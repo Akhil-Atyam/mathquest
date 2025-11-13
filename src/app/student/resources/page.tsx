@@ -6,38 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import Link from 'next/link';
 import React from 'react';
 
 function ResourceCard({ resource }: { resource: Resource }) {
   return (
-    <Dialog>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <resource.icon className="w-6 h-6 text-primary" />
-            {resource.title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">{resource.type}</p>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Start</Button>
-          </DialogTrigger>
-        </CardContent>
-      </Card>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{resource.title}</DialogTitle>
-          <DialogDescription>
-            {resource.grade} &middot; {resource.topic}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="prose dark:prose-invert">
-          <p>{resource.content}</p>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <resource.icon className="w-6 h-6 text-primary" />
+          {resource.title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">{resource.type}</p>
+        <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Link href={`/student/resources/${resource.id}`}>Start</Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -87,5 +74,3 @@ export default function ResourcesPage() {
     </div>
   );
 }
-
-    

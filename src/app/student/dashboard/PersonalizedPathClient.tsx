@@ -90,7 +90,7 @@ export function PersonalizedPathClient({ student }: { student: Student }) {
                         <p className="text-sm text-muted-foreground">Grade {res.grade} &middot; {res.topic}</p>
                     </div>
                     <Button size="sm" variant="ghost" asChild>
-                        <Link href="/student/resources">Start</Link>
+                        <Link href={`/student/resources/${res.id}`}>Start</Link>
                     </Button>
                 </Card>
             )) : <p className="text-sm text-muted-foreground">No new lessons recommended. Great job!</p>}
