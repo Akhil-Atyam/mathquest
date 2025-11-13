@@ -307,8 +307,7 @@
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "google"
     ]
   },
   "firestore": {
@@ -429,3 +428,4 @@
     "reasoning": "The Firestore data structure is designed to support the MathQuest application, focusing on secure access control and scalability. We leverage path-based ownership for user-specific data and membership maps for collaborative resources.  Authorization Independence is achieved by denormalizing necessary authorization data (like the user's role) directly within documents, eliminating the need for `get()` calls in security rules. This approach ensures that security rules can be evaluated efficiently and atomically. Segregation separates different types of data into collections with distinct security profiles, ensuring that rules remain simple and targeted. QAPs are supported by this segregation as well as the standardization of membership maps."
   }
 }
+    

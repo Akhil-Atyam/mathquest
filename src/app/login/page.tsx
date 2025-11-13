@@ -1,10 +1,30 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Logo } from '@/components/logo';
+import { AuthProvider, signInWithGoogle } from '@/firebase/auth/auth-provider';
+import { useAuth } from '@/firebase';
+import { useRouter } from 'next/navigation';
+
+function GoogleSignInButton({ role }: { role: 'student' | 'teacher' }) {
+    const auth = useAuth();
+    const router = useRouter();
+  
+    const handleSignIn = async () => {
+      try {
+        await signInWithGoogle(auth);
+        router.push(`/${role}/dashboard`);
+      } catch (error)
+      {
+        console.error("Could not sign in with Google", error);
+      }
+    };
+  
+    return <Button onClick={handleSignIn} className="w-full">Sign in with Google</Button>;
+}
 
 export default function LoginPage() {
   return (
@@ -29,17 +49,7 @@ export default function LoginPage() {
                 <CardDescription>Enter your details to access your dashboard.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="student-email">Email</Label>
-                  <Input id="student-email" type="email" placeholder="student@example.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="student-password">Password</Label>
-                  <Input id="student-password" type="password" />
-                </div>
-                <Button asChild className="w-full">
-                    <Link href="/student/dashboard">Login as Student</Link>
-                </Button>
+                <GoogleSignInButton role="student" />
               </CardContent>
             </Card>
           </TabsContent>
@@ -50,17 +60,7 @@ export default function LoginPage() {
                 <CardDescription>Welcome back! Manage your sessions and resources.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="teacher-email">Email</Label>
-                  <Input id="teacher-email" type="email" placeholder="teacher@example.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="teacher-password">Password</Label>
-                  <Input id="teacher-password" type="password" />
-                </div>
-                <Button asChild className="w-full">
-                    <Link href="/teacher/dashboard">Login as Teacher</Link>
-                </Button>
+                <GoogleSignInButton role="teacher" />
               </CardContent>
             </Card>
           </TabsContent>
