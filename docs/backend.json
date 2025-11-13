@@ -56,7 +56,7 @@
       ]
     },
     "Teacher": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$schema": "http://json-schema.org_draft-07/schema#",
       "title": "Teacher",
       "type": "object",
       "description": "Represents a teacher using the MathQuest platform.",
@@ -106,7 +106,7 @@
       ]
     },
     "Lesson": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$schema": "http://json-schema.org_draft-07/schema#",
       "title": "Lesson",
       "type": "object",
       "description": "Represents a single lesson within the MathQuest platform.",
@@ -131,10 +131,9 @@
           "type": "string",
           "description": "The math topic covered in the lesson (e.g., addition, subtraction)."
         },
-        "contentUrl": {
+        "content": {
           "type": "string",
-          "description": "URL to the lesson content (video, interactive game, etc.).",
-          "format": "uri"
+          "description": "The textual content of the lesson."
         }
       },
       "required": [
@@ -143,7 +142,7 @@
         "title",
         "gradeLevel",
         "topic",
-        "contentUrl"
+        "content"
       ]
     },
     "QuizScore": {

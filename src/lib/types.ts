@@ -7,6 +7,7 @@ export type Resource = {
   topic: string;
   grade: number;
   icon: LucideIcon;
+  content: string;
 };
 
 export type Quiz = {
@@ -48,3 +49,5 @@ export type Booking = {
   meetingLink?: string;
   attended?: boolean;
 };
+
+    

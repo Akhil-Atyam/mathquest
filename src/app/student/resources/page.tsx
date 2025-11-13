@@ -1,8 +1,45 @@
-import { resources, topics } from '@/lib/data';
+'use client';
+
+import { resources } from '@/lib/data';
+import type { Resource } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import React from 'react';
+
+function ResourceCard({ resource }: { resource: Resource }) {
+  return (
+    <Dialog>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <resource.icon className="w-6 h-6 text-primary" />
+            {resource.title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">{resource.type}</p>
+          <DialogTrigger asChild>
+            <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Start</Button>
+          </DialogTrigger>
+        </CardContent>
+      </Card>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{resource.title}</DialogTitle>
+          <DialogDescription>
+            {resource.grade} &middot; {resource.topic}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="prose dark:prose-invert">
+          <p>{resource.content}</p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function ResourcesPage() {
   const grades = [1, 2, 3, 4, 5];
@@ -34,18 +71,7 @@ export default function ResourcesPage() {
                                     <AccordionContent>
                                         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                         {topicResources.map(resource => (
-                                            <Card key={resource.id}>
-                                                <CardHeader>
-                                                    <CardTitle className="flex items-center gap-2 text-base">
-                                                        <resource.icon className="w-6 h-6 text-primary" />
-                                                        {resource.title}
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <p className="text-sm text-muted-foreground mb-4">{resource.type}</p>
-                                                    <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Start</Button>
-                                                </CardContent>
-                                            </Card>
+                                            <ResourceCard key={resource.id} resource={resource} />
                                         ))}
                                         </div>
                                     </AccordionContent>
@@ -61,3 +87,5 @@ export default function ResourcesPage() {
     </div>
   );
 }
+
+    

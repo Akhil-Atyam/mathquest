@@ -12,21 +12,21 @@ export const badges: Badge[] = [
 ];
 
 export const resources: Resource[] = [
-  { id: 'res-1', title: 'Intro to Addition', type: 'Lesson', topic: 'Addition', grade: 1, icon: Book },
-  { id: 'res-2', title: 'Addition Fun!', type: 'Video', topic: 'Addition', grade: 1, icon: Video },
-  { id: 'res-3', title: 'Counting Game', type: 'Game', topic: 'Addition', grade: 1, icon: Gamepad2 },
-  { id: 'res-4', title: 'Addition Worksheet', type: 'Worksheet', topic: 'Addition', grade: 1, icon: FileText },
-  { id: 'res-5', title: 'Subtraction Basics', type: 'Lesson', topic: 'Subtraction', grade: 1, icon: Book },
-  { id: 'res-6', title: 'What are Shapes?', type: 'Lesson', topic: 'Geometry', grade: 1, icon: Shapes },
-  { id: 'res-7', title: 'Advanced Addition', type: 'Lesson', topic: 'Addition', grade: 2, icon: Book },
-  { id: 'res-8', title: 'Intro to Multiplication', type: 'Video', topic: 'Multiplication', grade: 2, icon: Video },
-  { id: 'res-9', title: 'Measuring Length', type: 'Lesson', topic: 'Measurement', grade: 2, icon: Ruler },
-  { id: 'res-10', title: 'Understanding Fractions', type: 'Lesson', topic: 'Fractions', grade: 3, icon: Book },
-  { id: 'res-11', title: 'Fraction Pizza Party', type: 'Game', topic: 'Fractions', grade: 3, icon: Gamepad2 },
-  { id: 'res-12', title: 'Intro to Division', type: 'Lesson', topic: 'Division', grade: 3, icon: Book },
-  { id: 'res-13', title: 'Long Division', type: 'Lesson', topic: 'Division', grade: 4, icon: Book },
-  { id: 'res-14', title: 'Complex Shapes', type: 'Video', topic: 'Geometry', grade: 4, icon: Shapes },
-  { id: 'res-15', title: 'Decimal Points', type: 'Lesson', topic: 'Fractions', grade: 5, icon: Atom },
+  { id: 'res-1', title: 'Intro to Addition', type: 'Lesson', topic: 'Addition', grade: 1, icon: Book, content: 'This is a lesson about the basics of addition. We will learn how to add small numbers together.' },
+  { id: 'res-2', title: 'Addition Fun!', type: 'Video', topic: 'Addition', grade: 1, icon: Video, content: 'Watch this fun video to see addition in action!' },
+  { id: 'res-3', title: 'Counting Game', type: 'Game', topic: 'Addition', grade: 1, icon: Gamepad2, content: 'Play a game to practice your counting and addition skills.' },
+  { id: 'res-4', title: 'Addition Worksheet', type: 'Worksheet', topic: 'Addition', grade: 1, icon: FileText, content: 'Download and complete this worksheet to test your addition knowledge.' },
+  { id: 'res-5', title: 'Subtraction Basics', type: 'Lesson', topic: 'Subtraction', grade: 1, icon: Book, content: 'This lesson covers the fundamentals of subtracting numbers.' },
+  { id: 'res-6', title: 'What are Shapes?', type: 'Lesson', topic: 'Geometry', grade: 1, icon: Shapes, content: 'Learn to identify common shapes like circles, squares, and triangles.' },
+  { id: 'res-7', title: 'Advanced Addition', type: 'Lesson', topic: 'Addition', grade: 2, icon: Book, content: 'Take your addition skills to the next level with carrying and larger numbers.' },
+  { id: 'res-8', title: 'Intro to Multiplication', type: 'Video', topic: 'Multiplication', grade: 2, icon: Video, content: 'Multiplication is just repeated addition! This video shows you how.' },
+  { id: 'res-9', title: 'Measuring Length', type: 'Lesson', topic: 'Measurement', grade: 2, icon: Ruler, content: 'Learn how to use a ruler to measure inches and centimeters.' },
+  { id: 'res-10', title: 'Understanding Fractions', type: 'Lesson', topic: 'Fractions', grade: 3, icon: Book, content: 'What is a fraction? This lesson will explain parts of a whole.' },
+  { id: 'res-11', title: 'Fraction Pizza Party', type: 'Game', topic: 'Fractions', grade: 3, icon: Gamepad2, content: 'Design pizzas with different toppings to learn about fractions.' },
+  { id: 'res-12', title: 'Intro to Division', type: 'Lesson', topic: 'Division', grade: 3, icon: Book, content: 'Learn how to share items equally through division.' },
+  { id: 'res-13', title: 'Long Division', type: 'Lesson', topic: 'Division', grade: 4, icon: Book, content: 'Master the process of long division with this step-by-step lesson.' },
+  { id: 'res-14', title: 'Complex Shapes', type: 'Video', topic: 'Geometry', grade: 4, icon: Shapes, content: 'Explore polygons, polyhedrons, and other complex geometric shapes.' },
+  { id: 'res-15', title: 'Decimal Points', type: 'Lesson', topic: 'Fractions', grade: 5, icon: Atom, content: 'Understand the relationship between fractions and decimals.' },
 ];
 
 export const quizzes: Quiz[] = [
@@ -101,3 +101,5 @@ export const bookings: Booking[] = [
         teacherId: 'teacher-1'
     }
 ]
+
+    
