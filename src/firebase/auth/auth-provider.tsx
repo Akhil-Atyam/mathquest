@@ -33,12 +33,7 @@ export async function signInWithGoogle(authInstance: Auth) {
     const email = error.customData?.email;
     // The AuthCredential type that was used.
     const credential = GoogleAuthProvider.credentialFromError(error);
-    console.error('Google Sign-In Error:', {
-      errorCode,
-      errorMessage,
-      email,
-      credential,
-    });
+    console.error('Google Sign-In Error:', error);
     // Re-throw the error to be handled by the calling function
     throw error;
   }
