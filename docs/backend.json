@@ -4,279 +4,151 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Student",
       "type": "object",
-      "description": "Represents a student using the MathQuest platform.",
+      "description": "Represents a student in the MathQuest application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the student entity."
+          "description": "Unique identifier for the Student entity."
         },
-        "googleId": {
+        "name": {
           "type": "string",
-          "description": "Google ID of the student used for login via Google."
+          "description": "The student's full name."
         },
-        "firstName": {
-          "type": "string",
-          "description": "First name of the student."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "Last name of the student."
-        },
-        "gradeLevel": {
+        "grade": {
           "type": "number",
           "description": "The grade level of the student (1-5)."
         },
         "email": {
           "type": "string",
-          "description": "Email address of the student or their parent.",
+          "description": "The student's email address.",
           "format": "email"
-        },
-        "completedLessonIds": {
-          "type": "array",
-          "description": "References to lessons completed by the student. (Relationship: Student 1:N Lesson)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "quizScoreIds": {
-          "type": "array",
-          "description": "References to quiz scores achieved by the student. (Relationship: Student 1:N QuizScore)",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
         "id",
-        "googleId",
-        "firstName",
-        "lastName",
-        "gradeLevel",
+        "name",
+        "grade",
         "email"
       ]
     },
     "Teacher": {
-      "$schema": "http://json-schema.org_draft-07/schema#",
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Teacher",
       "type": "object",
-      "description": "Represents a teacher using the MathQuest platform.",
+      "description": "Represents a teacher in the MathQuest application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the teacher entity."
+          "description": "Unique identifier for the Teacher entity."
         },
-        "googleId": {
+        "name": {
           "type": "string",
-          "description": "Google ID of the teacher used for login via Google."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "First name of the teacher."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "Last name of the teacher."
+          "description": "The teacher's full name."
         },
         "email": {
           "type": "string",
-          "description": "Email address of the teacher.",
+          "description": "The teacher's email address.",
           "format": "email"
-        },
-        "lessonIds": {
-          "type": "array",
-          "description": "References to lessons created or managed by the teacher. (Relationship: Teacher 1:N Lesson)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "tutoringSessionIds": {
-          "type": "array",
-          "description": "References to tutoring sessions scheduled and managed by the teacher. (Relationship: Teacher 1:N TutoringSession)",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
         "id",
-        "googleId",
-        "firstName",
-        "lastName",
+        "name",
         "email"
       ]
     },
     "Lesson": {
-      "$schema": "http://json-schema.org_draft-07/schema#",
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Lesson",
       "type": "object",
-      "description": "Represents a single lesson within the MathQuest platform.",
+      "description": "Represents a lesson available in the MathQuest application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the lesson entity."
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "Reference to the teacher who created or manages the lesson. (Relationship: Teacher 1:N Lesson)"
+          "description": "Unique identifier for the Lesson entity."
         },
         "title": {
           "type": "string",
-          "description": "Title of the lesson."
+          "description": "The title of the lesson."
         },
-        "gradeLevel": {
+        "grade": {
           "type": "number",
-          "description": "The grade level for which the lesson is designed."
+          "description": "The grade level the lesson is designed for (1-5)."
         },
         "topic": {
           "type": "string",
           "description": "The math topic covered in the lesson (e.g., addition, subtraction)."
         },
-        "content": {
+        "contentUrl": {
           "type": "string",
-          "description": "The textual content of the lesson."
+          "description": "URL to the lesson content (video, interactive game, etc.).",
+          "format": "uri"
         }
       },
       "required": [
         "id",
-        "teacherId",
         "title",
-        "gradeLevel",
+        "grade",
         "topic",
-        "content"
-      ]
-    },
-    "QuizScore": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "QuizScore",
-      "type": "object",
-      "description": "Represents a student's score on a quiz.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the quiz score entry."
-        },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to the student who took the quiz. (Relationship: Student 1:N QuizScore)"
-        },
-        "quizId": {
-          "type": "string",
-          "description": "Reference to the quiz that was taken. (Relationship: Quiz 1:N QuizScore)"
-        },
-        "score": {
-          "type": "number",
-          "description": "The student's score on the quiz."
-        },
-        "submissionDateTime": {
-          "type": "string",
-          "description": "Date and time when the quiz was submitted.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "studentId",
-        "quizId",
-        "score",
-        "submissionDateTime"
+        "contentUrl"
       ]
     },
     "Quiz": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Quiz",
       "type": "object",
-      "description": "Represents a quiz available on the MathQuest platform.",
+      "description": "Represents a quiz available in the MathQuest application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the quiz entity."
-        },
-        "lessonId": {
-          "type": "string",
-          "description": "Reference to the lesson this quiz belongs to. (Relationship: Lesson 1:N Quiz)"
+          "description": "Unique identifier for the Quiz entity."
         },
         "title": {
           "type": "string",
-          "description": "Title of the quiz."
+          "description": "The title of the quiz."
         },
-        "description": {
+        "grade": {
+          "type": "number",
+          "description": "The grade level the quiz is designed for (1-5)."
+        },
+        "topic": {
           "type": "string",
-          "description": "Description of the quiz content."
+          "description": "The math topic covered in the quiz (e.g., addition, subtraction)."
         },
-        "questionIds": {
-          "type": "array",
-          "description": "References to the questions included in the quiz. (Relationship: Quiz 1:N Question)",
-          "items": {
-            "type": "string"
-          }
+        "lessonId": {
+          "type": "string",
+          "description": "Reference to Lesson. (Relationship: Lesson 1:N Quiz)"
         }
       },
       "required": [
         "id",
-        "lessonId",
         "title",
-        "description"
-      ]
-    },
-    "Question": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Question",
-      "type": "object",
-      "description": "Represents a single question within a quiz.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the question entity."
-        },
-        "quizId": {
-          "type": "string",
-          "description": "Reference to the quiz this question belongs to. (Relationship: Quiz 1:N Question)"
-        },
-        "text": {
-          "type": "string",
-          "description": "The text of the question."
-        },
-        "correctAnswer": {
-          "type": "string",
-          "description": "The correct answer to the question."
-        },
-        "possibleAnswers": {
-          "type": "array",
-          "description": "An array of possible answers for the question.",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "quizId",
-        "text",
-        "correctAnswer",
-        "possibleAnswers"
+        "grade",
+        "topic",
+        "lessonId"
       ]
     },
     "TutoringSession": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TutoringSession",
       "type": "object",
-      "description": "Represents a tutoring session booked on the MathQuest platform.",
+      "description": "Represents a tutoring session booked between a student and a teacher.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the tutoring session entity."
-        },
-        "teacherId": {
-          "type": "string",
-          "description": "Reference to the teacher conducting the session. (Relationship: Teacher 1:N TutoringSession)"
+          "description": "Unique identifier for the TutoringSession entity."
         },
         "studentId": {
           "type": "string",
-          "description": "Reference to the student attending the session. (Relationship: Student 1:N TutoringSession)"
+          "description": "Reference to Student. (Relationship: Student 1:N TutoringSession)"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to Teacher. (Relationship: Teacher 1:N TutoringSession)"
         },
         "startTime": {
           "type": "string",
-          "description": "Date and time when the session starts.",
+          "description": "The date and time the tutoring session starts.",
           "format": "date-time"
         },
         "durationMinutes": {
@@ -285,44 +157,82 @@
         },
         "topic": {
           "type": "string",
-          "description": "The topic covered during the tutoring session."
+          "description": "The topic covered in the tutoring session."
         },
         "meetingLink": {
           "type": "string",
-          "description": "Link to the online meeting for the tutoring session.",
+          "description": "Link to the virtual meeting for the tutoring session.",
           "format": "uri"
         }
       },
       "required": [
         "id",
-        "teacherId",
         "studentId",
+        "teacherId",
         "startTime",
         "durationMinutes",
         "topic",
         "meetingLink"
       ]
+    },
+    "StudentProgress": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudentProgress",
+      "type": "object",
+      "description": "Represents a student's progress in a lesson or quiz.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the StudentProgress entity."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to Student. (Relationship: Student 1:N StudentProgress)"
+        },
+        "lessonId": {
+          "type": "string",
+          "description": "Reference to Lesson. (Relationship: Lesson 1:N StudentProgress, nullable)"
+        },
+        "quizId": {
+          "type": "string",
+          "description": "Reference to Quiz. (Relationship: Quiz 1:N StudentProgress, nullable)"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Indicates whether the student has completed the lesson or quiz."
+        },
+        "score": {
+          "type": "number",
+          "description": "The student's score on the quiz (if applicable)."
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "completed"
+      ]
     }
   },
   "auth": {
     "providers": [
-      "google"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/students/{studentId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "Student",
+          "entityName": "User",
           "schema": {
             "$ref": "#/backend/entities/Student"
           },
-          "description": "Stores student profiles.  Uses path-based ownership for private student data. Includes the student's googleId for authentication purposes.",
+          "description": "Collection for storing student user profiles. The document ID is the Firebase Auth UID.",
           "params": [
             {
-              "name": "studentId",
-              "description": "The unique identifier for the student."
+              "name": "userId",
+              "description": "The Firebase Auth UID of the student user."
             }
           ]
         }
@@ -334,11 +244,11 @@
           "schema": {
             "$ref": "#/backend/entities/Teacher"
           },
-          "description": "Stores teacher profiles. Uses path-based ownership for private teacher data. Includes the teacher's googleId for authentication purposes.",
+          "description": "Collection for storing teacher user profiles.  The document ID is the Firebase Auth UID.",
           "params": [
             {
               "name": "teacherId",
-              "description": "The unique identifier for the teacher."
+              "description": "The Firebase Auth UID of the teacher user."
             }
           ]
         }
@@ -350,7 +260,7 @@
           "schema": {
             "$ref": "#/backend/entities/Lesson"
           },
-          "description": "Stores lesson data.  Accessible to students and teachers, but can only be created/modified by teachers. Teachers use their teacher ID in conjunction with their ID to create lessons",
+          "description": "Collection for storing lesson data.",
           "params": [
             {
               "name": "lessonId",
@@ -360,14 +270,18 @@
         }
       },
       {
-        "path": "/quizzes/{quizId}",
+        "path": "/lessons/{lessonId}/quizzes/{quizId}",
         "definition": {
           "entityName": "Quiz",
           "schema": {
             "$ref": "#/backend/entities/Quiz"
           },
-          "description": "Stores quiz data. Can be read by students, created by teachers.",
+          "description": "Subcollection for quizzes associated with a lesson. ",
           "params": [
+            {
+              "name": "lessonId",
+              "description": "The unique identifier for the parent lesson."
+            },
             {
               "name": "quizId",
               "description": "The unique identifier for the quiz."
@@ -376,55 +290,58 @@
         }
       },
       {
-        "path": "/questions/{questionId}",
-        "definition": {
-          "entityName": "Question",
-          "schema": {
-            "$ref": "#/backend/entities/Question"
-          },
-          "description": "Stores quiz question data.  Questions should have reference to quiz IDs.",
-          "params": [
-            {
-              "name": "questionId",
-              "description": "The unique identifier for the question."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/quizScores/{quizScoreId}",
-        "definition": {
-          "entityName": "QuizScore",
-          "schema": {
-            "$ref": "#/backend/entities/QuizScore"
-          },
-          "description": "Stores quiz score data. This data is considered private to each student.",
-          "params": [
-            {
-              "name": "quizScoreId",
-              "description": "The unique identifier for the quiz score."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/tutoringSessions/{tutoringSessionId}",
+        "path": "/tutoring_sessions/{sessionId}",
         "definition": {
           "entityName": "TutoringSession",
           "schema": {
             "$ref": "#/backend/entities/TutoringSession"
           },
-          "description": "Stores tutoring session data.  Requires denormalized studentId and teacherId for access control.",
+          "description": "Collection for storing tutoring session data. Includes both `studentId` and `teacherId` for authorization independence.",
           "params": [
             {
-              "name": "tutoringSessionId",
+              "name": "sessionId",
               "description": "The unique identifier for the tutoring session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{studentId}/progress/{progressId}",
+        "definition": {
+          "entityName": "StudentProgress",
+          "schema": {
+            "$ref": "#/backend/entities/StudentProgress"
+          },
+          "description": "Subcollection for storing student progress data. Stored under the user's document for easy access and secure list operations.",
+          "params": [
+            {
+              "name": "studentId",
+              "description": "The Firebase Auth UID of the student."
+            },
+            {
+              "name": "progressId",
+              "description": "The unique identifier for the progress entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_teacher/{userId}",
+        "definition": {
+          "entityName": "roles_teacher",
+          "schema": {
+            "$ref": "#/backend/entities/Teacher"
+          },
+          "description": "Collection used to store teacher role assignments based on document existence (DBAC).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the user."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the MathQuest application, focusing on secure access control and scalability. We leverage path-based ownership for user-specific data and membership maps for collaborative resources.  Authorization Independence is achieved by denormalizing necessary authorization data (like the user's role) directly within documents, eliminating the need for `get()` calls in security rules. This approach ensures that security rules can be evaluated efficiently and atomically. Segregation separates different types of data into collections with distinct security profiles, ensuring that rules remain simple and targeted. QAPs are supported by this segregation as well as the standardization of membership maps."
+    "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). It leverages structural segregation and denormalization strategies.  The top-level collections segregate data types with different security postures. User-owned data resides within `/users/{userId}` subcollections, providing clear ownership. Collaborative data, such as tutoring sessions, are managed in collections with explicit membership maps. The `roles_teacher` collection implements DBAC.\n\n**Authorization Independence**: Achieved by storing all authorization-relevant data directly within each document, avoiding `get()` calls in security rules.  For example, the `TutoringSessions` collection includes both `studentId` and `teacherId`, removing the need to fetch user roles during authorization checks. The `StudentProgress` collection is located under `/users/{studentId}`, enabling QAPs.\n\n**QAPs (Rules are not Filters)**: Each collection has a clear security posture, allowing for efficient and secure list operations. Placing `StudentProgress` under the user's document `/users/{userId}/progress/{progressId}` ensures only the student or an admin can access their progress data."
   }
 }
-    
