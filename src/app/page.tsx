@@ -1,10 +1,19 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Divide, Grip, Minus, Plus, X } from 'lucide-react';
 import { Logo } from '@/components/logo';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+  const [year, setYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="p-4 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
@@ -88,7 +97,7 @@ export default function Home() {
       </main>
       <footer className="bg-background border-t">
         <div className="container mx-auto px-4 py-6 text-center text-muted-foreground">
-          &copy; {new Date().getFullYear()} MathQuest. All rights reserved.
+          &copy; {year} MathQuest. All rights reserved.
         </div>
       </footer>
     </div>
