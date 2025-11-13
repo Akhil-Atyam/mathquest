@@ -1,39 +1,22 @@
 'use client';
 import {
   Auth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  // Make sure you have the Auth type and other necessary imports
+  signInAnonymously as firebaseSignInAnonymously,
 } from 'firebase/auth';
 
-// Create a new Google auth provider instance
-const provider = new GoogleAuthProvider();
 
 /**
- * Initiates Google Sign-In flow using a popup.
+ * Initiates Anonymous Sign-In flow.
  * @param authInstance The Firebase Auth instance.
  * @returns A promise that resolves with the user's credential.
  */
-export async function signInWithGoogle(authInstance: Auth) {
+export async function signInAnonymously(authInstance: Auth) {
   try {
-    const result = await signInWithPopup(authInstance, provider);
-    // This gives you a Google Access Token. You can use it to access the Google API.
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    const token = credential?.accessToken;
-    // The signed-in user info.
+    const result = await firebaseSignInAnonymously(authInstance);
     const user = result.user;
-    // IdP data available using getAdditionalUserInfo(result)
-    // ...
-    return { user, token };
+    return { user };
   } catch (error: any) {
-    // Handle Errors here.
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    // The email of the user's account used.
-    const email = error.customData?.email;
-    // The AuthCredential type that was used.
-    const credential = GoogleAuthProvider.credentialFromError(error);
-    console.error('Google Sign-In Error:', error);
+    console.error('Anonymous Sign-In Error:', error);
     // Re-throw the error to be handled by the calling function
     throw error;
   }

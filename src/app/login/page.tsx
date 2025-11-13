@@ -5,25 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Logo } from '@/components/logo';
-import { AuthProvider, signInWithGoogle } from '@/firebase/auth/auth-provider';
+import { signInAnonymously } from '@/firebase/auth/auth-provider';
 import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
-function GoogleSignInButton({ role }: { role: 'student' | 'teacher' }) {
+function AnonymousSignInButton({ role }: { role: 'student' | 'teacher' }) {
     const auth = useAuth();
     const router = useRouter();
   
     const handleSignIn = async () => {
       try {
-        await signInWithGoogle(auth);
+        await signInAnonymously(auth);
         router.push(`/${role}/dashboard`);
       } catch (error)
       {
-        console.error("Could not sign in with Google", error);
+        console.error("Could not sign in anonymously", error);
       }
     };
   
-    return <Button onClick={handleSignIn} className="w-full">Sign in with Google</Button>;
+    return <Button onClick={handleSignIn} className="w-full">Login as {role}</Button>;
 }
 
 export default function LoginPage() {
@@ -49,7 +49,7 @@ export default function LoginPage() {
                 <CardDescription>Enter your details to access your dashboard.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <GoogleSignInButton role="student" />
+                <AnonymousSignInButton role="student" />
               </CardContent>
             </Card>
           </TabsContent>
@@ -60,7 +60,7 @@ export default function LoginPage() {
                 <CardDescription>Welcome back! Manage your sessions and resources.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <GoogleSignInButton role="teacher" />
+                <AnonymousSignInButton role="teacher" />
               </CardContent>
             </Card>
           </TabsContent>
