@@ -77,18 +77,20 @@ function AuthForm({
     setIsLoading(true);
     try {
       if (isSignUp) {
+        if (role === 'teacher') {
+          if ('teacherCode' in values && values.teacherCode !== process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE) {
+            throw new Error('Invalid Teacher Code.');
+          }
+        }
+
         const userCredential = await initiateEmailSignUp(
           auth,
           values.email,
           values.password
         );
+
         if (role === 'teacher') {
-          // Additional check for teacher code
-          if ('teacherCode' in values) {
-             await setTeacherRole(userCredential.user.uid);
-          } else {
-            throw new Error('Teacher code not provided');
-          }
+           await setTeacherRole(userCredential.user.uid);
         }
         toast({
           title: 'Account Created',
@@ -271,4 +273,3 @@ export default function LoginPage() {
     </div>
   );
 }
-    

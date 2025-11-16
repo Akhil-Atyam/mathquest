@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  env: {
+    TEACHER_SECRET_CODE: process.env.TEACHER_SECRET_CODE,
+  },
   images: {
     remotePatterns: [
       {
