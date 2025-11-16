@@ -49,23 +49,29 @@ export const student: Student = {
   badges: ['badge-1', 'badge-2'],
 };
 
+const getFutureDate = (daysToAdd: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysToAdd);
+    return date.toISOString().split('T')[0];
+}
+
 export const teachers: Teacher[] = [
     {
         id: 'teacher-1',
         name: 'Mr. Davison',
         availability: {
-            "2024-07-29": ["09:00", "10:00", "11:00", "14:00"],
-            "2024-07-30": ["10:00", "11:00", "15:00"],
-            "2024-08-01": ["09:00", "10:00", "13:00", "14:00", "15:00"],
+            [getFutureDate(1)]: ["09:00", "10:00", "11:00", "14:00"],
+            [getFutureDate(2)]: ["10:00", "11:00", "15:00"],
+            [getFutureDate(3)]: ["09:00", "10:00", "13:00", "14:00", "15:00"],
         }
     },
     {
         id: 'teacher-2',
         name: 'Ms. Frizzle',
         availability: {
-            "2024-07-29": ["13:00", "14:00", "15:00"],
-            "2024-07-31": ["09:00", "10:00", "11:00", "12:00"],
-            "2024-08-02": ["11:00", "12:00"],
+            [getFutureDate(1)]: ["13:00", "14:00", "15:00"],
+            [getFutureDate(4)]: ["09:00", "10:00", "11:00", "12:00"],
+            [getFutureDate(5)]: ["11:00", "12:00"],
         }
     }
 ];
@@ -76,7 +82,7 @@ export const bookings: Booking[] = [
         studentName: 'Charlie',
         grade: 2,
         topic: 'Multiplication',
-        dateTime: new Date('2024-07-29T10:00:00'),
+        dateTime: new Date(new Date().getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
         status: 'Confirmed',
         teacherId: 'teacher-1',
         meetingLink: 'https://meet.example.com/charlie-session'
@@ -86,7 +92,7 @@ export const bookings: Booking[] = [
         studentName: 'Dana',
         grade: 4,
         topic: 'Long Division',
-        dateTime: new Date('2024-07-31T11:00:00'),
+        dateTime: new Date(new Date().getTime() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
         status: 'Confirmed',
         teacherId: 'teacher-2',
         meetingLink: 'https://meet.example.com/dana-session'
@@ -96,10 +102,8 @@ export const bookings: Booking[] = [
         studentName: 'Eli',
         grade: 1,
         topic: 'Subtraction',
-        dateTime: new Date('2024-07-25T14:00:00'),
+        dateTime: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
         status: 'Completed',
         teacherId: 'teacher-1'
     }
 ]
-
-    
