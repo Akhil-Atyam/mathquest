@@ -44,7 +44,7 @@ export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date
     console.log(values)
     toast({
       title: "Booking Confirmed!",
-      description: `Your tutoring session for ${values.topic} is booked for ${selectedDay?.toDateString()} at ${values.time}. A confirmation has been sent to ${values.parentEmail}.`,
+      description: `Your tutoring session for ${values.topic} is booked for ${selectedDay?.toDateString()} at ${values.time}.`,
     })
     form.reset();
   }
