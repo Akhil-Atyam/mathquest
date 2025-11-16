@@ -15,19 +15,23 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 
 
-function AddLinkDialog({ booking, onSave }: { booking: Booking, onSave: (bookingId: string, link: string) => void }) {
-    const [link, setLink] = useState('');
+function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave: (bookingId: string, link: string) => void, children: React.ReactNode }) {
+    const [link, setLink] = useState(booking.meetingLink || '');
+
+    useEffect(() => {
+        setLink(booking.meetingLink || '');
+    }, [booking.meetingLink]);
 
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="secondary" size="sm">Add Link</Button>
+                {children}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add Meeting Link</DialogTitle>
+                    <DialogTitle>{booking.meetingLink ? 'Edit' : 'Add'} Meeting Link</DialogTitle>
                     <DialogDescription>
-                        Add a meeting link for your session with {booking.studentName} on {format(booking.startTime, "PPP")}.
+                        {booking.meetingLink ? 'Edit the' : 'Add a'} meeting link for your session with {booking.studentName} on {format(booking.startTime, "PPP")}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -88,10 +92,20 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
                         <TableCell>{format(booking.startTime, "PPP 'at' p")}</TableCell>
                         <TableCell>{booking.topic}</TableCell>
                         <TableCell>
-                            {booking.meetingLink ?
-                                <Button variant="link" asChild><a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">Join</a></Button> :
-                                <AddLinkDialog booking={booking} onSave={onUpdateLink} />
-                            }
+                            <div className="flex items-center gap-2">
+                                {booking.meetingLink ?
+                                    <>
+                                        <Button variant="link" asChild className="p-0 h-auto"><a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">Join Meeting</a></Button>
+                                        <AddLinkDialog booking={booking} onSave={onUpdateLink}>
+                                            <Button variant="outline" size="sm">Edit</Button>
+                                        </AddLinkDialog>
+                                    </>
+                                    :
+                                    <AddLinkDialog booking={booking} onSave={onUpdateLink}>
+                                        <Button variant="secondary" size="sm">Add Link</Button>
+                                    </AddLinkDialog>
+                                }
+                            </div>
                         </TableCell>
                     </TableRow>
                 ))}
