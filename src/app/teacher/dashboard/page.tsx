@@ -127,7 +127,7 @@ export default function TeacherDashboardPage() {
               </div>
               <Button>Upload Resource</Button>
             </CardContent>
-          </card>
+          </Card>
         </TabsContent>
         
         <TabsContent value="attendance">
