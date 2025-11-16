@@ -16,6 +16,7 @@ import {
   createUserProfile,
   initiateEmailSignIn,
   setTeacherRole,
+  getUserEmailForUsername,
 } from '@/firebase/auth/auth-provider';
 import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -38,21 +39,23 @@ import type { Student, Teacher } from '@/lib/types';
 // Zod schema for validating the student sign-up form.
 const studentSignUpSchema = z.object({
   name: z.string().min(2, 'Name is too short.'),
-  email: z.string().email(),
+  username: z.string().min(3, 'Username must be at least 3 characters.'),
+  email: z.string().email('Please enter a valid email.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
 // Zod schema for validating the teacher sign-up form, including the teacher code.
 const teacherSignUpSchema = z.object({
   name: z.string().min(2, 'Name is too short.'),
-  email: z.string().email(),
+  username: z.string().min(3, 'Username must be at least 3 characters.'),
+  email: z.string().email('Please enter a valid email.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
   teacherCode: z.string().min(1, 'Teacher code is required.'),
 });
 
 // Zod schema for validating the sign-in form.
 const signInSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1, 'Username is required.'),
   password: z.string().min(1, 'Password is required.'),
 });
 
@@ -74,7 +77,9 @@ function AuthForm({
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [teacherSecretCode, setTeacherSecretCode] = useState<string | null>(null);
+  const [teacherSecretCode, setTeacherSecretCode] = useState<string | null>(
+    null
+  );
 
   // Fetch the teacher secret code from environment variables on the client-side.
   // This is done in `useEffect` to avoid hydration mismatches between server and client.
@@ -94,9 +99,9 @@ function AuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
-      ...(isSignUp && { name: '' }),
+      ...(isSignUp && { name: '', email: '' }),
       ...(role === 'teacher' && isSignUp && { teacherCode: '' }),
     },
   });
@@ -110,54 +115,77 @@ function AuthForm({
     setIsLoading(true);
     try {
       if (isSignUp) {
-        // For teacher sign-up, validate the secret code.
-        if (role === 'teacher') {
-          if ('teacherCode' in values && values.teacherCode !== teacherSecretCode) {
-            throw new Error('Invalid Teacher Code.');
-          }
+        if ('email' in values && 'password' in values) {
+            // For teacher sign-up, validate the secret code.
+            if (role === 'teacher') {
+            if (
+                'teacherCode' in values &&
+                values.teacherCode !== teacherSecretCode
+            ) {
+                throw new Error('Invalid Teacher Code.');
+            }
+            }
+    
+            // Create the user account with email and password.
+            const userCredential = await initiateEmailSignUp(
+                auth,
+                values.email,
+                values.password
+            );
+    
+            const user = userCredential.user;
+            // If sign-up is successful, create a user profile document in Firestore.
+            if ('name' in values && 'username' in values) {
+            const profileData = {
+                id: user.uid,
+                name: values.name,
+                username: values.username,
+                email: user.email!,
+            };
+    
+            if (role === 'student') {
+                await createUserProfile(
+                user.uid,
+                profileData as Omit<
+                    Student,
+                    'grade' | 'completedLessons' | 'quizScores' | 'badges'
+                >,
+                'student'
+                );
+            } else {
+                await createUserProfile(
+                user.uid,
+                profileData as Omit<Teacher, 'availability'>,
+                'teacher'
+                );
+            }
+            }
+    
+            // If the role is teacher, assign the teacher role in Firestore for DBAC.
+            if (role === 'teacher') {
+            await setTeacherRole(user.uid);
+            }
+            toast({
+            title: 'Account Created',
+            description: "You're all set! Redirecting to your dashboard.",
+            });
+            router.push(`/${role}/dashboard`);
         }
-
-        // Create the user account with email and password.
-        const userCredential = await initiateEmailSignUp(
-          auth,
-          values.email,
-          values.password
-        );
-
-        const user = userCredential.user;
-        // If sign-up is successful, create a user profile document in Firestore.
-        if (isSignUp && 'name' in values) {
-          const profileData = {
-            id: user.uid,
-            name: values.name,
-            email: user.email!,
-          };
-
-          if (role === 'student') {
-            await createUserProfile(user.uid, profileData as Omit<Student, 'grade' | 'completedLessons' | 'quizScores' | 'badges'>, 'student');
-          } else {
-            await createUserProfile(user.uid, profileData as Omit<Teacher, 'availability'>, 'teacher');
-          }
-        }
-
-        // If the role is teacher, assign the teacher role in Firestore for DBAC.
-        if (role === 'teacher') {
-           await setTeacherRole(user.user.uid);
-        }
-        toast({
-          title: 'Account Created',
-          description: "You're all set! Redirecting to your dashboard.",
-        });
       } else {
         // Handle sign-in.
-        await initiateEmailSignIn(auth, values.email, values.password);
-        toast({
-          title: 'Signed In',
-          description: "Welcome back! Redirecting to your dashboard.",
-        });
+        if ('username' in values) {
+            const email = await getUserEmailForUsername(values.username);
+            if (!email) {
+                throw new Error("Username not found.");
+            }
+            await initiateEmailSignIn(auth, email, values.password);
+            toast({
+              title: 'Signed In',
+              description: "Welcome back! Redirecting to your dashboard.",
+            });
+            router.push(`/${role}/dashboard`);
+        }
       }
-      // Redirect the user to their respective dashboard after success.
-      router.push(`/${role}/dashboard`);
     } catch (error: any) {
       console.error(`${isSignUp ? 'Sign-up' : 'Sign-in'} error:`, error);
       // Display an error toast on failure.
@@ -196,21 +224,36 @@ function AuthForm({
         )}
         <FormField
           control={form.control}
-          name="email"
+          name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input
-                  type="email"
-                  placeholder="name@example.com"
-                  {...field}
-                />
+                <Input placeholder="your_username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        {isSignUp && (
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="name@example.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="password"
@@ -244,7 +287,14 @@ function AuthForm({
             )}
           />
         )}
-        <Button type="submit" className="w-full" disabled={isLoading || (role === 'teacher' && isSignUp && !teacherSecretCode)}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={
+            isLoading ||
+            (role === 'teacher' && isSignUp && !teacherSecretCode)
+          }
+        >
           {isLoading
             ? 'Processing...'
             : isSignUp

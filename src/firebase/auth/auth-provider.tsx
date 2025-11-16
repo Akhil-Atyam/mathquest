@@ -6,7 +6,7 @@ import {
   signInWithEmailAndPassword,
   UserCredential,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Student, Teacher } from '@/lib/types';
 
@@ -113,6 +113,40 @@ export async function setTeacherRole(userId: string): Promise<void> {
         console.error(`Failed to set teacher role for user ${userId}`, error);
         throw error;
     }
+}
+
+/**
+ * Finds the email associated with a given username by querying Firestore.
+ * @param username The username to look up.
+ * @returns A promise that resolves with the user's email, or null if not found.
+ */
+export async function getUserEmailForUsername(username: string): Promise<string | null> {
+    const { firestore } = initializeFirebase();
+    
+    // Query students collection
+    const studentsRef = collection(firestore, 'users');
+    const studentQuery = query(studentsRef, where("username", "==", username));
+    const studentSnapshot = await getDocs(studentQuery);
+
+    if (!studentSnapshot.empty) {
+        // Found student, return email
+        const studentData = studentSnapshot.docs[0].data();
+        return studentData.email;
+    }
+
+    // Query teachers collection if not found in students
+    const teachersRef = collection(firestore, 'teachers');
+    const teacherQuery = query(teachersRef, where("username", "==", username));
+    const teacherSnapshot = await getDocs(teacherQuery);
+
+    if (!teacherSnapshot.empty) {
+        // Found teacher, return email
+        const teacherData = teacherSnapshot.docs[0].data();
+        return teacherData.email;
+    }
+
+    // Username not found in either collection
+    return null;
 }
 
 
