@@ -15,9 +15,19 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 
 
+/**
+ * A dialog component for adding or editing a meeting link for a booking.
+ * It's a controlled component that takes the booking details and a save handler.
+ * @param {object} props - The component props.
+ * @param {Booking} props.booking - The booking object to be updated.
+ * @param {function} props.onSave - Callback function to save the link.
+ * @param {React.ReactNode} props.children - The trigger element for the dialog.
+ */
 function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave: (bookingId: string, link: string) => void, children: React.ReactNode }) {
+    // State to manage the meeting link input field.
     const [link, setLink] = useState(booking.meetingLink || '');
 
+    // Effect to update the local state if the booking prop changes.
     useEffect(() => {
         setLink(booking.meetingLink || '');
     }, [booking.meetingLink]);
@@ -29,6 +39,7 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
+                    {/* The title changes based on whether a link already exists. */}
                     <DialogTitle>{booking.meetingLink ? 'Edit' : 'Add'} Meeting Link</DialogTitle>
                     <DialogDescription>
                         {booking.meetingLink ? 'Edit the' : 'Add a'} meeting link for your session with {booking.studentName} on {format(booking.startTime, "PPP 'at' p")}.
@@ -55,6 +66,7 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
                         </Button>
                     </DialogClose>
                     <DialogClose asChild>
+                        {/* The save button calls the onSave callback with the booking ID and the new link. */}
                         <Button type="submit" onClick={() => onSave(booking.id, link)}>Save Link</Button>
                     </DialogClose>
                 </DialogFooter>
@@ -63,10 +75,22 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
     )
 }
 
-
+/**
+ * A component that displays a list of upcoming bookings in a table.
+ * @param {object} props - The component props.
+ * @param {Booking[]} props.bookings - An array of all booking objects.
+ * @param {function} props.onUpdateLink - The callback function to handle link updates.
+ */
 function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdateLink: (bookingId: string, link: string) => void }) {
-    const upcomingBookings = bookings.filter(b => b.startTime >= new Date());
+    // State for upcoming and past bookings, populated on client-side to avoid hydration issues
+    const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
 
+    useEffect(() => {
+        const now = new Date();
+        setUpcomingBookings(bookings.filter(b => b.startTime >= now));
+    }, [bookings]);
+
+    // Show a message if there are no upcoming bookings.
     if (upcomingBookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No upcoming bookings.</p>
     }
@@ -90,6 +114,7 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
                         <TableCell>
                             <div className="flex items-center gap-2">
                                 {booking.meetingLink ?
+                                    // If a link exists, show "Join" and "Edit" buttons.
                                     <>
                                         <Button variant="link" asChild className="p-0 h-auto"><a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">Join Meeting</a></Button>
                                         <AddLinkDialog booking={booking} onSave={onUpdateLink}>
@@ -97,6 +122,7 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
                                         </AddLinkDialog>
                                     </>
                                     :
+                                    // If no link, show "Add Link" button.
                                     <AddLinkDialog booking={booking} onSave={onUpdateLink}>
                                         <Button variant="secondary" size="sm">Add Link</Button>
                                     </AddLinkDialog>
@@ -110,9 +136,21 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
     );
 }
 
+/**
+ * A component that displays a list of past bookings to track attendance.
+ * @param {object} props - The component props.
+ * @param {Booking[]} props.bookings - An array of all booking objects.
+ */
 function AttendanceList({ bookings }: { bookings: Booking[] }) {
-    const pastBookings = bookings.filter(b => b.startTime < new Date());
+    // State for past bookings, populated on client-side
+    const [pastBookings, setPastBookings] = useState<Booking[]>([]);
 
+    useEffect(() => {
+        const now = new Date();
+        setPastBookings(bookings.filter(b => b.startTime < now));
+    }, [bookings]);
+
+    // Show a message if there are no past sessions.
     if (pastBookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No past sessions to track.</p>
     }
@@ -143,9 +181,20 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
     )
 }
 
+/**
+ * The main page for the Teacher Dashboard.
+ * It provides a tabbed interface for managing bookings, uploading resources, and tracking attendance.
+ */
 export default function TeacherDashboardPage() {
+    // State to manage the list of bookings. Initialized with mock data.
     const [bookings, setBookings] = useState(initialBookings);
 
+    /**
+     * Handles updating the meeting link for a specific booking.
+     * This function is passed down to the BookingsList and AddLinkDialog components.
+     * @param {string} bookingId - The ID of the booking to update.
+     * @param {string} link - The new meeting link.
+     */
     const handleUpdateLink = (bookingId: string, link: string) => {
         setBookings(currentBookings =>
             currentBookings.map(b =>
@@ -165,6 +214,7 @@ export default function TeacherDashboardPage() {
                     <TabsTrigger value="attendance">Attendance</TabsTrigger>
                 </TabsList>
 
+                {/* Bookings Tab */}
                 <TabsContent value="bookings">
                     <Card>
                         <CardHeader>
@@ -177,6 +227,7 @@ export default function TeacherDashboardPage() {
                     </Card>
                 </TabsContent>
 
+                {/* Upload Resources Tab (UI only, no functionality) */}
                 <TabsContent value="resources">
                     <Card>
                         <CardHeader>
@@ -201,6 +252,7 @@ export default function TeacherDashboardPage() {
                     </Card>
                 </TabsContent>
 
+                {/* Attendance Tab */}
                 <TabsContent value="attendance">
                     <Card>
                         <CardHeader>

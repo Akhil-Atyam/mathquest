@@ -27,135 +27,164 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description: Restricts access to user profiles, allowing only the owner to read and write.
-     * @path: /users/{userId}
-     * @allow: User 'user123' (create) can create their profile if request.auth.uid == 'user123'.
-     * @deny: User 'user456' (create) cannot create a profile under /users/user123.
-     * @principle: Enforces user ownership for user profiles.
+     * @description Restricts access to student user profiles.
+     * Only the authenticated user who owns the profile can perform any operation on it.
+     * This follows the principle of user data ownership.
+     * @path /users/{userId}
      */
     match /users/{userId} {
+      /**
+       * Helper function to check if the requesting user is the owner of the document.
+       * @param {string} userId - The ID of the user document being accessed.
+       * @returns {boolean} True if the requester's UID matches the document's userId.
+       */
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if false; // Prevent listing all users
-
+      // Allow read, update, and delete only for the document owner.
+      allow get, update, delete: if isOwner(userId);
+      // Disallow listing all user documents to protect user privacy.
+      allow list: if false;
+      // Allow creation only if the user is creating their own document.
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && resource.data.id == userId;
-      allow delete: if isOwner(userId) && resource.data.id == userId;
     }
 
     /**
-     * @description: Restricts access to teacher profiles, allowing only the owner to read and write.
-     * @path: /teachers/{teacherId}
-     * @allow: Teacher 'teacher123' (create) can create their profile if request.auth.uid == 'teacher123'.
-     * @deny: User 'user456' (create) cannot create a a profile under /teachers/teacher123.
-     * @principle: Enforces user ownership for teacher profiles.
+     * @description Restricts access to teacher profiles.
+     * Only the owning teacher can access their profile.
+     * Creating, updating, or deleting requires the user to have the teacher role.
+     * @path /teachers/{teacherId}
      */
     match /teachers/{teacherId} {
+      /**
+       * Helper function to check if the requesting user is the owner of the teacher document.
+       * @param {string} teacherId - The ID of the teacher document being accessed.
+       * @returns {boolean} True if the requester's UID matches the document's teacherId.
+       */
       function isTeacherOwner(teacherId) {
           return request.auth != null && request.auth.uid == teacherId;
       }
       
+      /**
+       * Helper function to verify if the requesting user has a teacher role.
+       * It checks for the existence of a corresponding document in the 'roles_teacher' collection (DBAC).
+       * @returns {boolean} True if the user has a teacher role document.
+       */
       function isTeacher() {
         return exists(/databases/$(database)/documents/roles_teacher/$(request.auth.uid));
       }
 
+      // Allow a teacher to get their own profile.
       allow get: if isTeacherOwner(teacherId);
-      allow list: if false; // Prevent listing all teachers
+      // Prevent listing all teachers.
+      allow list: if false; 
 
-      allow create: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId && isTeacher();
-      allow update: if isTeacherOwner(teacherId) && resource.data.id == teacherId && isTeacher();
-      allow delete: if isTeacherOwner(teacherId) && resource.data.id == teacherId && isTeacher();
+      // Allow teachers to create, update, and delete their own profiles.
+      allow create, update, delete: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId && isTeacher();
     }
 
     /**
-     * @description: Allows public read access to lessons, but restricts write access.
-     * @path: /lessons/{lessonId}
-     * @allow: Any user (get, list) can read lesson data.
-     * @deny: User 'user123' (create) cannot create lessons without proper authorization. // TODO: Add logic for authorized lesson creators.
-     * @principle: Implements public read with owner-only writes for lessons.
+     * @description Manages access to lessons.
+     * All authenticated users can read and list lessons, making them public resources.
+     * Write operations are currently disabled and would require an admin/owner role.
+     * @path /lessons/{lessonId}
      */
     match /lessons/{lessonId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      // Allow public read access for all users.
+      allow get, list: if request.auth != null;
+      // Disallow all write operations for now.
+      // TODO: Add owner/admin validation for write access.
+      allow create, update, delete: if false;
     }
 
     /**
-     * @description: Restricts access to quizzes, allowing only authorized users to create, update, or delete them.
-     * @path: /lessons/{lessonId}/quizzes/{quizId}
-     * @allow: Any user (get, list) can read quiz data.
-     * @deny: User 'user123' (create) cannot create quizzes without proper authorization. // TODO: Add logic for authorized lesson creators.
-     * @principle: Secures quizzes by restricting write access to authorized users only.
+     * @description Manages access to quizzes within lessons.
+     * Similar to lessons, quizzes are publicly readable by any authenticated user.
+     * Write access is restricted.
+     * @path /lessons/{lessonId}/quizzes/{quizId}
      */
     match /lessons/{lessonId}/quizzes/{quizId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      // Allow public read access for all users.
+      allow get, list: if request.auth != null;
+      // Disallow all write operations for now.
+      // TODO: Add owner/admin validation for write access.
+      allow create, update, delete: if false; 
     }
 
     /**
-     * @description: Restricts access to tutoring sessions, allowing only the student or teacher involved to read and write.
-     * @path: /tutoring_sessions/{sessionId}
-     * @allow: Student 'student123' (get) can read session data if tutoringSession.studentId == 'student123'.
-     * @allow: Teacher 'teacher456' (get) can read session data if tutoringSession.teacherId == 'teacher456'.
-     * @deny: User 'user789' (get) cannot read session data if they are not the student or teacher.
-     * @principle: Enforces shared access for tutoring sessions based on studentId and teacherId.
+     * @description Manages access to tutoring sessions.
+     * Access is restricted to the participants (student and teacher) of the session.
+     * This rule prevents users from seeing sessions they are not a part of.
+     * @path /tutoring_sessions/{sessionId}
      */
     match /tutoring_sessions/{sessionId} {
+      /**
+       * Helper function to check if the requesting user is a participant in the session.
+       * @param {string} studentId - The ID of the student in the session.
+       * @param {string} teacherId - The ID of the teacher in the session.
+       * @returns {boolean} True if the requester's UID matches either the studentId or teacherId.
+       */
       function isParticipant(studentId, teacherId) {
         return request.auth != null && (request.auth.uid == studentId || request.auth.uid == teacherId);
       }
 
-      function isExistingParticipant(studentId, teacherId) {
-          return isParticipant(studentId, teacherId) && resource != null;
-      }
+      // Allow a user to list sessions only if they are querying by their own teacherId.
+      // This is crucial for securely fetching a teacher's schedule.
+      allow list: if request.auth != null && request.query.where.teacherId == request.auth.uid;
 
+      // Allow participants to get, create, update, and delete the session document.
       allow get: if isParticipant(resource.data.studentId, resource.data.teacherId);
-      allow list: if false;
-
       allow create: if isParticipant(request.resource.data.studentId, request.resource.data.teacherId);
-      allow update: if isExistingParticipant(resource.data.studentId, resource.data.teacherId);
-      allow delete: if isExistingParticipant(resource.data.studentId, resource.data.teacherId);
+      allow update, delete: if isParticipant(resource.data.studentId, resource.data.teacherId);
     }
 
     /**
-     * @description: Restricts access to student progress records, allowing only the owner to read and write.
-     * @path: /users/{studentId}/progress/{progressId}
-     * @allow: Student 'student123' (get) can read their own progress data.
-     * @deny: Student 'student456' (get) cannot read 'student123's progress data.
-     * @principle: Enforces user ownership for student progress records.
+     * @description Manages access to a student's progress records.
+     * These are stored in a subcollection under the user's document to ensure
+     * that only the owning student can access their own progress.
+     * @path /users/{studentId}/progress/{progressId}
      */
     match /users/{studentId}/progress/{progressId} {
+      /**
+       * Helper function to check if the requester is the owner of the parent user document.
+       * @param {string} studentId - The ID of the student (from the path).
+       * @returns {boolean} True if the requester's UID matches the studentId.
+       */
       function isOwner(studentId) {
         return request.auth != null && request.auth.uid == studentId;
       }
 
+      // Allow the owner to read, list, and write their own progress records.
       allow get, list: if isOwner(studentId);
-
-      allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
-      allow update: if isOwner(studentId) && resource.data.studentId == studentId;
-      allow delete: if isOwner(studentId) && resource.data.studentId == studentId;
+      allow create, update, delete: if isOwner(studentId) && request.resource.data.studentId == studentId;
     }
 
     /**
-     * @description: Enables document-based access control for assigning the teacher role based on DBAC.
-     * @path: /roles_teacher/{userId}
-     * @allow: User with UID matching {userId} can create this document for themselves if they provide the correct secret code.
-     * @deny: Other users cannot create this document.
-     * @principle: Implements Document Based Access Control (DBAC).
+     * @description Manages the teacher role assignment collection (DBAC).
+     * The existence of a document in this collection signifies that the user with that UID is a teacher.
+     * @path /roles_teacher/{userId}
      */
-      match /roles_teacher/{userId} {
-        function isSignedIn() {
-          return request.auth != null;
-        }
-
-        allow get: if isSignedIn();
-        allow list: if false;
-
-        allow create: if request.auth.uid == userId;
-        allow update: if false;
-        allow delete: if request.auth.uid == userId;
+    match /roles_teacher/{userId} {
+      /**
+       * Helper function to check if a user is signed in.
+       * @returns {boolean} True if a user is authenticated.
+       */
+      function isSignedIn() {
+        return request.auth != null;
       }
+
+      // Allow any signed-in user to check if another user is a teacher.
+      allow get: if isSignedIn();
+      // Disallow listing all teacher roles.
+      allow list: if false;
+
+      // Allow a user to create their own teacher role document.
+      // In a real app, this would be protected, e.g., by a secret code or an admin process.
+      allow create: if request.auth.uid == userId;
+      // Prevent updates or allow a user to remove their own role.
+      allow update: if false;
+      allow delete: if request.auth.uid == userId;
+    }
   }
 }

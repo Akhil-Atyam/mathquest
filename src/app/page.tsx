@@ -6,11 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Divide, Grip, Minus, Plus, X } from 'lucide-react';
 import { Logo } from '@/components/logo';
 
+/**
+ * The Home page component for MathQuest.
+ * This is the main landing page for the application, showcasing its features
+ * and providing navigation to key sections like login and learning resources.
+ */
 export default function Home() {
+  // Get the current year for the footer copyright.
   const year = new Date().getFullYear();
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Header section with Logo and Login button */}
       <header className="p-4 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
         <div className="container mx-auto flex justify-between items-center">
           <Logo />
@@ -21,8 +28,11 @@ export default function Home() {
           </nav>
         </div>
       </header>
+
       <main className="flex-1">
+        {/* Hero section with a welcoming message and call-to-action buttons */}
         <section className="container mx-auto px-4 py-20 text-center relative">
+          {/* Decorative math symbols floating around the hero text */}
           <div className="absolute top-20 left-10 bg-accent/20 text-accent p-2 rounded-full animate-bounce">
             <Plus className="w-8 h-8" />
           </div>
@@ -55,10 +65,12 @@ export default function Home() {
           </div>
         </section>
 
+        {/* "Why MathQuest?" section highlighting key features of the app */}
         <section className="bg-card py-20">
           <div className="container mx-auto px-4">
             <h2 className="text-4xl font-bold text-center mb-12">Why MathQuest?</h2>
             <div className="grid md:grid-cols-3 gap-8">
+              {/* Feature Card: Fun Lessons */}
               <Card>
                 <CardContent className="p-6 text-center">
                   <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
@@ -68,6 +80,7 @@ export default function Home() {
                   <p className="text-muted-foreground">Engaging lessons, videos, and games that make learning exciting.</p>
                 </CardContent>
               </Card>
+              {/* Feature Card: Track Progress */}
               <Card>
                 <CardContent className="p-6 text-center">
                   <div className="p-4 bg-accent/10 rounded-full inline-block mb-4">
@@ -77,6 +90,7 @@ export default function Home() {
                   <p className="text-muted-foreground">Earn badges and see your skills grow with our progress tracker.</p>
                 </CardContent>
               </Card>
+              {/* Feature Card: Expert Tutors */}
               <Card>
                 <CardContent className="p-6 text-center">
                   <div className="p-4 bg-green-500/10 rounded-full inline-block mb-4">
@@ -90,6 +104,8 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* Footer section with copyright information */}
       <footer className="bg-background border-t">
         <div className="container mx-auto px-4 py-6 text-center text-muted-foreground">
           &copy; {year} MathQuest. All rights reserved.
@@ -98,6 +114,9 @@ export default function Home() {
     </div>
   );
 }
+
+// The following are inline SVG components used for icons in the feature cards.
+// They are defined here for simplicity as they are only used on this page.
 
 function BookOpenIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -119,7 +138,6 @@ function BookOpenIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-
 function TargetIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -140,7 +158,6 @@ function TargetIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-
 
 function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
   return (

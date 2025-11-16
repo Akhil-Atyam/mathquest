@@ -35,12 +35,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import type { Student, Teacher } from '@/lib/types';
 
+// Zod schema for validating the student sign-up form.
 const studentSignUpSchema = z.object({
   name: z.string().min(2, 'Name is too short.'),
   email: z.string().email(),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
+// Zod schema for validating the teacher sign-up form, including the teacher code.
 const teacherSignUpSchema = z.object({
   name: z.string().min(2, 'Name is too short.'),
   email: z.string().email(),
@@ -48,11 +50,19 @@ const teacherSignUpSchema = z.object({
   teacherCode: z.string().min(1, 'Teacher code is required.'),
 });
 
+// Zod schema for validating the sign-in form.
 const signInSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1, 'Password is required.'),
 });
 
+/**
+ * A reusable authentication form component for sign-up and sign-in.
+ * It handles form state, validation, and submission for both students and teachers.
+ * @param {object} props - The component props.
+ * @param {boolean} props.isSignUp - Flag to determine if the form is for sign-up or sign-in.
+ * @param {'student' | 'teacher'} props.role - The role of the user.
+ */
 function AuthForm({
   isSignUp,
   role,
@@ -66,11 +76,13 @@ function AuthForm({
   const [isLoading, setIsLoading] = useState(false);
   const [teacherSecretCode, setTeacherSecretCode] = useState<string | null>(null);
 
+  // Fetch the teacher secret code from environment variables on the client-side.
+  // This is done in `useEffect` to avoid hydration mismatches between server and client.
   useEffect(() => {
-    // Fetch env variable on client-side to avoid hydration issues
     setTeacherSecretCode(process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE || null);
   }, []);
 
+  // Dynamically select the correct validation schema based on the role and form type.
   const formSchema =
     role === 'teacher' && isSignUp
       ? teacherSignUpSchema
@@ -78,6 +90,7 @@ function AuthForm({
       ? studentSignUpSchema
       : signInSchema;
 
+  // Initialize react-hook-form with the selected schema.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -88,16 +101,23 @@ function AuthForm({
     },
   });
 
+  /**
+   * Handles the form submission logic.
+   * It calls the appropriate Firebase authentication and database functions.
+   * @param {object} values - The validated form values.
+   */
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
       if (isSignUp) {
+        // For teacher sign-up, validate the secret code.
         if (role === 'teacher') {
           if ('teacherCode' in values && values.teacherCode !== teacherSecretCode) {
             throw new Error('Invalid Teacher Code.');
           }
         }
 
+        // Create the user account with email and password.
         const userCredential = await initiateEmailSignUp(
           auth,
           values.email,
@@ -105,6 +125,7 @@ function AuthForm({
         );
 
         const user = userCredential.user;
+        // If sign-up is successful, create a user profile document in Firestore.
         if (isSignUp && 'name' in values) {
           const profileData = {
             id: user.uid,
@@ -119,23 +140,27 @@ function AuthForm({
           }
         }
 
+        // If the role is teacher, assign the teacher role in Firestore for DBAC.
         if (role === 'teacher') {
-           await setTeacherRole(userCredential.user.uid);
+           await setTeacherRole(user.user.uid);
         }
         toast({
           title: 'Account Created',
           description: "You're all set! Redirecting to your dashboard.",
         });
       } else {
+        // Handle sign-in.
         await initiateEmailSignIn(auth, values.email, values.password);
         toast({
           title: 'Signed In',
           description: "Welcome back! Redirecting to your dashboard.",
         });
       }
+      // Redirect the user to their respective dashboard after success.
       router.push(`/${role}/dashboard`);
     } catch (error: any) {
       console.error(`${isSignUp ? 'Sign-up' : 'Sign-in'} error:`, error);
+      // Display an error toast on failure.
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
@@ -153,6 +178,7 @@ function AuthForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Conditionally render the 'Name' field for sign-up forms. */}
         {isSignUp && (
           <FormField
             control={form.control}
@@ -198,6 +224,7 @@ function AuthForm({
             </FormItem>
           )}
         />
+        {/* Conditionally render the 'Teacher Code' field for teacher sign-up. */}
         {isSignUp && role === 'teacher' && (
           <FormField
             control={form.control}
@@ -229,6 +256,10 @@ function AuthForm({
   );
 }
 
+/**
+ * The main login page component.
+ * It uses a tabbed interface to switch between student/teacher roles and sign-in/sign-up forms.
+ */
 export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -240,11 +271,13 @@ export default function LoginPage() {
         </div>
       </header>
       <main className="flex-1 flex items-center justify-center p-4">
+        {/* Tabs for selecting user role: Student or Teacher */}
         <Tabs defaultValue="student" className="w-full max-w-md">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="student">Student</TabsTrigger>
             <TabsTrigger value="teacher">Teacher</TabsTrigger>
           </TabsList>
+          {/* Student Forms */}
           <TabsContent value="student">
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
@@ -279,6 +312,7 @@ export default function LoginPage() {
               </TabsContent>
             </Tabs>
           </TabsContent>
+          {/* Teacher Forms */}
           <TabsContent value="teacher">
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">

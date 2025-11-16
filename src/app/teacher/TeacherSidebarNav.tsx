@@ -6,12 +6,18 @@ import { LayoutDashboard } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { teachers } from '@/lib/data';
 
+// An array defining the navigation items for the teacher sidebar.
 const menuItems = [
   { href: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
+/**
+ * Renders the primary navigation menu for the teacher sidebar.
+ * It maps over `menuItems` to create navigation links and highlights the active link.
+ */
 export function TeacherSidebarNav() {
     const pathname = usePathname();
+    // Using mock data for the teacher. In a real app, this would come from an auth context.
     const teacher = teachers[0];
     return (
         <SidebarMenu>
@@ -29,8 +35,12 @@ export function TeacherSidebarNav() {
     );
 }
 
-
+/**
+ * Renders the teacher's profile information at the bottom of the sidebar.
+ * It displays the teacher's avatar and name.
+ */
 export function TeacherProfile() {
+    // Using mock data for the teacher.
     const teacher = teachers[0];
     return (
         <div className="flex items-center gap-3">

@@ -2,16 +2,25 @@ import type { Student, Teacher, Resource, Quiz, Badge, Booking } from '@/lib/typ
 import { Book, Video, Gamepad2, FileText, Award, Star, Trophy, Atom, Ruler, Shapes } from 'lucide-react';
 import { format } from 'date-fns';
 
+/**
+ * @fileoverview This file contains mock data for the application.
+ * In a real-world scenario, this data would be fetched from a database like Firestore.
+ * Using mock data is useful for rapid prototyping and UI development without a live backend.
+ */
+
+// A simple array of math topics.
 export const topics = [
   "Addition", "Subtraction", "Multiplication", "Division", "Fractions", "Geometry", "Measurement"
 ];
 
+// Mock data for badges that students can earn.
 export const badges: Badge[] = [
   { id: 'badge-1', name: 'Addition Ace', icon: Award },
   { id: 'badge-2', name: 'Subtraction Star', icon: Star },
   { id: 'badge-3', name: 'Fraction Fanatic', icon: Trophy },
 ];
 
+// Mock data for learning resources (lessons, videos, etc.).
 export const resources: Resource[] = [
   { id: 'res-1', title: 'Intro to Addition', type: 'Lesson', topic: 'Addition', grade: 1, icon: Book, content: 'This is a lesson about the basics of addition. We will learn how to add small numbers together.' },
   { id: 'res-2', title: 'Addition Fun!', type: 'Video', topic: 'Addition', grade: 1, icon: Video, content: 'Watch this fun video to see addition in action!' },
@@ -30,6 +39,7 @@ export const resources: Resource[] = [
   { id: 'res-15', title: 'Decimal Points', type: 'Lesson', topic: 'Fractions', grade: 5, icon: Atom, content: 'Understand the relationship between fractions and decimals.' },
 ];
 
+// Mock data for quizzes.
 export const quizzes: Quiz[] = [
   { id: 'quiz-1', title: 'Addition Check', topic: 'Addition', grade: 1 },
   { id: 'quiz-2', title: 'Subtraction Skills', topic: 'Subtraction', grade: 1 },
@@ -38,6 +48,7 @@ export const quizzes: Quiz[] = [
   { id: 'quiz-5', title: 'Division Drill', topic: 'Division', grade: 4 },
 ];
 
+// A single mock student object for demonstration purposes.
 export const student: Student = {
   id: 'student-1',
   name: 'Alex',
@@ -50,21 +61,28 @@ export const student: Student = {
   badges: ['badge-1', 'badge-2'],
 };
 
-// Helper to generate a future date string
+/**
+ * Helper function to generate a date string for a future date.
+ * This is used to create dynamic but predictable dates for mock availability.
+ * @param {number} dayOffset - The number of days from today.
+ * @returns {string} A date formatted as 'yyyy-MM-dd'.
+ */
 const getFutureDate = (dayOffset: number) => {
     const date = new Date();
     date.setDate(date.getDate() + dayOffset);
     return format(date, 'yyyy-MM-dd');
 };
 
+// Mock data for teachers, including their availability.
+// The availability is stored as a map where the key is the day offset from today
+// and the value is an array of available time slots.
 export const teachers: Teacher[] = [
     {
         id: 'teacher-1',
         name: 'Mr. Davison',
-        // dayOffset: availability
         availability: {
-            '1': ["09:00", "10:00", "11:00", "14:00"],
-            '2': ["10:00", "11:00", "15:00"],
+            '1': ["09:00", "10:00", "11:00", "14:00"], // Tomorrow
+            '2': ["10:00", "11:00", "15:00"], // Day after tomorrow
             '3': ["09:00", "10:00", "13:00", "14:00", "15:00"],
         }
     },
@@ -79,6 +97,7 @@ export const teachers: Teacher[] = [
     }
 ];
 
+// Mock data for tutoring session bookings.
 export const bookings: Booking[] = [
   {
     id: 'booking-1',
@@ -86,7 +105,7 @@ export const bookings: Booking[] = [
     studentName: 'Alex',
     grade: 3,
     topic: 'Fractions',
-    startTime: new Date(new Date().setDate(new Date().getDate() + 1)),
+    startTime: new Date(new Date().setDate(new Date().getDate() + 1)), // Tomorrow
     status: 'Confirmed',
     teacherId: 'teacher-1',
     meetingLink: 'https://meet.google.com/xyz-abc-def'
@@ -97,7 +116,7 @@ export const bookings: Booking[] = [
     studentName: 'Beth',
     grade: 4,
     topic: 'Long Division',
-    startTime: new Date(new Date().setDate(new Date().getDate() + 2)),
+    startTime: new Date(new Date().setDate(new Date().getDate() + 2)), // Day after tomorrow
     status: 'Confirmed',
     teacherId: 'teacher-1',
   },
@@ -107,7 +126,7 @@ export const bookings: Booking[] = [
     studentName: 'Charlie',
     grade: 2,
     topic: 'Multiplication',
-    startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
+    startTime: new Date(new Date().setDate(new Date().getDate() - 1)), // Yesterday
     status: 'Completed',
     teacherId: 'teacher-1',
     attended: true,

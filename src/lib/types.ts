@@ -1,53 +1,78 @@
 import type { LucideIcon } from "lucide-react";
 
+/**
+ * @fileoverview This file contains TypeScript type definitions for the main data
+ * entities used throughout the MathQuest application. Centralizing these types
+ * helps ensure data consistency and provides better autocompletion and type-checking
+ * during development.
+ */
+
+/**
+ * Represents a single learning resource, which can be a lesson, video, game, or worksheet.
+ */
 export type Resource = {
-  id: string;
-  title: string;
-  type: 'Lesson' | 'Video' | 'Game' | 'Worksheet';
-  topic: string;
-  grade: number;
-  icon: LucideIcon;
-  content: string;
+  id: string; // Unique identifier for the resource.
+  title: string; // The display title of the resource.
+  type: 'Lesson' | 'Video' | 'Game' | 'Worksheet'; // The category of the resource.
+  topic: string; // The math topic it covers (e.g., "Addition").
+  grade: number; // The target grade level.
+  icon: LucideIcon; // The icon component to be displayed for this resource type.
+  content: string; // The main content or description of the resource.
 };
 
+/**
+ * Represents a single quiz.
+ */
 export type Quiz = {
-  id: string;
-  title: string;
-  topic: string;
-  grade: number;
+  id: string; // Unique identifier for the quiz.
+  title: string; // The title of the quiz.
+  topic: string; // The math topic it covers.
+  grade: number; // The target grade level.
 };
 
+/**
+ * Represents a badge that a student can earn for achievements.
+ */
 export type Badge = {
-  id: string;
-  name: string;
-  icon: LucideIcon;
+  id: string; // Unique identifier for the badge.
+  name: string; // The name of the badge (e.g., "Addition Ace").
+  icon: LucideIcon; // The icon component for the badge.
 };
 
+/**
+ * Represents a student user.
+ */
 export type Student = {
-  id: string;
-  name:string;
-  grade: number;
-  completedLessons: string[];
-  quizScores: Record<string, number>;
-  badges: string[];
+  id: string; // Unique identifier, typically the Firebase Auth UID.
+  name:string; // The student's name.
+  grade: number; // The student's grade level.
+  completedLessons: string[]; // An array of resource IDs that the student has completed.
+  quizScores: Record<string, number>; // A map of quiz IDs to the scores the student received.
+  badges: string[]; // An array of badge IDs the student has earned.
 };
 
+/**
+ * Represents a teacher user.
+ */
 export type Teacher = {
-  id: string;
-  name: string;
-  // Use day offset (number as string) to avoid server/client date mismatch
+  id: string; // Unique identifier, typically the Firebase Auth UID.
+  name: string; // The teacher's name.
+  // A record mapping a day offset (as a string, e.g., "1" for tomorrow) to an array of available time slots (e.g., "09:00").
   availability: Record<string, string[]>; 
 };
 
+/**
+ * Represents a booked tutoring session between a student and a teacher.
+ */
 export type Booking = {
-  id: string;
-  studentId: string;
-  studentName: string;
-  grade: number;
-  topic: string;
-  startTime: Date;
-  status: 'Confirmed' | 'Completed' | 'Cancelled';
-  teacherId: string;
-  meetingLink?: string;
-  attended?: boolean;
+  id: string; // Unique identifier for the booking.
+  studentId: string; // The ID of the student.
+  studentName: string; // The name of the student (denormalized for easy display).
+  grade: number; // The grade of the student at the time of booking.
+  topic: string; // The topic for the session.
+  startTime: Date; // The exact start date and time of the session.
+  status: 'Confirmed' | 'Completed' | 'Cancelled'; // The status of the booking.
+  teacherId: string; // The ID of the teacher.
+  meetingLink?: string; // An optional link to the virtual meeting.
+  attended?: boolean; // An optional flag to mark if the student attended.
 };

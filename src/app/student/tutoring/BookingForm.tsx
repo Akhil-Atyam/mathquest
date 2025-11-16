@@ -20,6 +20,7 @@ import { CalendarCheck } from "lucide-react"
 import React from "react"
 import type { Teacher } from "@/lib/types"
 
+// Zod schema to define the shape and validation rules for the booking form.
 const formSchema = z.object({
   studentName: z.string().min(2, "Name is too short."),
   grade: z.string().min(1, "Please select a grade."),
@@ -27,11 +28,22 @@ const formSchema = z.object({
   time: z.string().min(1, "Please select a time."),
 })
 
+/**
+ * A form component for booking a tutoring session.
+ * It handles form state, validation, and submission.
+ *
+ * @param {object} props - The component props.
+ * @param {Date | undefined} props.selectedDay - The date selected by the user in the calendar.
+ * @param {string[]} props.availableTimes - An array of available time slots for the selected day.
+ * @param {Teacher | undefined} props.teacher - The currently selected teacher.
+ */
 export function BookingForm({ selectedDay, availableTimes, teacher }: { selectedDay: Date | undefined, availableTimes: string[], teacher: Teacher | undefined }) {
   const { toast } = useToast()
   
+  // Initialize react-hook-form with the schema and default values.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    // Default values are pre-filled with mock student data.
     defaultValues: {
       studentName: student.name,
       grade: String(student.grade),
@@ -40,20 +52,29 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
     },
   })
 
+  // This effect runs when the list of available times changes.
+  // It checks if the currently selected time in the form is still valid.
+  // If not (e.g., user changed the date), it resets the time field.
   React.useEffect(() => {
-    // Reset time if it's no longer available
     if(form.getValues("time") && !availableTimes.includes(form.getValues("time"))){
       form.resetField("time");
     }
   }, [availableTimes, form]);
 
 
+  /**
+   * Handles form submission.
+   * On success, it shows a confirmation toast and logs the data.
+   * In a real app, this would make an API call to save the booking.
+   * @param {object} values - The validated form values.
+   */
   function onSubmit(values: z.infer<typeof formSchema>) {
     toast({
       title: "Booking Confirmed!",
       description: `Your tutoring session for ${values.topic} has been booked.`,
     })
     console.log(values)
+    // Reset the form fields after successful submission.
     form.reset();
   }
 
@@ -119,6 +140,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
           render={({ field }) => (
             <FormItem>
               <FormLabel>Preferred Time</FormLabel>
+              {/* The time selection dropdown is disabled if there are no available times. */}
               <Select onValueChange={field.onChange} value={field.value} disabled={availableTimes.length === 0}>
                 <FormControl>
                   <SelectTrigger>
