@@ -13,6 +13,7 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { Booking } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useState } from 'react';
 
 function BookingsList({ bookings, isLoading }: { bookings: Booking[] | null, isLoading: boolean }) {
     if (isLoading) {
@@ -106,6 +107,9 @@ export default function TeacherDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
+  const [upcomingBookings, setUpcomingBookings] = useState<Booking[] | null>(null);
+  const [pastBookings, setPastBookings] = useState<Booking[] | null>(null);
+
   const sessionsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
@@ -113,8 +117,14 @@ export default function TeacherDashboardPage() {
 
   const { data: bookings, isLoading: bookingsLoading } = useCollection<Booking>(sessionsQuery);
 
-  const upcomingBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() >= new Date());
-  const pastBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() < new Date());
+  useEffect(() => {
+    if (bookings) {
+      const now = new Date();
+      setUpcomingBookings(bookings.filter(b => (b.startTime as unknown as Timestamp).toDate() >= now));
+      setPastBookings(bookings.filter(b => (b.startTime as unknown as Timestamp).toDate() < now));
+    }
+  }, [bookings]);
+
 
   const isLoading = isUserLoading || bookingsLoading;
 
@@ -136,7 +146,7 @@ export default function TeacherDashboardPage() {
               <CardDescription>Manage your scheduled tutoring sessions.</CardDescription>
             </CardHeader>
             <CardContent>
-                <BookingsList bookings={upcomingBookings || null} isLoading={isLoading} />
+                <BookingsList bookings={upcomingBookings} isLoading={isLoading} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -172,7 +182,7 @@ export default function TeacherDashboardPage() {
               <CardDescription>Track which students attended past sessions.</CardDescription>
             </CardHeader>
             <CardContent>
-              <AttendanceList bookings={pastBookings || null} isLoading={isLoading} />
+              <AttendanceList bookings={pastBookings} isLoading={isLoading} />
             </CardContent>
           </Card>
         </TabsContent>
