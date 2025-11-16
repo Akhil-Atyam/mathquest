@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Logo } from '@/components/logo';
 import {
   initiateEmailSignUp,
+  createUserProfile,
   initiateEmailSignIn,
   setTeacherRole,
 } from '@/firebase/auth/auth-provider';
@@ -32,13 +33,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
+import type { Student, Teacher } from '@/lib/types';
 
 const studentSignUpSchema = z.object({
+  name: z.string().min(2, 'Name is too short.'),
   email: z.string().email(),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
 const teacherSignUpSchema = z.object({
+  name: z.string().min(2, 'Name is too short.'),
   email: z.string().email(),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
   teacherCode: z.string().min(1, 'Teacher code is required.'),
@@ -60,15 +64,26 @@ function AuthForm({
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [teacherSecretCode, setTeacherSecretCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch env variable on client-side to avoid hydration issues
+    setTeacherSecretCode(process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE || null);
+  }, []);
 
   const formSchema =
-    role === 'teacher' && isSignUp ? teacherSignUpSchema : isSignUp ? studentSignUpSchema : signInSchema;
+    role === 'teacher' && isSignUp
+      ? teacherSignUpSchema
+      : isSignUp
+      ? studentSignUpSchema
+      : signInSchema;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
       password: '',
+      ...(isSignUp && { name: '' }),
       ...(role === 'teacher' && isSignUp && { teacherCode: '' }),
     },
   });
@@ -78,7 +93,7 @@ function AuthForm({
     try {
       if (isSignUp) {
         if (role === 'teacher') {
-          if ('teacherCode' in values && values.teacherCode !== process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE) {
+          if ('teacherCode' in values && values.teacherCode !== teacherSecretCode) {
             throw new Error('Invalid Teacher Code.');
           }
         }
@@ -88,6 +103,21 @@ function AuthForm({
           values.email,
           values.password
         );
+
+        const user = userCredential.user;
+        if (isSignUp && 'name' in values) {
+          const profileData = {
+            id: user.uid,
+            name: values.name,
+            email: user.email!,
+          };
+
+          if (role === 'student') {
+            await createUserProfile(user.uid, profileData as Omit<Student, 'grade' | 'completedLessons' | 'quizScores' | 'badges'>, 'student');
+          } else {
+            await createUserProfile(user.uid, profileData as Omit<Teacher, 'availability'>, 'teacher');
+          }
+        }
 
         if (role === 'teacher') {
            await setTeacherRole(userCredential.user.uid);
@@ -123,6 +153,21 @@ function AuthForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {isSignUp && (
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="email"
@@ -172,7 +217,7 @@ function AuthForm({
             )}
           />
         )}
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full" disabled={isLoading || (role === 'teacher' && isSignUp && !teacherSecretCode)}>
           {isLoading
             ? 'Processing...'
             : isSignUp

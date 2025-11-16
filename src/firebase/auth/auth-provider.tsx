@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
+import type { Student, Teacher } from '@/lib/types';
 
 /**
  * Initiates Anonymous Sign-In flow.
@@ -48,6 +49,30 @@ export async function initiateEmailSignUp(
     throw error;
   }
 }
+
+/**
+ * Creates a user profile document in Firestore.
+ * @param userId The UID of the user.
+ * @param profileData The user's profile data.
+ * @param role The user's role ('student' or 'teacher').
+ */
+export async function createUserProfile(
+  userId: string,
+  profileData: Omit<Student, 'grade' | 'completedLessons' | 'quizScores' | 'badges'> | Omit<Teacher, 'availability'>,
+  role: 'student' | 'teacher'
+): Promise<void> {
+  const { firestore } = initializeFirebase();
+  const collectionPath = role === 'teacher' ? 'teachers' : 'users';
+  const userDocRef = doc(firestore, collectionPath, userId);
+  try {
+    await setDoc(userDocRef, profileData);
+    console.log(`${role} profile created for user ${userId}`);
+  } catch (error) {
+    console.error(`Failed to create ${role} profile for user ${userId}`, error);
+    throw error;
+  }
+}
+
 
 /**
  * Initiates email/password sign-in.
@@ -97,4 +122,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // This component can be used to wrap parts of your app that need auth context
   return <>{children}</>;
 }
-    

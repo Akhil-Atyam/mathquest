@@ -27,7 +27,6 @@
       "required": [
         "id",
         "name",
-        "grade",
         "email"
       ]
     },
@@ -343,4 +342,3 @@
     "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). It leverages structural segregation and denormalization strategies.  The top-level collections segregate data types with different security postures. User-owned data resides within `/users/{userId}` subcollections, providing clear ownership. Collaborative data, such as tutoring sessions, are managed in collections with explicit membership maps. The `roles_teacher` collection implements DBAC.\n\n**Authorization Independence**: Achieved by storing all authorization-relevant data directly within each document, avoiding `get()` calls in security rules.  For example, the `TutoringSessions` collection includes both `studentId` and `teacherId`, removing the need to fetch user roles during authorization checks. The `StudentProgress` collection is located under `/users/{userId}`, enabling QAPs.\n\n**QAPs (Rules are not Filters)**: Each collection has a clear security posture, allowing for efficient and secure list operations. Placing `StudentProgress` under the user's document `/users/{userId}/progress/{progressId}` ensures only the student or an admin can access their progress data."
   }
 }
-    
