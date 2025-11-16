@@ -45,7 +45,9 @@ export default function TutoringPage() {
   // This effect runs only on the client to prevent hydration mismatch
   React.useEffect(() => {
     // Set initial date on client mount to avoid hydration error
-    setDate(new Date());
+    if (!date) {
+        setDate(new Date());
+    }
 
     if (selectedTeacher) {
       const newAvailability: Record<string, string[]> = {};
@@ -62,7 +64,7 @@ export default function TutoringPage() {
         setDate(undefined);
       }
     }
-  }, [selectedTeacher, date]);
+  }, [selectedTeacher]);
 
   const allAvailableDays = React.useMemo(() => {
     return Object.keys(processedAvailability).map((day) => new Date(day));
