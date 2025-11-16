@@ -60,14 +60,6 @@ function AuthForm({
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [teacherCode, setTeacherCode] = useState('');
-
-  useEffect(() => {
-    // Set environment-dependent values on the client after mount
-    // to prevent hydration errors.
-    setTeacherCode(process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE || '');
-  }, []);
-
 
   const formSchema =
     role === 'teacher' && isSignUp ? teacherSignUpSchema : isSignUp ? studentSignUpSchema : signInSchema;
@@ -86,7 +78,7 @@ function AuthForm({
     try {
       if (isSignUp) {
         if (role === 'teacher') {
-          if ('teacherCode' in values && values.teacherCode !== teacherCode) {
+          if ('teacherCode' in values && values.teacherCode !== process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE) {
             throw new Error('Invalid Teacher Code.');
           }
         }

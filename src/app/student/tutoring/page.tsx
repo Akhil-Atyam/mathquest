@@ -16,65 +16,43 @@ import {
 import { Label } from '@/components/ui/label';
 import type { Teacher } from '@/lib/types';
 
-// Helper to generate a date from a day offset
-const getDateFromOffset = (offset: number) => {
+// Helper to generate a future date string
+const getFutureDate = (dayOffset: number) => {
   const date = new Date();
-  date.setDate(date.getDate() + offset);
-  date.setHours(0, 0, 0, 0); // Set to start of the day
-  return date;
+  date.setDate(date.getDate() + dayOffset);
+  return format(date, 'yyyy-MM-dd');
 };
-
-// Helper to format a date into yyyy-MM-dd
-const formatDate = (date: Date) => format(date, 'yyyy-MM-dd');
 
 export default function TutoringPage() {
   const [selectedTeacherId, setSelectedTeacherId] = React.useState<
     string | undefined
   >(teachers[0]?.id);
-  const [date, setDate] = React.useState<Date | undefined>();
-
-  // This state will hold the processed availability with actual Date objects, calculated on client-side
-  const [processedAvailability, setProcessedAvailability] = React.useState<
-    Record<string, string[]>
-  >({});
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
 
   const selectedTeacher = React.useMemo(() => {
     return teachers.find((t) => t.id === selectedTeacherId);
   }, [selectedTeacherId]);
 
-  // This effect runs only on the client to prevent hydration mismatch
-  React.useEffect(() => {
-    // Set initial date on client mount to avoid hydration error
-    if (!date) {
-        setDate(new Date());
-    }
-
-    if (selectedTeacher) {
-      const newAvailability: Record<string, string[]> = {};
-      for (const dayOffset in selectedTeacher.availability) {
-        const futureDate = getDateFromOffset(parseInt(dayOffset));
-        const formattedDate = formatDate(futureDate);
-        newAvailability[formattedDate] =
-          selectedTeacher.availability[dayOffset];
-      }
-      setProcessedAvailability(newAvailability);
-
-      // Reset date if the new teacher isn't available on the currently selected date.
-      if (date && !newAvailability[formatDate(date)]) {
-        setDate(undefined);
-      }
-    }
+  const allAvailableDays = React.useMemo(() => {
+    if (!selectedTeacher) return [];
+    return Object.keys(selectedTeacher.availability).map((dayOffset) => {
+      return new Date(getFutureDate(Number(dayOffset)));
+    });
   }, [selectedTeacher]);
 
-  const allAvailableDays = React.useMemo(() => {
-    return Object.keys(processedAvailability).map((day) => new Date(day));
-  }, [processedAvailability]);
-
   const availableTimesForSelectedDay = React.useMemo(() => {
-    if (!date) return [];
-    const formattedDate = formatDate(date);
-    return processedAvailability[formattedDate]?.sort() || [];
-  }, [date, processedAvailability]);
+    if (!date || !selectedTeacher) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDayStart = new Date(date);
+    selectedDayStart.setHours(0, 0, 0, 0);
+
+    const dayOffset = Math.ceil((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return selectedTeacher.availability[String(dayOffset)]?.sort() || [];
+
+  }, [date, selectedTeacher]);
+
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -124,7 +102,7 @@ export default function TutoringPage() {
                 disabled={(day) =>
                   !selectedTeacher ||
                   day < new Date() ||
-                  !allAvailableDays.some((d) => formatDate(d) === formatDate(day))
+                  !allAvailableDays.some(d => d.toDateString() === day.toDateString())
                 }
               />
             </CardContent>

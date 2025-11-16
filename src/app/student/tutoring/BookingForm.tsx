@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { student, topics } from "@/lib/data"
+import { student, teachers, topics, bookings } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -17,9 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { CalendarCheck } from "lucide-react"
-import { useAuth, useFirestore, useUser } from "@/firebase"
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
-import { collection } from "firebase/firestore"
+import React from "react"
 import type { Teacher } from "@/lib/types"
 
 const formSchema = z.object({
@@ -31,8 +29,6 @@ const formSchema = z.object({
 
 export function BookingForm({ selectedDay, availableTimes, teacher }: { selectedDay: Date | undefined, availableTimes: string[], teacher: Teacher | undefined }) {
   const { toast } = useToast()
-  const firestore = useFirestore();
-  const { user } = useUser();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,38 +47,13 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
     }
   }, [availableTimes, form]);
 
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user || !teacher || !selectedDay) {
-        toast({
-            variant: 'destructive',
-            title: "Booking Failed",
-            description: "Missing required information (user, teacher, or date).",
-        });
-        return;
-    }
-    
-    const [hours, minutes] = values.time.split(':').map(Number);
-    const bookingDateTime = new Date(selectedDay);
-    bookingDateTime.setHours(hours, minutes, 0, 0);
-
-    const tutoringSessionsRef = collection(firestore, "tutoring_sessions");
-
-    addDocumentNonBlocking(tutoringSessionsRef, {
-        studentId: user.uid,
-        studentName: values.studentName,
-        teacherId: teacher.id,
-        grade: parseInt(values.grade, 10),
-        topic: values.topic,
-        startTime: bookingDateTime,
-        durationMinutes: 60, // Assuming 60 minute sessions
-        status: 'Confirmed',
-        meetingLink: '', // Teacher can add this later
-    });
-    
     toast({
       title: "Booking Confirmed!",
       description: `Your tutoring session for ${values.topic} has been booked.`,
     })
+    console.log(values)
     form.reset();
   }
 

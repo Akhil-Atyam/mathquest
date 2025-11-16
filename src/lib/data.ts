@@ -1,5 +1,6 @@
 import type { Student, Teacher, Resource, Quiz, Badge, Booking } from '@/lib/types';
 import { Book, Video, Gamepad2, FileText, Award, Star, Trophy, Atom, Ruler, Shapes } from 'lucide-react';
+import { format } from 'date-fns';
 
 export const topics = [
   "Addition", "Subtraction", "Multiplication", "Division", "Fractions", "Geometry", "Measurement"
@@ -49,6 +50,13 @@ export const student: Student = {
   badges: ['badge-1', 'badge-2'],
 };
 
+// Helper to generate a future date string
+const getFutureDate = (dayOffset: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + dayOffset);
+    return format(date, 'yyyy-MM-dd');
+};
+
 export const teachers: Teacher[] = [
     {
         id: 'teacher-1',
@@ -71,5 +79,37 @@ export const teachers: Teacher[] = [
     }
 ];
 
-// This is now just for initial structure, will be replaced by firestore data
-export const bookings: Booking[] = []
+export const bookings: Booking[] = [
+  {
+    id: 'booking-1',
+    studentId: 'student-1',
+    studentName: 'Alex',
+    grade: 3,
+    topic: 'Fractions',
+    startTime: new Date(new Date().setDate(new Date().getDate() + 1)),
+    status: 'Confirmed',
+    teacherId: 'teacher-1',
+    meetingLink: 'https://meet.google.com/xyz-abc-def'
+  },
+   {
+    id: 'booking-2',
+    studentId: 'student-2',
+    studentName: 'Beth',
+    grade: 4,
+    topic: 'Long Division',
+    startTime: new Date(new Date().setDate(new Date().getDate() + 2)),
+    status: 'Confirmed',
+    teacherId: 'teacher-1',
+  },
+   {
+    id: 'booking-3',
+    studentId: 'student-3',
+    studentName: 'Charlie',
+    grade: 2,
+    topic: 'Multiplication',
+    startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
+    status: 'Completed',
+    teacherId: 'teacher-1',
+    attended: true,
+  }
+];

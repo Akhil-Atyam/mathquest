@@ -9,24 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { bookings } from '@/lib/data';
 import type { Booking } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
 
-function BookingsList({ bookings, isLoading }: { bookings: Booking[] | null, isLoading: boolean }) {
-    if (isLoading) {
-        return (
-            <div className="space-y-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-            </div>
-        )
-    }
 
-    if (!bookings || bookings.length === 0) {
-        return <p className="text-center text-muted-foreground p-8">No bookings found.</p>
+function BookingsList({ bookings }: { bookings: Booking[] }) {
+    const upcomingBookings = bookings.filter(b => b.startTime >= new Date());
+
+    if(upcomingBookings.length === 0) {
+        return <p className="text-center text-muted-foreground p-8">No upcoming bookings.</p>
     }
 
     return (
@@ -40,13 +31,10 @@ function BookingsList({ bookings, isLoading }: { bookings: Booking[] | null, isL
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {bookings.map(booking => (
+                {upcomingBookings.map(booking => (
                     <TableRow key={booking.id}>
                         <TableCell>{booking.studentName} (Grade {booking.grade})</TableCell>
-                        <TableCell>
-                            {/* Firestore timestamp needs to be converted to JS Date */}
-                            {format( (booking.startTime as unknown as Timestamp).toDate(), "PPP 'at' p")}
-                        </TableCell>
+                        <TableCell>{format(booking.startTime, "PPP 'at' p")}</TableCell>
                         <TableCell>{booking.topic}</TableCell>
                         <TableCell>
                             {booking.meetingLink ?
@@ -61,18 +49,10 @@ function BookingsList({ bookings, isLoading }: { bookings: Booking[] | null, isL
     );
 }
 
-function AttendanceList({ bookings, isLoading }: { bookings: Booking[] | null, isLoading: boolean }) {
-     if (isLoading) {
-        return (
-            <div className="space-y-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-            </div>
-        )
-    }
+function AttendanceList({ bookings }: { bookings: Booking[] }) {
+    const pastBookings = bookings.filter(b => b.startTime < new Date());
 
-    if (!bookings || bookings.length === 0) {
+     if(pastBookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No past sessions to track.</p>
     }
 
@@ -87,10 +67,10 @@ function AttendanceList({ bookings, isLoading }: { bookings: Booking[] | null, i
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {bookings.map(booking => (
+                {pastBookings.map(booking => (
                 <TableRow key={booking.id}>
                     <TableCell>{booking.studentName}</TableCell>
-                    <TableCell>{format((booking.startTime as unknown as Timestamp).toDate(), 'PPP')}</TableCell>
+                    <TableCell>{format(booking.startTime, 'PPP')}</TableCell>
                     <TableCell>{booking.topic}</TableCell>
                     <TableCell className="text-right">
                     <Checkbox defaultChecked={booking.attended} />
@@ -103,23 +83,6 @@ function AttendanceList({ bookings, isLoading }: { bookings: Booking[] | null, i
 }
 
 export default function TeacherDashboardPage() {
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
-
-  const sessionsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    // Securely query for sessions where the teacherId matches the logged-in user's UID.
-    return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
-  }, [firestore, user]);
-
-  const { data: bookings, isLoading: bookingsLoading } = useCollection<Booking>(sessionsQuery);
-
-  const isLoading = isUserLoading || bookingsLoading;
-
-  const now = new Date();
-  const upcomingBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() >= now) || [];
-  const pastBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() < now) || [];
-
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
@@ -138,7 +101,7 @@ export default function TeacherDashboardPage() {
               <CardDescription>Manage your scheduled tutoring sessions.</CardDescription>
             </CardHeader>
             <CardContent>
-                <BookingsList bookings={upcomingBookings} isLoading={isLoading} />
+                <BookingsList bookings={bookings} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -164,7 +127,7 @@ export default function TeacherDashboardPage() {
               </div>
               <Button>Upload Resource</Button>
             </CardContent>
-          </Card>
+          </card>
         </TabsContent>
         
         <TabsContent value="attendance">
@@ -174,7 +137,7 @@ export default function TeacherDashboardPage() {
               <CardDescription>Track which students attended past sessions.</CardDescription>
             </CardHeader>
             <CardContent>
-              <AttendanceList bookings={pastBookings} isLoading={isLoading} />
+              <AttendanceList bookings={bookings} />
             </CardContent>
           </Card>
         </TabsContent>

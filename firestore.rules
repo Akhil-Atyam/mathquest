@@ -112,8 +112,7 @@ service cloud.firestore {
       }
 
       allow get: if isParticipant(resource.data.studentId, resource.data.teacherId);
-      // Allow a teacher to list only their own sessions.
-      allow list: if request.auth != null && request.query.resource.data.teacherId == request.auth.uid;
+      allow list: if false;
 
       allow create: if isParticipant(request.resource.data.studentId, request.resource.data.teacherId);
       allow update: if isExistingParticipant(resource.data.studentId, resource.data.teacherId);
