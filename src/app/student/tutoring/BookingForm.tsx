@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { student, teachers, topics } from "@/lib/data"
+import { student, topics } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -17,17 +17,22 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { CalendarCheck } from "lucide-react"
+import { useAuth, useFirestore, useUser } from "@/firebase"
+import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { collection } from "firebase/firestore"
+import type { Teacher } from "@/lib/types"
 
 const formSchema = z.object({
   studentName: z.string().min(2, "Name is too short."),
   grade: z.string().min(1, "Please select a grade."),
   topic: z.string().min(1, "Please select a topic."),
   time: z.string().min(1, "Please select a time."),
-  parentEmail: z.string().email("Please enter a valid email."),
 })
 
-export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date | undefined, availableTimes: string[] }) {
+export function BookingForm({ selectedDay, availableTimes, teacher }: { selectedDay: Date | undefined, availableTimes: string[], teacher: Teacher | undefined }) {
   const { toast } = useToast()
+  const firestore = useFirestore();
+  const { user } = useUser();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,15 +41,47 @@ export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date
       grade: String(student.grade),
       topic: "",
       time: "",
-      parentEmail: "",
     },
   })
 
+  React.useEffect(() => {
+    // Reset time if it's no longer available
+    if(form.getValues("time") && !availableTimes.includes(form.getValues("time"))){
+      form.resetField("time");
+    }
+  }, [availableTimes, form]);
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
+    if (!user || !teacher || !selectedDay) {
+        toast({
+            variant: 'destructive',
+            title: "Booking Failed",
+            description: "Missing required information (user, teacher, or date).",
+        });
+        return;
+    }
+    
+    const [hours, minutes] = values.time.split(':').map(Number);
+    const bookingDateTime = new Date(selectedDay);
+    bookingDateTime.setHours(hours, minutes, 0, 0);
+
+    const tutoringSessionsRef = collection(firestore, "tutoring_sessions");
+
+    addDocumentNonBlocking(tutoringSessionsRef, {
+        studentId: user.uid,
+        studentName: values.studentName,
+        teacherId: teacher.id,
+        grade: parseInt(values.grade, 10),
+        topic: values.topic,
+        startTime: bookingDateTime,
+        durationMinutes: 60, // Assuming 60 minute sessions
+        status: 'Confirmed',
+        meetingLink: '', // Teacher can add this later
+    });
+    
     toast({
       title: "Booking Confirmed!",
-      description: `Your tutoring session for ${values.topic} is booked for ${selectedDay?.toDateString()} at ${values.time}.`,
+      description: `Your tutoring session for ${values.topic} has been booked.`,
     })
     form.reset();
   }
@@ -111,7 +148,7 @@ export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date
           render={({ field }) => (
             <FormItem>
               <FormLabel>Preferred Time</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={availableTimes.length === 0}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={availableTimes.length === 0}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select an available time" />
@@ -125,20 +162,7 @@ export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="parentEmail"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Parent's Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="parent@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={!selectedDay || availableTimes.length === 0}>
+        <Button type="submit" className="w-full" disabled={!selectedDay || !teacher || availableTimes.length === 0}>
             <CalendarCheck className="mr-2 h-4 w-4"/>
             Book Session
         </Button>

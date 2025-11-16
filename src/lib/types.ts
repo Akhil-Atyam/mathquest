@@ -40,14 +40,13 @@ export type Teacher = {
 
 export type Booking = {
   id: string;
+  studentId: string;
   studentName: string;
   grade: number;
   topic: string;
-  dateTime: Date;
+  startTime: Date;
   status: 'Confirmed' | 'Completed' | 'Cancelled';
   teacherId: string;
   meetingLink?: string;
   attended?: boolean;
 };
-
-    

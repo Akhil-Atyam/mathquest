@@ -1,4 +1,5 @@
-import { bookings, resources } from '@/lib/data';
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,11 +9,114 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
+import type { Booking } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function BookingsList({ bookings, isLoading }: { bookings: Booking[] | null, isLoading: boolean }) {
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+        )
+    }
+
+    if (!bookings || bookings.length === 0) {
+        return <p className="text-center text-muted-foreground p-8">No bookings found.</p>
+    }
+
+    return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Topic</TableHead>
+                    <TableHead>Meeting Link</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {bookings.map(booking => (
+                    <TableRow key={booking.id}>
+                        <TableCell>{booking.studentName} (Grade {booking.grade})</TableCell>
+                        <TableCell>
+                            {/* Firestore timestamp needs to be converted to JS Date */}
+                            {format( (booking.startTime as unknown as Timestamp).toDate(), "PPP 'at' p")}
+                        </TableCell>
+                        <TableCell>{booking.topic}</TableCell>
+                        <TableCell>
+                            {booking.meetingLink ?
+                                <Button variant="link" asChild><a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">Join</a></Button> :
+                                <Button variant="secondary" size="sm">Add Link</Button>
+                            }
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    );
+}
+
+function AttendanceList({ bookings, isLoading }: { bookings: Booking[] | null, isLoading: boolean }) {
+     if (isLoading) {
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+        )
+    }
+
+    if (!bookings || bookings.length === 0) {
+        return <p className="text-center text-muted-foreground p-8">No past sessions to track.</p>
+    }
+
+    return (
+         <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Student</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Topic</TableHead>
+                <TableHead className="text-right">Attended</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {bookings.map(booking => (
+                <TableRow key={booking.id}>
+                    <TableCell>{booking.studentName}</TableCell>
+                    <TableCell>{format((booking.startTime as unknown as Timestamp).toDate(), 'PPP')}</TableCell>
+                    <TableCell>{booking.topic}</TableCell>
+                    <TableCell className="text-right">
+                    <Checkbox defaultChecked={booking.attended} />
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    )
+}
 
 export default function TeacherDashboardPage() {
-  const upcomingBookings = bookings.filter(b => b.status === 'Confirmed' && b.dateTime >= new Date());
-  const pastBookings = bookings.filter(b => b.status === 'Completed' || b.dateTime < new Date());
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const sessionsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: bookings, isLoading: bookingsLoading } = useCollection<Booking>(sessionsQuery);
+
+  const upcomingBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() >= new Date());
+  const pastBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() < new Date());
+
+  const isLoading = isUserLoading || bookingsLoading;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -32,32 +136,7 @@ export default function TeacherDashboardPage() {
               <CardDescription>Manage your scheduled tutoring sessions.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Topic</TableHead>
-                    <TableHead>Meeting Link</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {upcomingBookings.map(booking => (
-                    <TableRow key={booking.id}>
-                      <TableCell>{booking.studentName} (Grade {booking.grade})</TableCell>
-                      <TableCell>{format(booking.dateTime, "PPP 'at' p")}</TableCell>
-                      <TableCell>{booking.topic}</TableCell>
-                      <TableCell>
-                        {booking.meetingLink ? 
-                          <Button variant="link" asChild><a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">Join</a></Button> :
-                          <Button variant="secondary" size="sm">Add Link</Button>
-                        }
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-               {upcomingBookings.length === 0 && <p className="text-center text-muted-foreground p-8">No upcoming bookings.</p>}
+                <BookingsList bookings={upcomingBookings || null} isLoading={isLoading} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -93,29 +172,7 @@ export default function TeacherDashboardPage() {
               <CardDescription>Track which students attended past sessions.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Topic</TableHead>
-                    <TableHead className="text-right">Attended</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pastBookings.map(booking => (
-                    <TableRow key={booking.id}>
-                      <TableCell>{booking.studentName}</TableCell>
-                      <TableCell>{format(booking.dateTime, 'PPP')}</TableCell>
-                      <TableCell>{booking.topic}</TableCell>
-                      <TableCell className="text-right">
-                        <Checkbox defaultChecked={booking.attended} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {pastBookings.length === 0 && <p className="text-center text-muted-foreground p-8">No past sessions to track.</p>}
+              <AttendanceList bookings={pastBookings || null} isLoading={isLoading} />
             </CardContent>
           </Card>
         </TabsContent>
