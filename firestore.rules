@@ -112,7 +112,8 @@ service cloud.firestore {
       }
 
       allow get: if isParticipant(resource.data.studentId, resource.data.teacherId);
-      allow list: if false; // Listing all tutoring sessions is not permitted.
+      // Allow a teacher to list only their own sessions.
+      allow list: if request.auth != null && request.query.resource.data.teacherId == request.auth.uid;
 
       allow create: if isParticipant(request.resource.data.studentId, request.resource.data.teacherId);
       allow update: if isExistingParticipant(resource.data.studentId, resource.data.teacherId);
@@ -159,5 +160,3 @@ service cloud.firestore {
       }
   }
 }
-
-    

@@ -111,7 +111,7 @@ export default function TeacherDashboardPage() {
   const [pastBookings, setPastBookings] = useState<Booking[] | null>(null);
 
   const sessionsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!firestore || !user) return null;
     // Securely query for sessions where the teacherId matches the logged-in user's UID.
     return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
