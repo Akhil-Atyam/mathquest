@@ -50,20 +50,24 @@ service cloud.firestore {
      * @description: Restricts access to teacher profiles, allowing only the owner to read and write.
      * @path: /teachers/{teacherId}
      * @allow: Teacher 'teacher123' (create) can create their profile if request.auth.uid == 'teacher123'.
-     * @deny: User 'user456' (create) cannot create a profile under /teachers/teacher123.
+     * @deny: User 'user456' (create) cannot create a a profile under /teachers/teacher123.
      * @principle: Enforces user ownership for teacher profiles.
      */
     match /teachers/{teacherId} {
-      function isTeacher(teacherId) {
+      function isTeacherOwner(teacherId) {
           return request.auth != null && request.auth.uid == teacherId;
       }
+      
+      function isTeacher() {
+        return exists(/databases/$(database)/documents/roles_teacher/$(request.auth.uid));
+      }
 
-      allow get: if isTeacher(teacherId);
+      allow get: if isTeacherOwner(teacherId);
       allow list: if false; // Prevent listing all teachers
 
-      allow create: if isTeacher(teacherId) && request.resource.data.id == teacherId;
-      allow update: if isTeacher(teacherId) && resource.data.id == teacherId;
-      allow delete: if isTeacher(teacherId) && resource.data.id == teacherId;
+      allow create: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId && isTeacher();
+      allow update: if isTeacherOwner(teacherId) && resource.data.id == teacherId && isTeacher();
+      allow delete: if isTeacherOwner(teacherId) && resource.data.id == teacherId && isTeacher();
     }
 
     /**
@@ -137,7 +141,7 @@ service cloud.firestore {
     /**
      * @description: Enables document-based access control for assigning the teacher role based on DBAC.
      * @path: /roles_teacher/{userId}
-     * @allow: User with UID matching {userId} can create this document for themselves.
+     * @allow: User with UID matching {userId} can create this document for themselves if they provide the correct secret code.
      * @deny: Other users cannot create this document.
      * @principle: Implements Document Based Access Control (DBAC).
      */
@@ -155,3 +159,5 @@ service cloud.firestore {
       }
   }
 }
+
+    
