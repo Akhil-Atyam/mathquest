@@ -13,7 +13,6 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { Booking } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useEffect, useState } from 'react';
 
 function BookingsList({ bookings, isLoading }: { bookings: Booking[] | null, isLoading: boolean }) {
     if (isLoading) {
@@ -107,9 +106,6 @@ export default function TeacherDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const [upcomingBookings, setUpcomingBookings] = useState<Booking[] | null>(null);
-  const [pastBookings, setPastBookings] = useState<Booking[] | null>(null);
-
   const sessionsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     // Securely query for sessions where the teacherId matches the logged-in user's UID.
@@ -118,16 +114,11 @@ export default function TeacherDashboardPage() {
 
   const { data: bookings, isLoading: bookingsLoading } = useCollection<Booking>(sessionsQuery);
 
-  useEffect(() => {
-    if (bookings) {
-      const now = new Date();
-      setUpcomingBookings(bookings.filter(b => (b.startTime as unknown as Timestamp).toDate() >= now));
-      setPastBookings(bookings.filter(b => (b.startTime as unknown as Timestamp).toDate() < now));
-    }
-  }, [bookings]);
-
-
   const isLoading = isUserLoading || bookingsLoading;
+
+  const now = new Date();
+  const upcomingBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() >= now) || [];
+  const pastBookings = bookings?.filter(b => (b.startTime as unknown as Timestamp).toDate() < now) || [];
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
