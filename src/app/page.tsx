@@ -36,7 +36,7 @@ export default function Home() {
           <div className="absolute top-10 left-10 bg-accent/20 text-accent p-2 rounded-full animate-bounce z-[-10]">
             <Plus className="w-8 h-8" />
           </div>
-          <div className="absolute top-1/3 right-10 bg-primary/20 text-primary p-3 rounded-full animate-pulse z-[-10]">
+          <div className="absolute top-10 right-10 bg-primary/20 text-primary p-3 rounded-full animate-pulse z-[-10]">
             <Minus className="w-10 h-10" />
           </div>
           <div className="absolute bottom-1/4 left-1/4 bg-destructive/20 text-destructive p-2 rounded-full animate-pulse delay-500 z-[-10]">
