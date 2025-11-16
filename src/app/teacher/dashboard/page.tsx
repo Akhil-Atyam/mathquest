@@ -31,7 +31,7 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
                 <DialogHeader>
                     <DialogTitle>{booking.meetingLink ? 'Edit' : 'Add'} Meeting Link</DialogTitle>
                     <DialogDescription>
-                        {booking.meetingLink ? 'Edit the' : 'Add a'} meeting link for your session with {booking.studentName} on {format(booking.startTime, "PPP")}.
+                        {booking.meetingLink ? 'Edit the' : 'Add a'} meeting link for your session with {booking.studentName} on {format(booking.startTime, "PPP 'at' p")}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -65,11 +65,7 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
 
 
 function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdateLink: (bookingId: string, link: string) => void }) {
-    const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
-
-    useEffect(() => {
-        setUpcomingBookings(bookings.filter(b => b.startTime >= new Date()));
-    }, [bookings]);
+    const upcomingBookings = bookings.filter(b => b.startTime >= new Date());
 
     if (upcomingBookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No upcoming bookings.</p>
@@ -115,12 +111,7 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
 }
 
 function AttendanceList({ bookings }: { bookings: Booking[] }) {
-    const [pastBookings, setPastBookings] = useState<Booking[]>([]);
-    
-    useEffect(() => {
-        setPastBookings(bookings.filter(b => b.startTime < new Date()));
-    }, [bookings]);
-
+    const pastBookings = bookings.filter(b => b.startTime < new Date());
 
     if (pastBookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No past sessions to track.</p>
