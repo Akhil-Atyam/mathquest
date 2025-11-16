@@ -112,6 +112,7 @@ export default function TeacherDashboardPage() {
 
   const sessionsQuery = useMemoFirebase(() => {
     if (!user) return null;
+    // Securely query for sessions where the teacherId matches the logged-in user's UID.
     return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
   }, [firestore, user]);
 
