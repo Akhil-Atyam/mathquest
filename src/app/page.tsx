@@ -8,7 +8,7 @@ import { Logo } from '@/components/logo';
 import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [year, setYear] = useState<number | null>(null);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
@@ -97,7 +97,7 @@ export default function Home() {
       </main>
       <footer className="bg-background border-t">
         <div className="container mx-auto px-4 py-6 text-center text-muted-foreground">
-          &copy; {year} MathQuest. All rights reserved.
+          &copy; {year || new Date().getFullYear()} MathQuest. All rights reserved.
         </div>
       </footer>
     </div>
