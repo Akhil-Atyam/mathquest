@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const studentSignUpSchema = z.object({
   email: z.string().email(),
@@ -60,6 +60,14 @@ function AuthForm({
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [teacherCode, setTeacherCode] = useState('');
+
+  useEffect(() => {
+    // Set environment-dependent values on the client after mount
+    // to prevent hydration errors.
+    setTeacherCode(process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE || '');
+  }, []);
+
 
   const formSchema =
     role === 'teacher' && isSignUp ? teacherSignUpSchema : isSignUp ? studentSignUpSchema : signInSchema;
@@ -78,7 +86,7 @@ function AuthForm({
     try {
       if (isSignUp) {
         if (role === 'teacher') {
-          if ('teacherCode' in values && values.teacherCode !== process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE) {
+          if ('teacherCode' in values && values.teacherCode !== teacherCode) {
             throw new Error('Invalid Teacher Code.');
           }
         }
