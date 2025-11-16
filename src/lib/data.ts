@@ -23,7 +23,7 @@ export const resources: Resource[] = [
   { id: 'res-9', title: 'Measuring Length', type: 'Lesson', topic: 'Measurement', grade: 2, icon: Ruler, content: 'Learn how to use a ruler to measure inches and centimeters.' },
   { id: 'res-10', title: 'Understanding Fractions', type: 'Lesson', topic: 'Fractions', grade: 3, icon: Book, content: 'What is a fraction? This lesson will explain parts of a whole.' },
   { id: 'res-11', title: 'Fraction Pizza Party', type: 'Game', topic: 'Fractions', grade: 3, icon: Gamepad2, content: 'Design pizzas with different toppings to learn about fractions.' },
-  { id: 'res-12', title: 'Intro to Division', type 'Lesson', topic: 'Division', grade: 3, icon: Book, content: 'Learn how to share items equally through division.' },
+  { id: 'res-12', title: 'Intro to Division', type: 'Lesson', topic: 'Division', grade: 3, icon: Book, content: 'Learn how to share items equally through division.' },
   { id: 'res-13', title: 'Long Division', type: 'Lesson', topic: 'Division', grade: 4, icon: Book, content: 'Master the process of long division with this step-by-step lesson.' },
   { id: 'res-14', title: 'Complex Shapes', type: 'Video', topic: 'Geometry', grade: 4, icon: Shapes, content: 'Explore polygons, polyhedrons, and other complex geometric shapes.' },
   { id: 'res-15', title: 'Decimal Points', type: 'Lesson', topic: 'Fractions', grade: 5, icon: Atom, content: 'Understand the relationship between fractions and decimals.' },
