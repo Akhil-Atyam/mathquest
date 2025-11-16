@@ -20,7 +20,7 @@ import { CalendarCheck } from "lucide-react"
 
 const formSchema = z.object({
   studentName: z.string().min(2, "Name is too short."),
-  grade: z.string().transform(Number),
+  grade: z.string().min(1, "Please select a grade."),
   topic: z.string().min(1, "Please select a topic."),
   time: z.string().min(1, "Please select a time."),
   parentEmail: z.string().email("Please enter a valid email."),
@@ -33,7 +33,7 @@ export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date
     resolver: zodResolver(formSchema),
     defaultValues: {
       studentName: student.name,
-      grade: student.grade,
+      grade: String(student.grade),
       topic: "",
       time: "",
       parentEmail: "",
@@ -45,8 +45,6 @@ export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date
     toast({
       title: "Booking Confirmed!",
       description: `Your tutoring session for ${values.topic} is booked for ${selectedDay?.toDateString()} at ${values.time}. A confirmation has been sent to ${values.parentEmail}.`,
-      className: "bg-green-100 dark:bg-green-900 border-green-500",
-      duration: 5000,
     })
     form.reset();
   }
@@ -73,7 +71,7 @@ export function BookingForm({ selectedDay, availableTimes }: { selectedDay: Date
           render={({ field }) => (
             <FormItem>
               <FormLabel>Grade</FormLabel>
-              <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your grade" />
