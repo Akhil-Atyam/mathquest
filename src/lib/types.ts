@@ -35,6 +35,7 @@ export type Student = {
 export type Teacher = {
   id: string;
   name: string;
+  // Use day offset (number as string) to avoid server/client date mismatch
   availability: Record<string, string[]>; 
 };
 

@@ -49,30 +49,24 @@ export const student: Student = {
   badges: ['badge-1', 'badge-2'],
 };
 
-const getFutureDate = (daysToAdd: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysToAdd);
-    date.setHours(0, 0, 0, 0); // Set to start of the day
-    return date.toISOString().split('T')[0];
-}
-
 export const teachers: Teacher[] = [
     {
         id: 'teacher-1',
         name: 'Mr. Davison',
+        // dayOffset: availability
         availability: {
-            [getFutureDate(1)]: ["09:00", "10:00", "11:00", "14:00"],
-            [getFutureDate(2)]: ["10:00", "11:00", "15:00"],
-            [getFutureDate(3)]: ["09:00", "10:00", "13:00", "14:00", "15:00"],
+            '1': ["09:00", "10:00", "11:00", "14:00"],
+            '2': ["10:00", "11:00", "15:00"],
+            '3': ["09:00", "10:00", "13:00", "14:00", "15:00"],
         }
     },
     {
         id: 'teacher-2',
         name: 'Ms. Frizzle',
         availability: {
-            [getFutureDate(1)]: ["13:00", "14:00", "15:00"],
-            [getFutureDate(4)]: ["09:00", "10:00", "11:00", "12:00"],
-            [getFutureDate(5)]: ["11:00", "12:00"],
+            '1': ["13:00", "14:00", "15:00"],
+            '4': ["09:00", "10:00", "11:00", "12:00"],
+            '5': ["11:00", "12:00"],
         }
     }
 ];
