@@ -137,26 +137,26 @@ function AuthForm({
             };
     
             if (role === 'student') {
-                await createUserProfile(
-                user.uid,
-                profileData as Omit<
-                    Student,
-                    'grade' | 'completedLessons' | 'quizScores' | 'badges'
-                >,
-                'student'
+                createUserProfile(
+                    user.uid,
+                    profileData as Omit<
+                        Student,
+                        'grade' | 'completedLessons' | 'quizScores' | 'badges'
+                    >,
+                    'student'
                 );
             } else {
-                await createUserProfile(
-                user.uid,
-                profileData as Omit<Teacher, 'availability'>,
-                'teacher'
+                createUserProfile(
+                    user.uid,
+                    profileData as Omit<Teacher, 'availability'>,
+                    'teacher'
                 );
             }
             }
     
             // If the role is teacher, assign the teacher role in Firestore for DBAC.
             if (role === 'teacher') {
-            await setTeacherRole(user.uid);
+            setTeacherRole(user.uid);
             }
             toast({
             title: 'Account Created',

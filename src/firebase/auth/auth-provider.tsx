@@ -9,6 +9,9 @@ import {
 import { getFirestore, doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Student, Teacher } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 /**
  * Initiates Anonymous Sign-In flow.
@@ -56,21 +59,30 @@ export async function initiateEmailSignUp(
  * @param profileData The user's profile data.
  * @param role The user's role ('student' or 'teacher').
  */
-export async function createUserProfile(
+export function createUserProfile(
   userId: string,
   profileData: Omit<Student, 'grade' | 'completedLessons' | 'quizScores' | 'badges'> | Omit<Teacher, 'availability'>,
   role: 'student' | 'teacher'
-): Promise<void> {
+): void {
   const { firestore } = initializeFirebase();
   const collectionPath = role === 'teacher' ? 'teachers' : 'users';
   const userDocRef = doc(firestore, collectionPath, userId);
-  try {
-    await setDoc(userDocRef, profileData);
-    console.log(`${role} profile created for user ${userId}`);
-  } catch (error) {
-    console.error(`Failed to create ${role} profile for user ${userId}`, error);
-    throw error;
-  }
+  
+  setDoc(userDocRef, profileData)
+    .then(() => {
+        console.log(`${role} profile created for user ${userId}`);
+    })
+    .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: profileData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+        // We still throw the original error for other potential issues
+        // but the listener will catch and display the contextual one.
+        throw error;
+    });
 }
 
 
@@ -103,16 +115,24 @@ export async function initiateEmailSignIn(
  * Creates a document in the 'roles_teacher' collection to assign a teacher role.
  * @param userId The UID of the user to be assigned the teacher role.
  */
-export async function setTeacherRole(userId: string): Promise<void> {
+export function setTeacherRole(userId: string): void {
     const { firestore } = initializeFirebase();
     const teacherRoleRef = doc(firestore, 'roles_teacher', userId);
-    try {
-        await setDoc(teacherRoleRef, { role: 'teacher' });
-        console.log(`Teacher role set for user ${userId}`);
-    } catch (error) {
-        console.error(`Failed to set teacher role for user ${userId}`, error);
-        throw error;
-    }
+    const roleData = { role: 'teacher' };
+    
+    setDoc(teacherRoleRef, roleData)
+        .then(() => {
+            console.log(`Teacher role set for user ${userId}`);
+        })
+        .catch((error) => {
+            const contextualError = new FirestorePermissionError({
+                path: teacherRoleRef.path,
+                operation: 'create',
+                requestResourceData: roleData
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            throw error;
+        });
 }
 
 /**
