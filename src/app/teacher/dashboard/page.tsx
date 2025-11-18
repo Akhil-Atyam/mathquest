@@ -161,6 +161,7 @@ export default function TeacherDashboardPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    // The single, guarded query for this teacher's bookings.
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null; // Guard: Wait for user and firestore
         return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
@@ -174,19 +175,6 @@ export default function TeacherDashboardPage() {
     }, [user, firestore]);
 
     const { data: teacher, isLoading: isTeacherLoading } = useDoc<Teacher>(teacherDocRef);
-
-    const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
-    const [pastBookings, setPastBookings] = useState<Booking[]>([]);
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-        if (bookings) {
-            const now = new Date();
-            setUpcomingBookings(bookings.filter(b => b.startTime.toDate() >= now).sort((a, b) => a.startTime.toMillis() - b.startTime.toMillis()));
-            setPastBookings(bookings.filter(b => b.startTime.toDate() < now).sort((a, b) => b.startTime.toMillis() - a.startTime.toMillis()));
-        }
-    }, [bookings]);
 
     const handleUpdateLink = async (bookingId: string, link: string) => {
         if (!firestore) return;
@@ -226,7 +214,9 @@ export default function TeacherDashboardPage() {
         }
     };
     
-    if (isUserLoading || areBookingsLoading || isTeacherLoading) {
+    const isLoading = isUserLoading || areBookingsLoading || isTeacherLoading;
+    
+    if (isLoading) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
                 <Skeleton className="h-9 w-1/2" />
@@ -237,6 +227,10 @@ export default function TeacherDashboardPage() {
             </div>
         )
     }
+
+    const now = new Date();
+    const upcomingBookings = (bookings || []).filter(b => b.startTime.toDate() >= now).sort((a, b) => a.startTime.toMillis() - b.startTime.toMillis());
+    const pastBookings = (bookings || []).filter(b => b.startTime.toDate() < now).sort((a, b) => b.startTime.toMillis() - a.startTime.toMillis());
 
     return (
         <div className="p-4 sm:p-6 space-y-6">
@@ -257,7 +251,7 @@ export default function TeacherDashboardPage() {
                             <CardDescription>Manage your scheduled tutoring sessions.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {!isClient ? <Skeleton className="h-40 w-full" /> : <BookingsList bookings={upcomingBookings} onUpdateLink={handleUpdateLink} />}
+                           <BookingsList bookings={upcomingBookings} onUpdateLink={handleUpdateLink} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -297,7 +291,7 @@ export default function TeacherDashboardPage() {
                             <CardDescription>Track which students attended past sessions.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {!isClient ? <Skeleton className="h-40 w-full" /> : <AttendanceList bookings={pastBookings} onUpdateAttendance={handleUpdateAttendance} />}
+                           <AttendanceList bookings={pastBookings} onUpdateAttendance={handleUpdateAttendance} />
                         </CardContent>
                     </Card>
                 </TabsContent>
