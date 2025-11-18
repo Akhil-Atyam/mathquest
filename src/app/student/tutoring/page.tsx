@@ -13,10 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import type { Teacher } from '@/lib/types';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import type { Teacher, Booking } from '@/lib/types';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * The main page for booking a tutoring session.
@@ -24,6 +25,9 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function TutoringPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
 
   // --- State Management ---
   const [selectedTeacherId, setSelectedTeacherId] = React.useState<string | undefined>();
@@ -83,6 +87,78 @@ export default function TutoringPage() {
     
     return selectedTeacher.availability[String(dayOffset)]?.sort() || [];
   }, [date, selectedTeacher]);
+
+  const handleBookingConfirmed = async (bookingData: Omit<Booking, 'id' | 'studentId' | 'teacherId' | 'status' | 'meetingLink' | 'attended'>, selectedTime: string) => {
+    if (!user || !selectedTeacher || !selectedTeacher.name || !date || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Booking Failed',
+        description: 'Missing required information to complete booking.',
+      });
+      return false;
+    }
+
+    const [hour, minute] = selectedTime.split(':').map(Number);
+    const startTime = new Date(date);
+    startTime.setHours(hour, minute);
+
+    const today = startOfDay(new Date());
+    const selectedDayStart = startOfDay(date);
+    const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dayKey = String(dayOffset);
+
+    try {
+      // 1. Create the new booking document
+      const bookingsCollection = collection(firestore, 'tutoring_sessions');
+      await addDoc(bookingsCollection, {
+        ...bookingData,
+        studentId: user.uid,
+        teacherId: selectedTeacher.id,
+        startTime: startTime,
+        status: 'Confirmed',
+        meetingLink: '',
+        attended: false,
+      });
+
+      // 2. Remove the booked time slot from the teacher's availability
+      const teacherRef = doc(firestore, 'teachers', selectedTeacher.id);
+      const teacherSnap = await getDoc(teacherRef);
+      if (teacherSnap.exists()) {
+        const teacherData = teacherSnap.data() as Teacher;
+        const currentAvailability = teacherData.availability || {};
+        
+        // Filter out the booked time
+        const newDayAvailability = (currentAvailability[dayKey] || []).filter(
+          (time) => time !== selectedTime
+        );
+
+        const updatedAvailability = { ...currentAvailability };
+
+        if (newDayAvailability.length > 0) {
+            updatedAvailability[dayKey] = newDayAvailability;
+        } else {
+            // If no times left for this day, remove the day key
+            delete updatedAvailability[dayKey];
+        }
+
+        await setDoc(teacherRef, { availability: updatedAvailability }, { merge: true });
+      }
+
+      toast({
+        title: 'Booking Confirmed!',
+        description: `Your tutoring session for ${bookingData.topic} has been booked.`,
+      });
+      return true; // Indicate success
+    } catch (error) {
+       console.error("Error booking session:", error);
+       toast({
+        variant: 'destructive',
+        title: 'Booking Error',
+        description: 'Could not save your booking. Please try again.',
+      });
+      return false; // Indicate failure
+    }
+  };
   
   const isLoading = areTeachersLoading;
 
@@ -184,7 +260,8 @@ export default function TutoringPage() {
                 selectedDay={date}
                 availableTimes={availableTimesForSelectedDay}
                 teacher={selectedTeacher}
-                isLoadingTimes={false} // Since we are not fetching bookings, this is always false
+                isLoadingTimes={false}
+                onBookingConfirmed={handleBookingConfirmed}
               />
             </CardContent>
           </Card>

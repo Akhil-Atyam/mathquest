@@ -21,13 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { CalendarCheck } from 'lucide-react';
 import React from 'react';
-import type { Student, Teacher } from '@/lib/types';
+import type { Student, Teacher, Booking } from '@/lib/types';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc, collection, addDoc, setDoc, getDoc } from 'firebase/firestore';
-import { startOfDay } from 'date-fns';
+import { doc } from 'firebase/firestore';
+
 
 // Zod schema to define the shape and validation rules for the booking form.
 const formSchema = z.object({
@@ -46,19 +45,21 @@ const formSchema = z.object({
  * @param {string[]} props.availableTimes - An array of available time slots for the selected day.
  * @param {Teacher | undefined} props.teacher - The currently selected teacher.
  * @param {boolean} props.isLoadingTimes - Flag indicating if available times are being loaded.
+ * @param {(bookingData: Omit<Booking, 'id' | 'studentId' | 'teacherId' | 'status' | 'meetingLink' | 'attended' | 'startTime'>, selectedTime: string) => Promise<boolean>} props.onBookingConfirmed - The callback function to execute when the booking is confirmed.
  */
 export function BookingForm({
   selectedDay,
   availableTimes,
   teacher,
   isLoadingTimes,
+  onBookingConfirmed,
 }: {
   selectedDay: Date | undefined;
   availableTimes: string[];
   teacher: Teacher | undefined;
   isLoadingTimes: boolean;
+  onBookingConfirmed: (bookingData: Omit<Booking, 'id' | 'studentId' | 'teacherId' | 'status' | 'meetingLink' | 'attended' | 'startTime'>, selectedTime: string) => Promise<boolean>;
 }) {
-  const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -111,77 +112,25 @@ export function BookingForm({
    * @param {object} values - The validated form values.
    */
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user || !teacher || !teacher.name || !selectedDay || !firestore) {
-      toast({
-        variant: 'destructive',
-        title: 'Booking Failed',
-        description: 'Missing user, teacher, or date information.',
-      });
-      return;
-    }
-
-    const [hour, minute] = values.time.split(':').map(Number);
-    const startTime = new Date(selectedDay);
-    startTime.setHours(hour, minute);
+    if (!teacher || !teacher.name) return;
     
-    const today = startOfDay(new Date());
-    const selectedDayStart = startOfDay(selectedDay);
-    const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const dayKey = String(dayOffset);
-
-    try {
-      // 1. Create the new booking document
-      const bookingsCollection = collection(firestore, 'tutoring_sessions');
-      await addDoc(bookingsCollection, {
-        studentId: user.uid,
+    const bookingData = {
         studentName: values.studentName,
         grade: Number(values.grade),
-        teacherId: teacher.id,
-        teacherName: teacher.name, // Denormalize teacher name
+        teacherName: teacher.name,
         topic: values.topic,
-        startTime: startTime,
-        status: 'Confirmed',
-        meetingLink: '',
-        attended: false,
-      });
+    };
 
-      // 2. Remove the booked time slot from the teacher's availability
-      const teacherRef = doc(firestore, 'teachers', teacher.id);
-      const teacherSnap = await getDoc(teacherRef);
-      if (teacherSnap.exists()) {
-        const teacherData = teacherSnap.data() as Teacher;
-        const currentAvailability = teacherData.availability || {};
-        
-        // Filter out the booked time
-        const newDayAvailability = (currentAvailability[dayKey] || []).filter(
-          (time) => time !== values.time
-        );
+    const success = await onBookingConfirmed(bookingData, values.time);
 
-        const updatedAvailability = { ...currentAvailability };
-
-        if (newDayAvailability.length > 0) {
-            updatedAvailability[dayKey] = newDayAvailability;
-        } else {
-            // If no times left for this day, remove the day key
-            delete updatedAvailability[dayKey];
-        }
-
-        await setDoc(teacherRef, { availability: updatedAvailability }, { merge: true });
-      }
-
-      toast({
-        title: 'Booking Confirmed!',
-        description: `Your tutoring session for ${values.topic} has been booked.`,
-      });
-      // Reset the form fields after successful submission.
-      form.reset();
-    } catch (error) {
-       console.error("Error booking session:", error);
-       toast({
-        variant: 'destructive',
-        title: 'Booking Error',
-        description: 'Could not save your booking. Please try again.',
-      });
+    if (success) {
+        // Reset the form fields after successful submission.
+        form.reset({
+            studentName: student?.name || '',
+            grade: student ? String(student.grade) : '',
+            topic: '',
+            time: '',
+        });
     }
   }
 
