@@ -48,6 +48,9 @@ export default function StudentDashboardPage() {
   const earnedBadges = allBadges.filter(b => (student.badges || []).includes(b.id));
 
   const progressPercentage = ((student.completedLessons?.length || 0) / resources.length) * 100;
+  
+  // Determine if the student has made any progress to show the personalized path.
+  const hasProgress = (student.completedLessons && student.completedLessons.length > 0) || (student.quizScores && Object.keys(student.quizScores).length > 0);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -88,10 +91,12 @@ export default function StudentDashboardPage() {
         </Card>
       </div>
 
-      {/* Personalized Learning Path section, rendered by a client component */}
-      <div>
-        <PersonalizedPathClient student={student} />
-      </div>
+      {/* Personalized Learning Path section, rendered only if the student has progress */}
+      {hasProgress && (
+        <div>
+          <PersonalizedPathClient student={student} />
+        </div>
+      )}
 
       {/* Card to display a list of completed activities */}
       <div>
