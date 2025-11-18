@@ -77,8 +77,8 @@ service cloud.firestore {
 
       // Allow a teacher to get their own profile.
       allow get: if isTeacherOwner(teacherId);
-      // Prevent listing all teachers.
-      allow list: if false; 
+      // Allow any authenticated user to list teachers for booking purposes.
+      allow list: if request.auth != null; 
 
       // Allow teachers to create, update, and delete their own profiles.
       allow create, update, delete: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId && isTeacher();
