@@ -150,7 +150,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
           render={({ field }) => (
             <FormItem>
               <FormLabel>Grade</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your grade" />
