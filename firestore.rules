@@ -14,13 +14,7 @@
  * - /tutoring_sessions/{sessionId}: Tutoring sessions involving students and teachers.
  * - /users/{userId}/progress/{progressId}: Student progress records.
  * - /roles_teacher/{userId}:  Documents denoting teacher role.
- *
- * Key Security Decisions:
- * - Students can only access their own profile data and progress records.
- * - Teachers can access their own profile data and tutoring sessions they are involved in.
- * - Lessons are publicly readable, but only specific users can create, update, or delete them.
- * - Listing users or teachers is disallowed for privacy reasons.
- * - Denormalization is used to store authorization data within documents for efficient rule evaluation.
+ * - /usernames/{username}: Maps a username to a user's email for login.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -186,5 +180,22 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if request.auth.uid == userId;
     }
+
+    /**
+     * @description Manages the username-to-email mapping for login purposes.
+     * The document ID is the username.
+     * @path /usernames/{username}
+     */
+    match /usernames/{username} {
+      // Allow any authenticated user to read a username document to find the corresponding email for login.
+      allow get: if request.auth != null;
+      // Disallow listing all username mappings.
+      allow list: if false;
+      // Allow a user to create their own username mapping, but only if the UID in the document matches their auth UID.
+      allow create: if request.auth.uid == request.resource.data.uid;
+      // Disallow updates and deletes for now to prevent tampering.
+      allow update, delete: if false;
+    }
   }
 }
+    

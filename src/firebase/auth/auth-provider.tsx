@@ -6,7 +6,7 @@ import {
   signInWithEmailAndPassword,
   UserCredential,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Student, Teacher } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -54,9 +54,9 @@ export async function initiateEmailSignUp(
 }
 
 /**
- * Creates a user profile document in Firestore.
+ * Creates a user profile document in Firestore and a username mapping.
  * @param userId The UID of the user.
- * @param profileData The user's profile data.
+ * @param profileData The user's profile data, including username.
  * @param role The user's role ('student' or 'teacher').
  */
 export function createUserProfile(
@@ -68,6 +68,7 @@ export function createUserProfile(
   const collectionPath = role === 'teacher' ? 'teachers' : 'users';
   const userDocRef = doc(firestore, collectionPath, userId);
   
+  // Create user profile
   setDoc(userDocRef, profileData)
     .then(() => {
         console.log(`${role} profile created for user ${userId}`);
@@ -79,8 +80,23 @@ export function createUserProfile(
             requestResourceData: profileData,
         });
         errorEmitter.emit('permission-error', contextualError);
-        // We still throw the original error for other potential issues
-        // but the listener will catch and display the contextual one.
+        throw error;
+    });
+
+  // Create username to email mapping
+  const usernameRef = doc(firestore, "usernames", profileData.username);
+  const usernameData = { email: profileData.email, uid: userId };
+  setDoc(usernameRef, usernameData)
+    .then(() => {
+        console.log(`Username mapping created for ${profileData.username}`);
+    })
+    .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+            path: usernameRef.path,
+            operation: 'create',
+            requestResourceData: usernameData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
         throw error;
     });
 }
@@ -136,37 +152,29 @@ export function setTeacherRole(userId: string): void {
 }
 
 /**
- * Finds the email associated with a given username by querying Firestore.
+ * Finds the email associated with a given username by looking up the mapping in the `/usernames` collection.
  * @param username The username to look up.
  * @returns A promise that resolves with the user's email, or null if not found.
  */
 export async function getUserEmailForUsername(username: string): Promise<string | null> {
     const { firestore } = initializeFirebase();
-    
-    // Query students collection
-    const studentsRef = collection(firestore, 'users');
-    const studentQuery = query(studentsRef, where("username", "==", username));
-    const studentSnapshot = await getDocs(studentQuery);
+    const usernameDocRef = doc(firestore, 'usernames', username);
 
-    if (!studentSnapshot.empty) {
-        // Found student, return email
-        const studentData = studentSnapshot.docs[0].data();
-        return studentData.email;
+    try {
+        const docSnap = await getDoc(usernameDocRef);
+
+        if (docSnap.exists()) {
+            return docSnap.data().email;
+        } else {
+            console.log("No such username!");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error getting username doc:", error);
+        // We don't throw a contextual error here because a failed read is expected
+        // if a user mistypes their username. We just return null.
+        return null;
     }
-
-    // Query teachers collection if not found in students
-    const teachersRef = collection(firestore, 'teachers');
-    const teacherQuery = query(teachersRef, where("username", "==", username));
-    const teacherSnapshot = await getDocs(teacherQuery);
-
-    if (!teacherSnapshot.empty) {
-        // Found teacher, return email
-        const teacherData = teacherSnapshot.docs[0].data();
-        return teacherData.email;
-    }
-
-    // Username not found in either collection
-    return null;
 }
 
 
@@ -176,3 +184,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // This component can be used to wrap parts of your app that need auth context
   return <>{children}</>;
 }
+
+    
