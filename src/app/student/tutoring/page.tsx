@@ -36,7 +36,7 @@ const getFutureDate = (dayOffset: number) => {
  */
 export default function TutoringPage() {
   const firestore = useFirestore();
-  const teachersCollectionRef = useMemoFirebase(() => collection(firestore, 'teachers'), [firestore]);
+  const teachersCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
   const { data: teachers, isLoading: areTeachersLoading } = useCollection<Teacher>(teachersCollectionRef);
 
   // State to manage the ID of the selected teacher. Defaults to the first teacher.
@@ -154,6 +154,7 @@ export default function TutoringPage() {
                 className="rounded-md"
                 // Disable dates that are in the past or for which the teacher is not available.
                 disabled={(day) =>
+                  !date || // Disable calendar if date is not set yet
                   !selectedTeacher ||
                   day < new Date(new Date().setHours(0,0,0,0)) ||
                   !allAvailableDays.some(d => d.toDateString() === day.toDateString())
