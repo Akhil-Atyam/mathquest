@@ -72,10 +72,10 @@ export function TeacherProfile() {
         <div className="flex items-center gap-3">
              <Avatar className="h-10 w-10">
                 <AvatarImage src={`https://picsum.photos/seed/${user.uid}/100/100`} data-ai-hint="avatar" />
-                <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{teacher?.name?.charAt(0) || ''}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden">
-                <span className="font-semibold truncate">{teacher.name}</span>
+                <span className="font-semibold truncate">{teacher?.name || 'Teacher'}</span>
                 <span className="text-xs text-muted-foreground">Teacher</span>
             </div>
         </div>

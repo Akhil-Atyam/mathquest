@@ -86,11 +86,11 @@ export function StudentProfile() {
                 {/* Using a placeholder image from picsum.photos */}
                 <AvatarImage src={`https://picsum.photos/seed/${user.uid}/100/100`} data-ai-hint="avatar" />
                 {/* Fallback avatar shows the first initial of the student's name. */}
-                <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{student?.name?.charAt(0) || ''}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden">
-                <span className="font-semibold truncate">{student.name}</span>
-                <span className="text-xs text-muted-foreground">Grade {student.grade || 'N/A'}</span>
+                <span className="font-semibold truncate">{student?.name || 'Student'}</span>
+                <span className="text-xs text-muted-foreground">Grade {student?.grade || 'N/A'}</span>
             </div>
         </div>
     )
