@@ -85,11 +85,17 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
 function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdateLink: (bookingId: string, link: string) => void }) {
     // State for upcoming and past bookings, populated on client-side to avoid hydration issues
     const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        setIsClient(true);
         const now = new Date();
         setUpcomingBookings(bookings.filter(b => b.startTime.toDate() >= now));
     }, [bookings]);
+
+    if (!isClient) {
+        return <Skeleton className="h-40 w-full" />;
+    }
 
     // Show a message if there are no upcoming bookings.
     if (upcomingBookings.length === 0) {
@@ -145,11 +151,17 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
 function AttendanceList({ bookings }: { bookings: Booking[] }) {
     // State for past bookings, populated on client-side
     const [pastBookings, setPastBookings] = useState<Booking[]>([]);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        setIsClient(true);
         const now = new Date();
         setPastBookings(bookings.filter(b => b.startTime.toDate() < now));
     }, [bookings]);
+
+     if (!isClient) {
+        return <Skeleton className="h-40 w-full" />;
+    }
 
     // Show a message if there are no past sessions.
     if (pastBookings.length === 0) {

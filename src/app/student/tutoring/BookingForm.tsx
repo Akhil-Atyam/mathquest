@@ -20,7 +20,8 @@ import { CalendarCheck } from "lucide-react"
 import React from "react"
 import type { Student, Teacher } from "@/lib/types"
 import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase"
-import { doc, addDoc, collection } from "firebase/firestore"
+import { doc, collection } from "firebase/firestore"
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates'
 
 // Zod schema to define the shape and validation rules for the booking form.
 const formSchema = z.object({
@@ -90,7 +91,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
    * In a real app, this would make an API call to save the booking.
    * @param {object} values - The validated form values.
    */
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user || !teacher || !selectedDay) {
         toast({
             variant: "destructive",
@@ -104,35 +105,27 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
     const startTime = new Date(selectedDay);
     startTime.setHours(hour, minute);
 
-    try {
-        const bookingsCollection = collection(firestore, "tutoring_sessions");
-        await addDoc(bookingsCollection, {
-            studentId: user.uid,
-            studentName: values.studentName,
-            grade: Number(values.grade),
-            teacherId: teacher.id,
-            topic: values.topic,
-            startTime: startTime,
-            status: 'Confirmed',
-            meetingLink: '',
-            attended: false,
-        });
+    
+    const bookingsCollection = collection(firestore, "tutoring_sessions");
+    addDocumentNonBlocking(bookingsCollection, {
+        studentId: user.uid,
+        studentName: values.studentName,
+        grade: Number(values.grade),
+        teacherId: teacher.id,
+        topic: values.topic,
+        startTime: startTime,
+        status: 'Confirmed',
+        meetingLink: '',
+        attended: false,
+    });
 
-        toast({
-            title: "Booking Confirmed!",
-            description: `Your tutoring session for ${values.topic} has been booked.`,
-        });
-        // Reset the form fields after successful submission.
-        form.reset();
+    toast({
+        title: "Booking Confirmed!",
+        description: `Your tutoring session for ${values.topic} has been booked.`,
+    });
+    // Reset the form fields after successful submission.
+    form.reset();
 
-    } catch (error) {
-        console.error("Error creating booking: ", error);
-        toast({
-            variant: "destructive",
-            title: "Booking Error",
-            description: "Could not save your booking. Please try again."
-        });
-    }
   }
 
   return (
