@@ -16,6 +16,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AvailabilityManager } from './AvailabilityManager';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * A dialog component for adding or editing a meeting link for a booking.
@@ -118,7 +119,7 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
 /**
  * A component that displays a list of past bookings to track attendance.
  */
-function AttendanceList({ bookings }: { bookings: Booking[] }) {
+function AttendanceList({ bookings, onUpdateAttendance }: { bookings: Booking[], onUpdateAttendance: (bookingId: string, attended: boolean) => void }) {
     if (bookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No past sessions to track.</p>
     }
@@ -140,7 +141,10 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
                         <TableCell>{format(booking.startTime.toDate(), 'PPP')}</TableCell>
                         <TableCell>{booking.topic}</TableCell>
                         <TableCell className="text-right">
-                            <Checkbox defaultChecked={booking.attended} />
+                             <Checkbox 
+                                checked={booking.attended} 
+                                onCheckedChange={(checked) => onUpdateAttendance(booking.id, !!checked)}
+                            />
                         </TableCell>
                     </TableRow>
                 ))}
@@ -155,6 +159,7 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
 export default function TeacherDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
 
     const bookingsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null; // Guard: Wait for user and firestore
@@ -188,8 +193,36 @@ export default function TeacherDashboardPage() {
         const bookingRef = doc(firestore, 'tutoring_sessions', bookingId);
         try {
             await updateDoc(bookingRef, { meetingLink: link });
+             toast({
+                title: "Link Saved",
+                description: "The meeting link has been updated.",
+            });
         } catch (error) {
             console.error("Error updating meeting link: ", error);
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not save the meeting link.",
+            });
+        }
+    };
+
+    const handleUpdateAttendance = async (bookingId: string, attended: boolean) => {
+        if (!firestore) return;
+        const bookingRef = doc(firestore, 'tutoring_sessions', bookingId);
+        try {
+            await updateDoc(bookingRef, { attended: attended });
+             toast({
+                title: "Attendance Updated",
+                description: "The attendance has been recorded.",
+            });
+        } catch (error) {
+            console.error("Error updating attendance: ", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not update attendance.",
+            });
         }
     };
     
@@ -264,7 +297,7 @@ export default function TeacherDashboardPage() {
                             <CardDescription>Track which students attended past sessions.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {!isClient ? <Skeleton className="h-40 w-full" /> : <AttendanceList bookings={pastBookings} />}
+                            {!isClient ? <Skeleton className="h-40 w-full" /> : <AttendanceList bookings={pastBookings} onUpdateAttendance={handleUpdateAttendance} />}
                         </CardContent>
                     </Card>
                 </TabsContent>
