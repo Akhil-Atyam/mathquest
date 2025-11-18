@@ -1,29 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Trash2 } from 'lucide-react';
+import { CalendarIcon, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Teacher } from '@/lib/types';
-
-// Schema for a single time slot
-const timeSlotSchema = z.object({
-  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
-});
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format, startOfDay } from 'date-fns';
 
 // Schema for the availability form
 const availabilitySchema = z.object({
-  day: z.string().min(1, "Please select a day."),
+  day: z.date({
+    required_error: "A date is required.",
+  }),
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
 });
 
@@ -42,7 +42,6 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
   const form = useForm<z.infer<typeof availabilitySchema>>({
     resolver: zodResolver(availabilitySchema),
     defaultValues: {
-      day: '',
       time: '',
     },
   });
@@ -52,27 +51,38 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
     if (!user || !firestore) return;
 
     const { day, time } = values;
+
+    const today = startOfDay(new Date());
+    const selectedDay = startOfDay(day);
+    const dayOffset = Math.ceil((selectedDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (dayOffset < 0) {
+        form.setError('day', { type: 'manual', message: 'Cannot set availability for a past date.' });
+        return;
+    }
+    const dayKey = String(dayOffset);
+
     const updatedAvailability = { ...currentAvailability };
     
-    if (!updatedAvailability[day]) {
-      updatedAvailability[day] = [];
+    if (!updatedAvailability[dayKey]) {
+      updatedAvailability[dayKey] = [];
     }
 
     // Avoid adding duplicate times
-    if (updatedAvailability[day].includes(time)) {
-      form.setError('time', { type: 'manual', message: 'This time slot already exists.' });
+    if (updatedAvailability[dayKey].includes(time)) {
+      form.setError('time', { type: 'manual', message: 'This time slot already exists for this day.' });
       return;
     }
 
-    updatedAvailability[day].push(time);
-    updatedAvailability[day].sort(); // Keep times sorted
+    updatedAvailability[dayKey].push(time);
+    updatedAvailability[dayKey].sort(); // Keep times sorted
 
     try {
       const teacherRef = doc(firestore, 'teachers', user.uid);
       await updateDoc(teacherRef, { availability: updatedAvailability });
       setCurrentAvailability(updatedAvailability);
-      toast({ title: 'Success', description: `Added ${time} to your availability.` });
-      form.reset({ day: '', time: '' });
+      toast({ title: 'Success', description: `Added ${time} to your availability for ${format(day, 'PPP')}.` });
+      form.reset({ day: undefined, time: '' });
     } catch (error) {
       console.error("Error updating availability:", error);
       toast({ variant: "destructive", title: 'Error', description: 'Could not update your availability.' });
@@ -100,16 +110,18 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
       toast({ variant: "destructive", title: 'Error', description: 'Could not update your availability.' });
     }
   }
+  
+  const getDayLabel = (dayOffset: string) => {
+      const offset = Number(dayOffset);
+      if (offset === 0) return 'Today';
+      if (offset === 1) return 'Tomorrow';
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      return format(date, 'PPP');
+  }
 
-  const dayOffsets = [
-    { label: 'Today', value: '0' },
-    { label: 'Tomorrow', value: '1' },
-    { label: 'In 2 days', value: '2' },
-    { label: 'In 3 days', value: '3' },
-    { label: 'In 4 days', value: '4' },
-    { label: 'In 5 days', value: '5' },
-    { label: 'In 6 days', value: '6' },
-  ];
+  const sortedDays = Object.keys(currentAvailability).sort((a,b) => Number(a) - Number(b));
+
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
@@ -117,29 +129,48 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
       <Card>
         <CardHeader>
           <CardTitle>Add Available Time</CardTitle>
-          <CardDescription>Add a new time slot to your schedule for students to book.</CardDescription>
+          <CardDescription>Select a date and add a time slot to your schedule.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onAddTimeSlot)} className="space-y-4">
-              <FormField
+               <FormField
                 control={form.control}
                 name="day"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Day</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a day" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {dayOffsets.map(d => (
-                          <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0,0,0,0)) 
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -171,20 +202,20 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
         </CardHeader>
         <CardContent>
           <Accordion type="multiple" className="w-full">
-            {Object.keys(currentAvailability).length > 0 ? (
-                dayOffsets.filter(d => currentAvailability[d.value]?.length > 0).map(d => (
-                <AccordionItem key={d.value} value={d.value}>
-                  <AccordionTrigger>{d.label}</AccordionTrigger>
+            {sortedDays.length > 0 ? (
+                sortedDays.filter(d => currentAvailability[d]?.length > 0).map(dayKey => (
+                <AccordionItem key={dayKey} value={dayKey}>
+                  <AccordionTrigger>{getDayLabel(dayKey)}</AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-wrap gap-2">
-                      {currentAvailability[d.value].map(time => (
+                      {currentAvailability[dayKey].map(time => (
                         <div key={time} className="flex items-center gap-2 bg-muted p-2 rounded-md">
                           <span className="font-mono text-sm">{time}</span>
                           <Button 
                             variant="ghost" 
                             size="icon" 
                             className="h-6 w-6"
-                            onClick={() => onRemoveTimeSlot(d.value, time)}
+                            onClick={() => onRemoveTimeSlot(dayKey, time)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
