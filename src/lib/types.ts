@@ -22,6 +22,18 @@ export type Resource = {
 };
 
 /**
+ * Represents a single lesson created by a teacher.
+ */
+export type Lesson = {
+  id: string;
+  title: string;
+  grade: number;
+  topic: string;
+  content: string;
+  teacherId: string;
+}
+
+/**
  * Represents a single quiz.
  */
 export type Quiz = {
@@ -84,3 +96,5 @@ export type Booking = {
   meetingLink?: string; // An optional link to the virtual meeting.
   attended: boolean; // A flag to mark if the student attended.
 };
+
+    

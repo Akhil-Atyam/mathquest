@@ -4,18 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Teacher, Booking } from '@/lib/types';
 import React, { useState, useMemo } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, updateDoc, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, where, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AvailabilityManager } from './AvailabilityManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar, Clock, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { LessonManager } from './LessonManager';
 
 /**
  * Component to display a list of bookings.
@@ -187,7 +187,7 @@ export default function TeacherDashboardPage() {
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="availability">Availability</TabsTrigger>
                     <TabsTrigger value="bookings">Bookings</TabsTrigger>
-                    <TabsTrigger value="resources">Upload Resources</TabsTrigger>
+                    <TabsTrigger value="lessons">Manage Lessons</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="availability">
@@ -207,30 +207,12 @@ export default function TeacherDashboardPage() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="resources">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Upload New Resource</CardTitle>
-                            <CardDescription>Share a new lesson, video, or worksheet with students.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="res-title">Title</Label>
-                                <Input id="res-title" placeholder="e.g., Fun with Fractions" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="res-desc">Description</Label>
-                                <Textarea id="res-desc" placeholder="A short description of the resource." />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="res-file">File or Link</Label>
-                                <Input id="res-file" type="text" placeholder="https://example.com/video or upload file" />
-                            </div>
-                            <Button>Upload Resource</Button>
-                        </CardContent>
-                    </Card>
+                <TabsContent value="lessons">
+                   <LessonManager />
                 </TabsContent>
             </Tabs>
         </div>
     );
 }
+
+    

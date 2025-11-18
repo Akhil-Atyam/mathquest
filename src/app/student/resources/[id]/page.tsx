@@ -1,30 +1,59 @@
 'use client';
 
-import { resources } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
+import type { Lesson } from '@/lib/types';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
- * A dynamic page component that displays the content of a single resource.
- * The resource to display is determined by the `id` parameter in the URL.
+ * A dynamic page component that displays the content of a single lesson.
+ * The lesson to display is determined by the `id` parameter in the URL.
  *
  * @param {object} props - The component props provided by Next.js.
  * @param {object} props.params - An object containing the dynamic route parameters.
- * @param {string} props.params.id - The ID of the resource to display.
+ * @param {string} props.params.id - The ID of the lesson to display.
  */
 export default function LessonPage({ params }: { params: { id: string } }) {
-  // Find the specific resource from the mock data array using the ID from the URL.
-  const resource = resources.find(r => r.id === params.id);
+  const firestore = useFirestore();
 
-  // If no resource is found with the given ID, render the 404 Not Found page.
-  if (!resource) {
+  const lessonRef = useMemoFirebase(() => {
+    if (!firestore || !params.id) return null;
+    return doc(firestore, 'lessons', params.id);
+  }, [firestore, params.id]);
+
+  const { data: lesson, isLoading } = useDoc<Lesson>(lessonRef);
+  
+  // Show a skeleton loader while the data is being fetched.
+  if (isLoading) {
+    return (
+        <div className="p-4 sm:p-6 space-y-6">
+            <Skeleton className="h-10 w-48" />
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/4" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
+  // If no lesson is found with the given ID after loading, render the 404 Not Found page.
+  if (!lesson) {
     notFound();
   }
 
-  // Render the details of the found resource.
+  // Render the details of the found lesson.
   return (
     <div className="p-4 sm:p-6 space-y-6">
        {/* A "Back" button to navigate the user back to the main resources page. */}
@@ -37,21 +66,22 @@ export default function LessonPage({ params }: { params: { id: string } }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-             {/* The resource's associated icon is rendered dynamically. */}
-             <resource.icon className="w-8 h-8 text-primary" />
-            {resource.title}
+             <BookOpen className="w-8 h-8 text-primary" />
+            {lesson.title}
           </CardTitle>
           <CardDescription>
-            Grade {resource.grade} &middot; {resource.topic}
+            Grade {lesson.grade} &middot; {lesson.topic}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* The `prose` classes from Tailwind Typography are used for nicely styled article content. */}
           <div className="prose dark:prose-invert max-w-none">
-            <p>{resource.content}</p>
+            <p>{lesson.content}</p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+    
