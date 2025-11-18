@@ -23,8 +23,10 @@ service cloud.firestore {
 
     // Student user profiles.
     match /users/{userId} {
+      // Teachers can list all students to manage assignments.
+      allow list: if isTeacher();
       // Only the document owner can read or write their own profile.
-      allow read, write: if isOwner(userId);
+      allow get, write: if isOwner(userId);
     }
     
     // Teacher user profiles.
