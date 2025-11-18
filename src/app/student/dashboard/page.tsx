@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Award, ListChecks } from 'lucide-react';
 import { PersonalizedPathClient } from './PersonalizedPathClient';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Lesson } from '@/lib/types';
 
 /**
  * The main page for the student dashboard.
@@ -25,9 +26,16 @@ export default function StudentDashboardPage() {
   }, [firestore, user?.uid]);
 
   const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
+
+  const lessonsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'lessons');
+  }, [firestore]);
+
+  const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
   
   // While data is loading, show a skeleton UI to provide better user experience.
-  if (isUserLoading || isStudentLoading || !student) {
+  if (isUserLoading || isStudentLoading || areLessonsLoading || !student || !lessons) {
     return (
       <div className="p-4 sm:p-6 space-y-6">
         <Skeleton className="h-9 w-1/2" />
@@ -35,29 +43,31 @@ export default function StudentDashboardPage() {
           <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
           <Card><CardHeader><Skeleton className="h-6 w-24" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
         </div>
-        <Skeleton className="h-64 w-full" />
         <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
   // Once data is loaded, prepare it for rendering.
-  // These fallback to empty arrays/objects if the student data isn't fully populated.
-  const completedLessonsData = resources.filter(r => (student.completedLessons || []).includes(r.id));
+  const completedLessons = student.completedLessons || [];
+  const assignedLessons = student.assignedLessons || [];
+  
+  const completedAssignedLessons = assignedLessons.filter(lessonId => completedLessons.includes(lessonId));
+
+  const progressPercentage = assignedLessons.length > 0
+    ? (completedAssignedLessons.length / assignedLessons.length) * 100
+    : 0;
+
+  const completedLessonsData = lessons.filter(l => completedLessons.includes(l.id));
   const completedQuizzesData = quizzes.filter(q => Object.keys(student.quizScores || {}).includes(q.id));
   const earnedBadges = allBadges.filter(b => (student.badges || []).includes(b.id));
-
-  const progressPercentage = ((student.completedLessons?.length || 0) / resources.length) * 100;
   
-  // Determine if the student has made any progress to show the personalized path.
-  const hasProgress = (student.completedLessons && student.completedLessons.length > 0) || (student.quizScores && Object.keys(student.quizScores).length > 0);
-
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-3xl font-bold font-headline">Welcome back, {student.name}!</h1>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Card to display overall progress */}
+        {/* Card to display overall progress on assigned lessons */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -66,10 +76,11 @@ export default function StudentDashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-2">
-              {student.completedLessons?.length || 0} of {resources.length} lessons completed
+              {completedAssignedLessons.length} of {assignedLessons.length} assigned lessons completed
             </p>
             <Progress value={progressPercentage} className="w-full" />
-            <p className="text-center text-sm mt-2 font-medium text-primary animate-pulse">Keep up the great work!</p>
+             {assignedLessons.length > 0 && <p className="text-center text-sm mt-2 font-medium text-primary animate-pulse">Keep up the great work!</p>}
+             {assignedLessons.length === 0 && <p className="text-center text-sm mt-2 text-muted-foreground">Your teacher has not assigned any lessons yet.</p>}
           </CardContent>
         </Card>
 
@@ -90,13 +101,6 @@ export default function StudentDashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Personalized Learning Path section, rendered only if the student has progress */}
-      {hasProgress && (
-        <div>
-          <PersonalizedPathClient student={student} />
-        </div>
-      )}
 
       {/* Card to display a list of completed activities */}
       <div>

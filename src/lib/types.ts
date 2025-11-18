@@ -62,6 +62,7 @@ export type Student = {
   username: string; // The student's unique username.
   email: string; // The student's email address.
   grade: number; // The student's grade level.
+  assignedLessons?: string[]; // An array of lesson IDs assigned by a teacher.
   completedLessons?: string[]; // An array of resource IDs that the student has completed.
   quizScores?: Record<string, number>; // A map of quiz IDs to the scores the student received.
   badges?: string[]; // An array of badge IDs the student has earned.
@@ -96,5 +97,3 @@ export type Booking = {
   meetingLink?: string; // An optional link to the virtual meeting.
   attended: boolean; // A flag to mark if the student attended.
 };
-
-    
