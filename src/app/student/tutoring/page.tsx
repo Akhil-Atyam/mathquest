@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookingForm } from './BookingForm';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -17,18 +17,6 @@ import type { Teacher } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-
-/**
- * Helper function to get a date string for a future date.
- * This is used to map the teacher's availability from day offsets to actual dates.
- * @param {number} dayOffset - The number of days from today.
- * @returns {string} The date formatted as 'yyyy-MM-dd'.
- */
-const getFutureDate = (dayOffset: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() + dayOffset);
-  return format(date, 'yyyy-MM-dd');
-};
 
 /**
  * The main page for booking a tutoring session.
@@ -67,19 +55,24 @@ export default function TutoringPage() {
   // Memoized value to get a list of all dates the selected teacher is available.
   const allAvailableDays = React.useMemo(() => {
     if (!selectedTeacher || !selectedTeacher.availability) return [];
-    return Object.keys(selectedTeacher.availability).map((dayOffset) => {
-      return new Date(getFutureDate(Number(dayOffset)));
-    });
+    const today = startOfDay(new Date());
+    return Object.keys(selectedTeacher.availability)
+      .map(dayOffset => {
+          const futureDate = new Date(today);
+          futureDate.setDate(futureDate.getDate() + Number(dayOffset));
+          return startOfDay(futureDate);
+      })
+      .filter(d => (selectedTeacher.availability?.[String(Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))]?.length || 0) > 0);
   }, [selectedTeacher]);
+
 
   // Memoized value to get the available time slots for the selected date.
   const availableTimesForSelectedDay = React.useMemo(() => {
     if (!date || !selectedTeacher || !selectedTeacher.availability) return [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selectedDayStart = new Date(date);
-    selectedDayStart.setHours(0, 0, 0, 0);
-
+    
+    const today = startOfDay(new Date());
+    const selectedDayStart = startOfDay(date);
+    
     // Calculate the day offset between today and the selected date.
     const dayOffset = Math.ceil((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -155,10 +148,9 @@ export default function TutoringPage() {
                   className="rounded-md"
                   // Disable dates that are in the past or for which the teacher is not available.
                   disabled={(day) =>
-                    !date || // Disable calendar if date is not set yet
                     !selectedTeacher ||
-                    day < new Date(new Date().setHours(0,0,0,0)) ||
-                    !allAvailableDays.some(d => d.toDateString() === day.toDateString())
+                    day < startOfDay(new Date()) ||
+                    !allAvailableDays.some(d => d.getTime() === day.getTime())
                   }
                 />
               ) : (
