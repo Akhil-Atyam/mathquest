@@ -59,20 +59,17 @@ export async function initiateEmailSignUp(
  * @param profileData The user's profile data, including username.
  * @param role The user's role ('student' or 'teacher').
  */
-export function createUserProfile(
+export async function createUserProfile(
   userId: string,
   profileData: Omit<Student, 'completedLessons' | 'quizScores' | 'badges'> | Omit<Teacher, 'availability'>,
   role: 'student' | 'teacher'
-): void {
+): Promise<void> {
   const { firestore } = initializeFirebase();
   const collectionPath = role === 'teacher' ? 'teachers' : 'users';
   const userDocRef = doc(firestore, collectionPath, userId);
   
   // Create user profile
-  setDoc(userDocRef, profileData)
-    .then(() => {
-        console.log(`${role} profile created for user ${userId}`);
-    })
+  await setDoc(userDocRef, profileData)
     .catch((error) => {
         const contextualError = new FirestorePermissionError({
             path: userDocRef.path,
@@ -86,10 +83,7 @@ export function createUserProfile(
   // Create username to email mapping
   const usernameRef = doc(firestore, "usernames", profileData.username);
   const usernameData = { email: profileData.email, uid: userId };
-  setDoc(usernameRef, usernameData)
-    .then(() => {
-        console.log(`Username mapping created for ${profileData.username}`);
-    })
+  await setDoc(usernameRef, usernameData)
     .catch((error) => {
         const contextualError = new FirestorePermissionError({
             path: usernameRef.path,
@@ -131,15 +125,12 @@ export async function initiateEmailSignIn(
  * Creates a document in the 'roles_teacher' collection to assign a teacher role.
  * @param userId The UID of the user to be assigned the teacher role.
  */
-export function setTeacherRole(userId: string): void {
+export async function setTeacherRole(userId: string): Promise<void> {
     const { firestore } = initializeFirebase();
     const teacherRoleRef = doc(firestore, 'roles_teacher', userId);
     const roleData = { role: 'teacher' };
     
-    setDoc(teacherRoleRef, roleData)
-        .then(() => {
-            console.log(`Teacher role set for user ${userId}`);
-        })
+    await setDoc(teacherRoleRef, roleData)
         .catch((error) => {
             const contextualError = new FirestorePermissionError({
                 path: teacherRoleRef.path,
@@ -149,6 +140,24 @@ export function setTeacherRole(userId: string): void {
             errorEmitter.emit('permission-error', contextualError);
             throw error;
         });
+}
+
+/**
+ * Checks if a user has a teacher profile document.
+ * @param userId The UID of the user to check.
+ * @returns A promise that resolves with true if the user is a teacher, false otherwise.
+ */
+export async function isTeacher(userId: string): Promise<boolean> {
+    const { firestore } = initializeFirebase();
+    const teacherDocRef = doc(firestore, 'teachers', userId);
+    try {
+        const docSnap = await getDoc(teacherDocRef);
+        return docSnap.exists();
+    } catch (error) {
+        console.error("Error checking teacher status:", error);
+        // In case of error (e.g. permissions), assume not a teacher.
+        return false;
+    }
 }
 
 /**
@@ -184,5 +193,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // This component can be used to wrap parts of your app that need auth context
   return <>{children}</>;
 }
-
-    

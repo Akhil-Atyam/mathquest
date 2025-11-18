@@ -17,6 +17,7 @@ import {
   initiateEmailSignIn,
   setTeacherRole,
   getUserEmailForUsername,
+  isTeacher as isTeacherRole,
 } from '@/firebase/auth/auth-provider';
 import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -65,28 +66,25 @@ const signInSchema = z.object({
  * A reusable authentication form component for sign-up and sign-in.
  * It handles form state, validation, and submission for both students and teachers.
  * @param {object} props - The component props.
- * @param {boolean} props.isSignUp - Flag to determine if the form is for sign-up or sign-in.
- * @param {'student' | 'teacher'} props.role - The role of the user.
+ * @param {'student' | 'teacher' | 'signin'} props.formType - The type of form to render.
  */
 function AuthForm({
-  isSignUp,
-  role,
+  formType,
 }: {
-  isSignUp: boolean;
-  role: 'student' | 'teacher';
+  formType: 'student' | 'teacher' | 'signin';
 }) {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
-  // Dynamically select the correct validation schema based on the role and form type.
-  const formSchema =
-    role === 'teacher' && isSignUp
+  // Dynamically select the correct validation schema based on the form type.
+  const formSchema = 
+    formType === 'signin' 
+      ? signInSchema 
+      : formType === 'teacher'
       ? teacherSignUpSchema
-      : isSignUp
-      ? studentSignUpSchema
-      : signInSchema;
+      : studentSignUpSchema;
 
   // Initialize react-hook-form with the selected schema.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -94,8 +92,8 @@ function AuthForm({
     defaultValues: {
       username: '',
       password: '',
-      ...(isSignUp && { name: '', email: '' }),
-      ...(isSignUp && role === 'student' && { grade: '' }),
+      ...(formType !== 'signin' && { name: '', email: '' }),
+      ...(formType === 'student' && { grade: '' }),
     },
   });
 
@@ -107,7 +105,7 @@ function AuthForm({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      if (isSignUp) {
+      if (formType === 'student' || formType === 'teacher') {
         if ('email' in values && 'password' in values) {
             
             // Create the user account with email and password.
@@ -121,7 +119,7 @@ function AuthForm({
             // If sign-up is successful, create a user profile document in Firestore.
             if ('name' in values && 'username' in values) {
     
-            if (role === 'student' && 'grade' in values) {
+            if (formType === 'student' && 'grade' in values) {
                 const profileData = {
                     id: user.uid,
                     name: values.name,
@@ -129,7 +127,7 @@ function AuthForm({
                     email: user.email!,
                     grade: parseInt(values.grade, 10),
                 };
-                createUserProfile(
+                await createUserProfile(
                     user.uid,
                     profileData as Omit<
                         Student,
@@ -137,14 +135,14 @@ function AuthForm({
                     >,
                     'student'
                 );
-            } else if (role === 'teacher') {
+            } else if (formType === 'teacher') {
                 const profileData = {
                     id: user.uid,
                     name: values.name,
                     username: values.username,
                     email: user.email!,
                 };
-                createUserProfile(
+                await createUserProfile(
                     user.uid,
                     profileData as Omit<Teacher, 'availability'>,
                     'teacher'
@@ -153,34 +151,39 @@ function AuthForm({
             }
     
             // If the role is teacher, assign the teacher role in Firestore for DBAC.
-            if (role === 'teacher') {
-            setTeacherRole(user.uid);
+            if (formType === 'teacher') {
+              await setTeacherRole(user.uid);
             }
+
             toast({
-            title: 'Account Created',
-            description: "You're all set! Redirecting to your dashboard.",
+              title: 'Account Created',
+              description: "You're all set! Redirecting to your dashboard.",
             });
-            router.push(`/${role}/dashboard`);
+            router.push(`/${formType}/dashboard`);
         }
-      } else {
-        // Handle sign-in.
+      } else { // Sign In
         if ('username' in values) {
             const email = await getUserEmailForUsername(values.username);
             if (!email) {
                 throw new Error("Username not found.");
             }
-            await initiateEmailSignIn(auth, email, values.password);
+            const userCredential = await initiateEmailSignIn(auth, email, values.password);
+            
+            // After sign-in, check if the user is a teacher to redirect correctly
+            const isTeacher = await isTeacherRole(userCredential.user.uid);
+            const redirectPath = isTeacher ? '/teacher/dashboard' : '/student/dashboard';
+
             toast({
               title: 'Signed In',
               description: "Welcome back! Redirecting to your dashboard.",
             });
-            router.push(`/${role}/dashboard`);
+            router.push(redirectPath);
         }
       }
     } catch (error: any) {
-      console.error(`${isSignUp ? 'Sign-up' : 'Sign-in'} error:`, error);
+      console.error(`${formType !== 'signin' ? 'Sign-up' : 'Sign-in'} error:`, error);
       
-      let description = `Could not ${ isSignUp ? 'create your account' : 'sign you in' }. Please try again.`;
+      let description = `Could not ${ formType !== 'signin' ? 'create your account' : 'sign you in' }. Please try again.`;
       if (error instanceof FirebaseError && error.code === 'auth/email-already-in-use') {
         description = "This email is already registered. Please try signing in or use a different email.";
       } else if (error.message) {
@@ -198,25 +201,60 @@ function AuthForm({
     }
   };
 
+  if (formType === 'signin') {
+      return (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="your_username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Processing...' : 'Sign In'}
+              </Button>
+          </form>
+      </Form>
+      )
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Conditionally render the 'Name' field for sign-up forms. */}
-        {isSignUp && (
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Your name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="username"
@@ -230,26 +268,24 @@ function AuthForm({
             </FormItem>
           )}
         />
-        {isSignUp && (
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="name@example.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-        {isSignUp && role === 'student' && (
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="name@example.com"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {formType === 'student' && (
           <FormField
             control={form.control}
             name="grade"
@@ -289,15 +325,11 @@ function AuthForm({
         <Button
           type="submit"
           className="w-full"
-          disabled={
-            isLoading
-          }
+          disabled={isLoading}
         >
           {isLoading
             ? 'Processing...'
-            : isSignUp
-            ? 'Create Account'
-            : 'Sign In'}
+            : 'Create Account'}
         </Button>
       </form>
     </Form>
@@ -306,7 +338,7 @@ function AuthForm({
 
 /**
  * The main login page component.
- * It uses a tabbed interface to switch between student/teacher roles and sign-in/sign-up forms.
+ * It uses a tabbed interface to switch between sign-in and sign-up forms.
  */
 export default function LoginPage() {
   return (
@@ -319,33 +351,35 @@ export default function LoginPage() {
         </div>
       </header>
       <main className="flex-1 flex items-center justify-center p-4">
-        {/* Tabs for selecting user role: Student or Teacher */}
-        <Tabs defaultValue="student" className="w-full max-w-md">
+        <Tabs defaultValue="signin" className="w-full max-w-md">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="student">Student</TabsTrigger>
-            <TabsTrigger value="teacher">Teacher</TabsTrigger>
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Create Account</TabsTrigger>
           </TabsList>
-          {/* Student Forms */}
-          <TabsContent value="student">
-            <Tabs defaultValue="signin" className="w-full">
+          
+          {/* Sign In Form */}
+          <TabsContent value="signin">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sign In</CardTitle>
+                <CardDescription>
+                  Access your MathQuest dashboard.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AuthForm formType="signin" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sign Up Forms */}
+          <TabsContent value="signup">
+            <Tabs defaultValue="student" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Create Account</TabsTrigger>
+                <TabsTrigger value="student">I'm a Student</TabsTrigger>
+                <TabsTrigger value="teacher">I'm a Teacher</TabsTrigger>
               </TabsList>
-              <TabsContent value="signin">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Student Sign In</CardTitle>
-                    <CardDescription>
-                      Access your learning dashboard.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <AuthForm isSignUp={false} role="student" />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="signup">
+              <TabsContent value="student">
                 <Card>
                   <CardHeader>
                     <CardTitle>Create Student Account</CardTitle>
@@ -354,33 +388,11 @@ export default function LoginPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AuthForm isSignUp={true} role="student" />
+                    <AuthForm formType="student" />
                   </CardContent>
                 </Card>
               </TabsContent>
-            </Tabs>
-          </TabsContent>
-          {/* Teacher Forms */}
-          <TabsContent value="teacher">
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Create Account</TabsTrigger>
-              </TabsList>
-              <TabsContent value="signin">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Teacher Sign In</CardTitle>
-                    <CardDescription>
-                      Manage your sessions and resources.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <AuthForm isSignUp={false} role="teacher" />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="signup">
+              <TabsContent value="teacher">
                 <Card>
                   <CardHeader>
                     <CardTitle>Create Teacher Account</CardTitle>
@@ -389,7 +401,7 @@ export default function LoginPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AuthForm isSignUp={true} role="teacher" />
+                    <AuthForm formType="teacher" />
                   </CardContent>
                 </Card>
               </TabsContent>
