@@ -75,7 +75,7 @@ service cloud.firestore {
       allow list: if request.auth != null; 
 
       // Allow a user to create their own teacher profile.
-      allow create: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId;
+      allow create: if isTeacherOwner(teacherId);
       // Allow teachers to update and delete their own profiles.
       allow update, delete: if isTeacherOwner(teacherId);
     }
