@@ -1,30 +1,30 @@
 'use client';
 
 import type { Lesson, Student } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
-import { BookOpen, ArrowLeft } from 'lucide-react';
+import { collection, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { BookOpen, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
- * It shows the lesson's title, topic, and provides a "Start" button to view its content.
  *
  * @param {object} props - The component props.
  * @param {Lesson} props.lesson - The lesson object to display.
  * @param {(lesson: Lesson) => void} props.onSelect - Callback function when lesson is selected.
+ * @param {boolean} props.isCompleted - Flag to indicate if the lesson is completed.
  */
-function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (lesson: Lesson) => void; }) {
+function LessonCard({ lesson, onSelect, isCompleted }: { lesson: Lesson; onSelect: (lesson: Lesson) => void; isCompleted: boolean; }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <BookOpen className="w-6 h-6 text-primary" />
+          {isCompleted ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <BookOpen className="w-6 h-6 text-primary" />}
           {lesson.title}
         </CardTitle>
       </CardHeader>
@@ -34,7 +34,7 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (lesson: L
             onClick={() => onSelect(lesson)} 
             className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
         >
-          Start Lesson
+          {isCompleted ? 'Review Lesson' : 'Start Lesson'}
         </Button>
       </CardContent>
     </Card>
@@ -47,8 +47,10 @@ function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (lesson: L
  * @param {object} props - The component props.
  * @param {Lesson} props.lesson - The lesson to display.
  * @param {() => void} props.onBack - Callback function to go back to the lesson list.
+ * @param {(lessonId: string) => void} props.onComplete - Callback to mark the lesson as complete.
+ * @param {boolean} props.isCompleted - Whether the lesson has already been completed.
  */
-function LessonView({ lesson, onBack }: { lesson: Lesson; onBack: () => void; }) {
+function LessonView({ lesson, onBack, onComplete, isCompleted }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; isCompleted: boolean }) {
     return (
         <div className="space-y-6">
            <Button variant="ghost" onClick={onBack}>
@@ -70,6 +72,14 @@ function LessonView({ lesson, onBack }: { lesson: Lesson; onBack: () => void; })
                 <p>{lesson.content}</p>
               </div>
             </CardContent>
+            <CardFooter>
+                 {!isCompleted && (
+                    <Button onClick={() => onComplete(lesson.id)} className="ml-auto">
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Finish this lesson!
+                    </Button>
+                 )}
+            </CardFooter>
           </Card>
         </div>
       );
@@ -104,6 +114,16 @@ export default function ResourcesPage() {
   
   const isLoading = isUserLoading || isStudentLoading || areLessonsLoading;
 
+  const handleCompleteLesson = (lessonId: string) => {
+    if (!studentDocRef) return;
+    updateDoc(studentDocRef, {
+        completedLessons: arrayUnion(lessonId)
+    }).then(() => {
+        // Go back to the list after marking as complete
+        setSelectedLesson(null);
+    });
+  }
+
   if (isLoading) {
     return (
         <div className="p-4 sm:p-6 space-y-6">
@@ -118,7 +138,12 @@ export default function ResourcesPage() {
   if (selectedLesson) {
     return (
         <div className="p-4 sm:p-6">
-            <LessonView lesson={selectedLesson} onBack={() => setSelectedLesson(null)} />
+            <LessonView 
+                lesson={selectedLesson} 
+                onBack={() => setSelectedLesson(null)}
+                onComplete={handleCompleteLesson}
+                isCompleted={student?.completedLessons?.includes(selectedLesson.id) || false}
+             />
         </div>
     )
   }
@@ -152,7 +177,12 @@ export default function ResourcesPage() {
                                     <AccordionContent>
                                         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                         {topicLessons.map(lesson => (
-                                            <LessonCard key={lesson.id} lesson={lesson} onSelect={setSelectedLesson} />
+                                            <LessonCard 
+                                                key={lesson.id} 
+                                                lesson={lesson} 
+                                                onSelect={setSelectedLesson} 
+                                                isCompleted={student?.completedLessons?.includes(lesson.id) || false}
+                                            />
                                         ))}
                                         </div>
                                     </AccordionContent>
