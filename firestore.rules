@@ -74,8 +74,10 @@ service cloud.firestore {
       // Allow any authenticated user to list teachers for booking purposes.
       allow list: if request.auth != null; 
 
-      // Allow teachers to create, update, and delete their own profiles.
-      allow create, update, delete: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId && isTeacher();
+      // Allow a user to create their own teacher profile.
+      allow create: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId;
+      // Allow teachers to update and delete their own profiles.
+      allow update, delete: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId && isTeacher();
     }
 
     /**
@@ -198,4 +200,3 @@ service cloud.firestore {
     }
   }
 }
-    
