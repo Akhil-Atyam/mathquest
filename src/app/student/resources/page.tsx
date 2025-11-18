@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -18,14 +18,18 @@ import { Skeleton } from '@/components/ui/skeleton';
  * @param {Lesson} props.lesson - The lesson object to display.
  * @param {(lesson: Lesson) => void} props.onSelect - Callback function when lesson is selected.
  * @param {boolean} props.isCompleted - Flag to indicate if the lesson is completed.
+ * @param {boolean} props.isAssigned - Flag to indicate if the lesson is assigned.
  */
-function LessonCard({ lesson, onSelect, isCompleted }: { lesson: Lesson; onSelect: (lesson: Lesson) => void; isCompleted: boolean; }) {
+function LessonCard({ lesson, onSelect, isCompleted, isAssigned }: { lesson: Lesson; onSelect: (lesson: Lesson) => void; isCompleted: boolean; isAssigned: boolean; }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          {isCompleted ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <BookOpen className="w-6 h-6 text-primary" />}
-          {lesson.title}
+        <CardTitle className="flex items-start justify-between text-base">
+          <div className="flex items-center gap-2">
+            {isCompleted ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <BookOpen className="w-6 h-6 text-primary" />}
+            <span>{lesson.title}</span>
+          </div>
+          {isAssigned && <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -168,7 +172,7 @@ export default function ResourcesPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-3xl font-bold font-headline">Resources</h1>
-      <p className="text-muted-foreground">Explore lessons created by our teachers!</p>
+      <p className="text-muted-foreground">Explore lessons created by our teachers! Assigned lessons are marked with a <Star className="inline w-4 h-4 text-yellow-400 fill-yellow-400" />.</p>
 
       <Tabs defaultValue={defaultGradeTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
@@ -197,6 +201,7 @@ export default function ResourcesPage() {
                                                 lesson={lesson} 
                                                 onSelect={setSelectedLesson} 
                                                 isCompleted={student?.completedLessons?.includes(lesson.id) || false}
+                                                isAssigned={student?.assignedLessons?.includes(lesson.id) || false}
                                             />
                                         ))}
                                         </div>
