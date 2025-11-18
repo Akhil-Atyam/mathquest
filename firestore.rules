@@ -23,10 +23,14 @@ service cloud.firestore {
 
     // Student user profiles.
     match /users/{userId} {
-      // Teachers can list all students to manage assignments.
-      allow list: if isTeacher();
-      // Only the document owner can read or write their own profile.
-      allow get, write: if isOwner(userId);
+      // Teachers can list students to manage assignments, and get a specific student's profile.
+      allow list, get: if isTeacher();
+      // A student can read their own profile.
+      allow get: if isOwner(userId);
+      // A student can create and delete their own profile.
+      allow create, delete: if isOwner(userId);
+      // A student can update their own profile. A teacher can only update the 'assignedLessons' field.
+      allow update: if isOwner(userId) || (isTeacher() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignedLessons']));
     }
     
     // Teacher user profiles.
