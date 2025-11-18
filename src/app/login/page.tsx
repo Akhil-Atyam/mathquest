@@ -35,6 +35,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import type { Student, Teacher } from '@/lib/types';
+import { FirebaseError } from 'firebase/app';
 
 // Zod schema for validating the student sign-up form.
 const studentSignUpSchema = z.object({
@@ -188,15 +189,19 @@ function AuthForm({
       }
     } catch (error: any) {
       console.error(`${isSignUp ? 'Sign-up' : 'Sign-in'} error:`, error);
+      
+      let description = `Could not ${ isSignUp ? 'create your account' : 'sign you in' }. Please try again.`;
+      if (error instanceof FirebaseError && error.code === 'auth/email-already-in-use') {
+        description = "This email is already registered. Please try signing in or use a different email.";
+      } else if (error.message) {
+        description = error.message;
+      }
+      
       // Display an error toast on failure.
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
-        description:
-          error.message ||
-          `Could not ${
-            isSignUp ? 'create your account' : 'sign you in'
-          }. Please try again.`,
+        description: description,
       });
     } finally {
       setIsLoading(false);
