@@ -7,8 +7,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -48,9 +48,10 @@ function LessonCard({ lesson, onSelect, isCompleted }: { lesson: Lesson; onSelec
  * @param {Lesson} props.lesson - The lesson to display.
  * @param {() => void} props.onBack - Callback function to go back to the lesson list.
  * @param {(lessonId: string) => void} props.onComplete - Callback to mark the lesson as complete.
+ * @param {(lessonId: string) => void} props.onUncomplete - Callback to mark the lesson as incomplete.
  * @param {boolean} props.isCompleted - Whether the lesson has already been completed.
  */
-function LessonView({ lesson, onBack, onComplete, isCompleted }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; isCompleted: boolean }) {
+function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; onUncomplete: (lessonId: string) => void; isCompleted: boolean }) {
     return (
         <div className="space-y-6">
            <Button variant="ghost" onClick={onBack}>
@@ -72,9 +73,14 @@ function LessonView({ lesson, onBack, onComplete, isCompleted }: { lesson: Lesso
                 <p>{lesson.content}</p>
               </div>
             </CardContent>
-            <CardFooter>
-                 {!isCompleted && (
-                    <Button onClick={() => onComplete(lesson.id)} className="ml-auto">
+            <CardFooter className="flex justify-end gap-2">
+                 {isCompleted ? (
+                    <Button variant="outline" onClick={() => onUncomplete(lesson.id)}>
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Redo Lesson
+                    </Button>
+                 ) : (
+                    <Button onClick={() => onComplete(lesson.id)}>
                         <CheckCircle2 className="mr-2 h-4 w-4" />
                         Finish this lesson!
                     </Button>
@@ -124,6 +130,14 @@ export default function ResourcesPage() {
     });
   }
 
+  const handleUncompleteLesson = (lessonId: string) => {
+    if (!studentDocRef) return;
+    updateDoc(studentDocRef, {
+        completedLessons: arrayRemove(lessonId)
+    });
+    // No need to navigate away, user can now re-complete it from the same view.
+  }
+
   if (isLoading) {
     return (
         <div className="p-4 sm:p-6 space-y-6">
@@ -142,6 +156,7 @@ export default function ResourcesPage() {
                 lesson={selectedLesson} 
                 onBack={() => setSelectedLesson(null)}
                 onComplete={handleCompleteLesson}
+                onUncomplete={handleUncompleteLesson}
                 isCompleted={student?.completedLessons?.includes(selectedLesson.id) || false}
              />
         </div>
