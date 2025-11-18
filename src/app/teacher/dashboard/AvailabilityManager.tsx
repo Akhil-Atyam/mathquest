@@ -182,7 +182,7 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
                   <FormItem>
                     <FormLabel>Time (24-hour format)</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <Input type="text" placeholder="HH:MM" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
