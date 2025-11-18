@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BookOpenIcon, Divide, Grip, Minus, Plus, TargetIcon, UsersIcon, X } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useEffect, useState } from 'react';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 /**
  * A client-side component to render decorative, animated icons.
@@ -41,6 +43,48 @@ function DecorativeIcons() {
       </div>
     </>
   );
+}
+
+/**
+ * A component that handles the conditional navigation for the main call-to-action buttons.
+ * If the user is logged in, it directs them to the feature page.
+ * If not, it directs them to the login page.
+ */
+function HeroButtons() {
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
+
+    const handleNavigation = (path: string) => {
+        if (isUserLoading) return; // Do nothing while checking auth state
+
+        if (user) {
+            router.push(path);
+        } else {
+            router.push('/login');
+        }
+    };
+    
+    return (
+        <div className="flex justify-center gap-4">
+            <Button 
+                size="lg" 
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={() => handleNavigation('/student/resources')}
+                disabled={isUserLoading}
+            >
+              Start Learning
+            </Button>
+            <Button 
+                asChild 
+                size="lg" 
+                variant="secondary"
+                onClick={() => handleNavigation('/student/tutoring')}
+                disabled={isUserLoading}
+            >
+              <Link href={user ? '/student/tutoring' : '/login'}>Book Tutoring</Link>
+            </Button>
+        </div>
+    );
 }
 
 
@@ -79,14 +123,7 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 relative bg-background/80">
             Where math becomes an adventure!
           </p>
-          <div className="flex justify-center gap-4">
-            <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Link href="/student/resources">Start Learning</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/student/tutoring">Book Tutoring</Link>
-            </Button>
-          </div>
+          <HeroButtons />
         </section>
 
         {/* "Why MathQuest?" section highlighting key features of the app */}
