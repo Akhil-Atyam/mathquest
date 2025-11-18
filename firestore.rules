@@ -30,8 +30,9 @@ service cloud.firestore {
     // Teacher user profiles.
     match /teachers/{teacherId} {
         // Students can read teacher profiles (e.g., for availability).
+        // The teacher who owns the profile can also read it.
         // Only the teacher can create or update their own profile.
-        allow read: if isStudent();
+        allow read: if isStudent() || isOwner(teacherId);
         allow write: if isOwner(teacherId);
     }
 
