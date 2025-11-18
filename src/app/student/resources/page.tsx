@@ -5,11 +5,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSearchParams } from 'next/navigation';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
@@ -95,15 +96,13 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
       );
 }
 
-
 /**
- * The main page for browsing all available learning lessons.
- * It organizes lessons into tabs by grade level and then into accordions by topic.
- * It now handles displaying the lesson content on the same page.
+ * A wrapper component to handle suspense for search params.
  */
-export default function ResourcesPage() {
+function ResourcesPageContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
   const [selectedLesson, setSelectedLesson] = React.useState<Lesson | null>(null);
 
   const studentDocRef = useMemoFirebase(() => {
@@ -119,6 +118,19 @@ export default function ResourcesPage() {
   }, [firestore]);
 
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
+  
+  // Effect to automatically select a lesson if an ID is in the URL params.
+  useEffect(() => {
+    if (lessons && lessons.length > 0) {
+      const lessonId = searchParams.get('lesson');
+      if (lessonId) {
+        const lessonFromParam = lessons.find(l => l.id === lessonId);
+        if (lessonFromParam) {
+          setSelectedLesson(lessonFromParam);
+        }
+      }
+    }
+  }, [lessons, searchParams]);
   
   const grades = [1, 2, 3, 4, 5];
   
@@ -217,4 +229,17 @@ export default function ResourcesPage() {
       </Tabs>
     </div>
   );
+}
+
+/**
+ * The main page for browsing all available learning lessons.
+ * It organizes lessons into tabs by grade level and then into accordions by topic.
+ * It now handles displaying the lesson content on the same page.
+ */
+export default function ResourcesPage() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <ResourcesPageContent />
+        </React.Suspense>
+    );
 }
