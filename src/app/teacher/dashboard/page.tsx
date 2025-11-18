@@ -191,7 +191,7 @@ export default function TeacherDashboardPage() {
     const firestore = useFirestore();
 
     const bookingsQuery = useMemoFirebase(() => {
-        if (!user) return null;
+        if (!user || !firestore) return null;
         return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
     }, [user, firestore]);
 
