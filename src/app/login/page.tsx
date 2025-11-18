@@ -78,16 +78,7 @@ function AuthForm({
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [teacherSecretCode, setTeacherSecretCode] = useState<string | null>(
-    null
-  );
-
-  // Fetch the teacher secret code from environment variables on the client-side.
-  // This is done in `useEffect` to avoid hydration mismatches between server and client.
-  useEffect(() => {
-    setTeacherSecretCode(process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE || null);
-  }, []);
-
+  
   // Dynamically select the correct validation schema based on the role and form type.
   const formSchema =
     role === 'teacher' && isSignUp
@@ -119,12 +110,13 @@ function AuthForm({
         if ('email' in values && 'password' in values) {
             // For teacher sign-up, validate the secret code.
             if (role === 'teacher') {
-            if (
-                'teacherCode' in values &&
-                values.teacherCode !== teacherSecretCode
-            ) {
-                throw new Error('Invalid Teacher Code.');
-            }
+                const teacherSecretCode = process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE;
+                if (
+                    'teacherCode' in values &&
+                    values.teacherCode !== teacherSecretCode
+                ) {
+                    throw new Error('Invalid Teacher Code.');
+                }
             }
     
             // Create the user account with email and password.
@@ -296,8 +288,7 @@ function AuthForm({
           type="submit"
           className="w-full"
           disabled={
-            isLoading ||
-            (role === 'teacher' && isSignUp && !teacherSecretCode)
+            isLoading
           }
         >
           {isLoading
