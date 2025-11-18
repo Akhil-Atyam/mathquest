@@ -39,16 +39,16 @@ export default function TutoringPage() {
   const teachersCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
   const { data: teachers, isLoading: areTeachersLoading } = useCollection<Teacher>(teachersCollectionRef);
 
-  // State to manage the ID of the selected teacher. Defaults to the first teacher.
-  const [selectedTeacherId, setSelectedTeacherId] = React.useState<
-    string | undefined
-  >(undefined);
-  // State for the date selected in the calendar.
+  // State to manage the ID of the selected teacher.
+  const [selectedTeacherId, setSelectedTeacherId] = React.useState<string | undefined>(undefined);
+  // State for the date selected in the calendar, initialized to undefined.
   const [date, setDate] = React.useState<Date | undefined>(undefined);
+  const [isClient, setIsClient] = React.useState(false);
   
-  // Set initial date on the client-side to avoid hydration errors.
+  // Set initial date and client flag on the client-side to avoid hydration errors.
   React.useEffect(() => {
     setDate(new Date());
+    setIsClient(true);
   }, []);
 
   // Effect to set the default selected teacher once teachers are loaded.
@@ -147,19 +147,25 @@ export default function TutoringPage() {
               <CardTitle>2. Select an Available Date</CardTitle>
             </CardHeader>
             <CardContent className="p-2 flex justify-center">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md"
-                // Disable dates that are in the past or for which the teacher is not available.
-                disabled={(day) =>
-                  !date || // Disable calendar if date is not set yet
-                  !selectedTeacher ||
-                  day < new Date(new Date().setHours(0,0,0,0)) ||
-                  !allAvailableDays.some(d => d.toDateString() === day.toDateString())
-                }
-              />
+              {isClient ? (
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  className="rounded-md"
+                  // Disable dates that are in the past or for which the teacher is not available.
+                  disabled={(day) =>
+                    !date || // Disable calendar if date is not set yet
+                    !selectedTeacher ||
+                    day < new Date(new Date().setHours(0,0,0,0)) ||
+                    !allAvailableDays.some(d => d.toDateString() === day.toDateString())
+                  }
+                />
+              ) : (
+                <div className="p-3">
+                  <Skeleton className="w-[280px] h-[313px]" />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
