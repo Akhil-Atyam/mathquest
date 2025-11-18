@@ -19,17 +19,10 @@ import { AvailabilityManager } from './AvailabilityManager';
 
 /**
  * A dialog component for adding or editing a meeting link for a booking.
- * It's a controlled component that takes the booking details and a save handler.
- * @param {object} props - The component props.
- * @param {Booking} props.booking - The booking object to be updated.
- * @param {function} props.onSave - Callback function to save the link.
- * @param {React.ReactNode} props.children - The trigger element for the dialog.
  */
 function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave: (bookingId: string, link: string) => void, children: React.ReactNode }) {
-    // State to manage the meeting link input field.
     const [link, setLink] = useState(booking.meetingLink || '');
 
-    // Effect to update the local state if the booking prop changes.
     useEffect(() => {
         setLink(booking.meetingLink || '');
     }, [booking.meetingLink]);
@@ -41,7 +34,6 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    {/* The title changes based on whether a link already exists. */}
                     <DialogTitle>{booking.meetingLink ? 'Edit' : 'Add'} Meeting Link</DialogTitle>
                     <DialogDescription>
                         {booking.meetingLink ? 'Edit the' : 'Add a'} meeting link for your session with {booking.studentName} on {format(booking.startTime.toDate(), "PPP 'at' p")}.
@@ -68,7 +60,6 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
                         </Button>
                     </DialogClose>
                     <DialogClose asChild>
-                        {/* The save button calls the onSave callback with the booking ID and the new link. */}
                         <Button type="submit" onClick={() => onSave(booking.id, link)}>Save Link</Button>
                     </DialogClose>
                 </DialogFooter>
@@ -79,29 +70,9 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
 
 /**
  * A component that displays a list of upcoming bookings in a table.
- * @param {object} props - The component props.
- * @param {Booking[]} props.bookings - An array of all booking objects.
- * @param {function} props.onUpdateLink - The callback function to handle link updates.
  */
 function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdateLink: (bookingId: string, link: string) => void }) {
-    // State for upcoming and past bookings, populated on client-side to avoid hydration issues
-    const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-        if (bookings) {
-            const now = new Date();
-            setUpcomingBookings(bookings.filter(b => b.startTime.toDate() >= now));
-        }
-    }, [bookings]);
-
-    if (!isClient) {
-        return <Skeleton className="h-40 w-full" />;
-    }
-
-    // Show a message if there are no upcoming bookings.
-    if (upcomingBookings.length === 0) {
+    if (bookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No upcoming bookings.</p>
     }
 
@@ -116,7 +87,7 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {upcomingBookings.map(booking => (
+                {bookings.map(booking => (
                     <TableRow key={booking.id}>
                         <TableCell>{booking.studentName} (Grade {booking.grade})</TableCell>
                         <TableCell>{format(booking.startTime.toDate(), "PPP 'at' p")}</TableCell>
@@ -124,7 +95,6 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
                         <TableCell>
                             <div className="flex items-center gap-2">
                                 {booking.meetingLink ?
-                                    // If a link exists, show "Join" and "Edit" buttons.
                                     <>
                                         <Button variant="link" asChild className="p-0 h-auto"><a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">Join Meeting</a></Button>
                                         <AddLinkDialog booking={booking} onSave={onUpdateLink}>
@@ -132,7 +102,6 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
                                         </AddLinkDialog>
                                     </>
                                     :
-                                    // If no link, show "Add Link" button.
                                     <AddLinkDialog booking={booking} onSave={onUpdateLink}>
                                         <Button variant="secondary" size="sm">Add Link</Button>
                                     </AddLinkDialog>
@@ -148,28 +117,9 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
 
 /**
  * A component that displays a list of past bookings to track attendance.
- * @param {object} props - The component props.
- * @param {Booking[]} props.bookings - An array of all booking objects.
  */
 function AttendanceList({ bookings }: { bookings: Booking[] }) {
-    // State for past bookings, populated on client-side
-    const [pastBookings, setPastBookings] = useState<Booking[]>([]);
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-        if (bookings) {
-            const now = new Date();
-            setPastBookings(bookings.filter(b => b.startTime.toDate() < now));
-        }
-    }, [bookings]);
-
-     if (!isClient) {
-        return <Skeleton className="h-40 w-full" />;
-    }
-
-    // Show a message if there are no past sessions.
-    if (pastBookings.length === 0) {
+    if (bookings.length === 0) {
         return <p className="text-center text-muted-foreground p-8">No past sessions to track.</p>
     }
 
@@ -184,7 +134,7 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {pastBookings.map(booking => (
+                {bookings.map(booking => (
                     <TableRow key={booking.id}>
                         <TableCell>{booking.studentName}</TableCell>
                         <TableCell>{format(booking.startTime.toDate(), 'PPP')}</TableCell>
@@ -201,33 +151,38 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
 
 /**
  * The main page for the Teacher Dashboard.
- * It provides a tabbed interface for managing bookings, uploading resources, and tracking attendance.
  */
 export default function TeacherDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
     const bookingsQuery = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
+        if (!user || !firestore) return null; // Guard: Wait for user and firestore
         return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
     }, [user, firestore]);
 
     const { data: bookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
 
     const teacherDocRef = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
+        if (!user || !firestore) return null; // Guard: Wait for user and firestore
         return doc(firestore, 'teachers', user.uid);
     }, [user, firestore]);
 
     const { data: teacher, isLoading: isTeacherLoading } = useDoc<Teacher>(teacherDocRef);
 
+    const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
+    const [pastBookings, setPastBookings] = useState<Booking[]>([]);
+    const [isClient, setIsClient] = useState(false);
 
-    /**
-     * Handles updating the meeting link for a specific booking.
-     * This function is passed down to the BookingsList and AddLinkDialog components.
-     * @param {string} bookingId - The ID of the booking to update.
-     * @param {string} link - The new meeting link.
-     */
+    useEffect(() => {
+        setIsClient(true);
+        if (bookings) {
+            const now = new Date();
+            setUpcomingBookings(bookings.filter(b => b.startTime.toDate() >= now).sort((a, b) => a.startTime.toMillis() - b.startTime.toMillis()));
+            setPastBookings(bookings.filter(b => b.startTime.toDate() < now).sort((a, b) => b.startTime.toMillis() - a.startTime.toMillis()));
+        }
+    }, [bookings]);
+
     const handleUpdateLink = async (bookingId: string, link: string) => {
         if (!firestore) return;
         const bookingRef = doc(firestore, 'tutoring_sessions', bookingId);
@@ -262,7 +217,6 @@ export default function TeacherDashboardPage() {
                     <TabsTrigger value="attendance">Attendance</TabsTrigger>
                 </TabsList>
 
-                {/* Bookings Tab */}
                 <TabsContent value="bookings">
                     <Card>
                         <CardHeader>
@@ -270,17 +224,15 @@ export default function TeacherDashboardPage() {
                             <CardDescription>Manage your scheduled tutoring sessions.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <BookingsList bookings={bookings || []} onUpdateLink={handleUpdateLink} />
+                            {!isClient ? <Skeleton className="h-40 w-full" /> : <BookingsList bookings={upcomingBookings} onUpdateLink={handleUpdateLink} />}
                         </CardContent>
                     </Card>
                 </TabsContent>
 
-                {/* Availability Tab */}
                 <TabsContent value="availability">
                     <AvailabilityManager teacher={teacher} />
                 </TabsContent>
 
-                {/* Upload Resources Tab (UI only, no functionality) */}
                 <TabsContent value="resources">
                     <Card>
                         <CardHeader>
@@ -305,7 +257,6 @@ export default function TeacherDashboardPage() {
                     </Card>
                 </TabsContent>
 
-                {/* Attendance Tab */}
                 <TabsContent value="attendance">
                     <Card>
                         <CardHeader>
@@ -313,7 +264,7 @@ export default function TeacherDashboardPage() {
                             <CardDescription>Track which students attended past sessions.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <AttendanceList bookings={bookings || []} />
+                            {!isClient ? <Skeleton className="h-40 w-full" /> : <AttendanceList bookings={pastBookings} />}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -321,5 +272,3 @@ export default function TeacherDashboardPage() {
         </div>
     );
 }
-
-    
