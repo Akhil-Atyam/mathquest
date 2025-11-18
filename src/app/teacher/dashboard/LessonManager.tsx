@@ -154,7 +154,7 @@ export function LessonManager() {
     
     const lessonData = {
       ...data,
-      grade: parseInt(data.grade),
+      grade: parseInt(data.grade, 10), // Ensure grade is a number
       teacherId: user.uid,
     };
 
@@ -259,5 +259,3 @@ export function LessonManager() {
     </Card>
   );
 }
-
-    

@@ -58,7 +58,7 @@ export default function ResourcesPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <h1 className="text-3xl font-bold font-headline">Resources</h1>
-            <p className="text-muted-foreground">Explore lessons, videos, games, and more!</p>
+            <p className="text-muted-foreground">Explore lessons created by our teachers!</p>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-64 w-full" />
         </div>
