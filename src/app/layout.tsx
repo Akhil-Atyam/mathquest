@@ -36,7 +36,7 @@ export default function RootLayout({
         {/* Link to the PT Sans font used in the application. */}
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased min-h-screen bg-background">
+      <body className="font-body antialiased min-h-screen bg-background" suppressHydrationWarning>
         {/* `FirebaseClientProvider` initializes Firebase on the client-side and provides it to the app via context. */}
         <FirebaseClientProvider>
           {children}
