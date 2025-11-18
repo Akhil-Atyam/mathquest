@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { LayoutDashboard } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { teachers } from '@/lib/data';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Teacher } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // An array defining the navigation items for the teacher sidebar.
 const menuItems = [
@@ -17,8 +20,6 @@ const menuItems = [
  */
 export function TeacherSidebarNav() {
     const pathname = usePathname();
-    // Using mock data for the teacher. In a real app, this would come from an auth context.
-    const teacher = teachers[0];
     return (
         <SidebarMenu>
             {menuItems.map(item => (
@@ -37,15 +38,40 @@ export function TeacherSidebarNav() {
 
 /**
  * Renders the teacher's profile information at the bottom of the sidebar.
- * It displays the teacher's avatar and name.
+ * It fetches the teacher's data from Firestore and displays their avatar and name.
  */
 export function TeacherProfile() {
-    // Using mock data for the teacher.
-    const teacher = teachers[0];
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+
+    const teacherDocRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, 'teachers', user.uid);
+    }, [firestore, user]);
+
+    const { data: teacher, isLoading: isTeacherLoading } = useDoc<Teacher>(teacherDocRef);
+
+    // Show a skeleton loader while user or teacher data is loading.
+    if (isUserLoading || isTeacherLoading) {
+        return (
+            <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex flex-col gap-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                </div>
+            </div>
+        );
+    }
+
+    if (!user || !teacher) {
+        return null;
+    }
+
     return (
         <div className="flex items-center gap-3">
              <Avatar className="h-10 w-10">
-                <AvatarImage src="https://picsum.photos/seed/teacher/100/100" data-ai-hint="avatar" />
+                <AvatarImage src={`https://picsum.photos/seed/${user.uid}/100/100`} data-ai-hint="avatar" />
                 <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden">

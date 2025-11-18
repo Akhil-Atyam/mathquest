@@ -41,24 +41,30 @@ export type Badge = {
 
 /**
  * Represents a student user.
+ * This type is used for data fetched from the `/users/{userId}` collection in Firestore.
  */
 export type Student = {
   id: string; // Unique identifier, typically the Firebase Auth UID.
   name:string; // The student's name.
+  username: string; // The student's unique username.
+  email: string; // The student's email address.
   grade: number; // The student's grade level.
-  completedLessons: string[]; // An array of resource IDs that the student has completed.
-  quizScores: Record<string, number>; // A map of quiz IDs to the scores the student received.
-  badges: string[]; // An array of badge IDs the student has earned.
+  completedLessons?: string[]; // An array of resource IDs that the student has completed.
+  quizScores?: Record<string, number>; // A map of quiz IDs to the scores the student received.
+  badges?: string[]; // An array of badge IDs the student has earned.
 };
 
 /**
  * Represents a teacher user.
+ * This type is used for data fetched from the `/teachers/{teacherId}` collection in Firestore.
  */
 export type Teacher = {
   id: string; // Unique identifier, typically the Firebase Auth UID.
   name: string; // The teacher's name.
+  username: string; // The teacher's unique username.
+  email: string; // The teacher's email address.
   // A record mapping a day offset (as a string, e.g., "1" for tomorrow) to an array of available time slots (e.g., "09:00").
-  availability: Record<string, string[]>; 
+  availability?: Record<string, string[]>; 
 };
 
 /**

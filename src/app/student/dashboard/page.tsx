@@ -1,24 +1,53 @@
-import { student, resources, quizzes, badges as allBadges } from '@/lib/data';
+'use client';
+import { resources, quizzes, badges as allBadges } from '@/lib/data';
+import type { Student } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Award, ListChecks } from 'lucide-react';
 import { PersonalizedPathClient } from './PersonalizedPathClient';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * The main page for the student dashboard.
- * This server component displays an overview of the student's progress,
+ * This client component fetches and displays an overview of the logged-in student's progress,
  * including completed activities, earned badges, and a personalized learning path.
  */
 export default function StudentDashboardPage() {
-  // Filter data to get the student's completed lessons, quizzes, and badges.
-  // This uses mock data from `lib/data.ts`.
-  const completedLessons = resources.filter(r => student.completedLessons.includes(r.id));
-  const completedQuizzes = quizzes.filter(q => Object.keys(student.quizScores).includes(q.id));
-  const earnedBadges = allBadges.filter(b => student.badges.includes(b.id));
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
 
-  // Calculate the student's overall progress percentage.
-  const progressPercentage = (student.completedLessons.length / resources.length) * 100;
+  const studentDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
+  
+  // While data is loading, show a skeleton UI to provide better user experience.
+  if (isUserLoading || isStudentLoading || !student) {
+    return (
+      <div className="p-4 sm:p-6 space-y-6">
+        <Skeleton className="h-9 w-1/2" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-6 w-24" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
+        </div>
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  // Once data is loaded, prepare it for rendering.
+  // These fallback to empty arrays/objects if the student data isn't fully populated.
+  const completedLessonsData = resources.filter(r => (student.completedLessons || []).includes(r.id));
+  const completedQuizzesData = quizzes.filter(q => Object.keys(student.quizScores || {}).includes(q.id));
+  const earnedBadges = allBadges.filter(b => (student.badges || []).includes(b.id));
+
+  const progressPercentage = ((student.completedLessons?.length || 0) / resources.length) * 100;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -34,7 +63,7 @@ export default function StudentDashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-2">
-              {student.completedLessons.length} of {resources.length} lessons completed
+              {student.completedLessons?.length || 0} of {resources.length} lessons completed
             </p>
             <Progress value={progressPercentage} className="w-full" />
             <p className="text-center text-sm mt-2 font-medium text-primary animate-pulse">Keep up the great work!</p>
@@ -78,7 +107,7 @@ export default function StudentDashboardPage() {
               <div>
                 <h3 className="font-semibold mb-2">Lessons</h3>
                 <ul className="space-y-2">
-                  {completedLessons.length > 0 ? completedLessons.map(lesson => (
+                  {completedLessonsData.length > 0 ? completedLessonsData.map(lesson => (
                     <li key={lesson.id} className="text-sm text-muted-foreground">{lesson.title}</li>
                   )) : <p className="text-sm text-muted-foreground">No lessons completed yet.</p>}
                 </ul>
@@ -87,7 +116,7 @@ export default function StudentDashboardPage() {
               <div>
                 <h3 className="font-semibold mb-2">Quizzes</h3>
                 <ul className="space-y-2">
-                   {completedQuizzes.length > 0 ? completedQuizzes.map(quiz => (
+                   {completedQuizzesData.length > 0 ? completedQuizzesData.map(quiz => (
                     <li key={quiz.id} className="flex justify-between items-center text-sm text-muted-foreground">
                       <span>{quiz.title}</span>
                       <span className="font-bold text-primary">{student.quizScores[quiz.id]}%</span>
