@@ -26,7 +26,8 @@ import { CalendarCheck } from 'lucide-react';
 import React from 'react';
 import type { Student, Teacher } from '@/lib/types';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc, collection, addDoc } from 'firebase/firestore';
+import { doc, collection, addDoc, setDoc, getDoc } from 'firebase/firestore';
+import { startOfDay } from 'date-fns';
 
 // Zod schema to define the shape and validation rules for the booking form.
 const formSchema = z.object({
@@ -122,8 +123,14 @@ export function BookingForm({
     const [hour, minute] = values.time.split(':').map(Number);
     const startTime = new Date(selectedDay);
     startTime.setHours(hour, minute);
+    
+    const today = startOfDay(new Date());
+    const selectedDayStart = startOfDay(selectedDay);
+    const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dayKey = String(dayOffset);
 
     try {
+      // 1. Create the new booking document
       const bookingsCollection = collection(firestore, 'tutoring_sessions');
       await addDoc(bookingsCollection, {
         studentId: user.uid,
@@ -137,6 +144,30 @@ export function BookingForm({
         meetingLink: '',
         attended: false,
       });
+
+      // 2. Remove the booked time slot from the teacher's availability
+      const teacherRef = doc(firestore, 'teachers', teacher.id);
+      const teacherSnap = await getDoc(teacherRef);
+      if (teacherSnap.exists()) {
+        const teacherData = teacherSnap.data() as Teacher;
+        const currentAvailability = teacherData.availability || {};
+        
+        // Filter out the booked time
+        const newDayAvailability = (currentAvailability[dayKey] || []).filter(
+          (time) => time !== values.time
+        );
+
+        const updatedAvailability = { ...currentAvailability };
+
+        if (newDayAvailability.length > 0) {
+            updatedAvailability[dayKey] = newDayAvailability;
+        } else {
+            // If no times left for this day, remove the day key
+            delete updatedAvailability[dayKey];
+        }
+
+        await setDoc(teacherRef, { availability: updatedAvailability }, { merge: true });
+      }
 
       toast({
         title: 'Booking Confirmed!',
