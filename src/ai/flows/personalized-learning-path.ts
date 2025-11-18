@@ -23,9 +23,9 @@ const PersonalizedLearningPathInputSchema = z.object({
 export type PersonalizedLearningPathInput = z.infer<typeof PersonalizedLearningPathInputSchema>;
 
 const PersonalizedLearningPathOutputSchema = z.object({
-  recommendedLessons: z.array(z.string()).describe('List of lesson IDs recommended for the student.'),
-  recommendedQuizzes: z.array(z.string()).describe('List of quiz IDs recommended for the student.'),
-  explanation: z.string().describe('Explanation of why these lessons and quizzes were recommended.'),
+  recommendedLessons: z.array(z.string()).describe('List of lesson IDs recommended for the student. Maximum of 2.'),
+  recommendedQuizzes: z.array(z.string()).describe('List of quiz IDs recommended for the student. Maximum of 1.'),
+  explanation: z.string().describe('A single sentence explaining why these lessons and quizzes were recommended.'),
 });
 export type PersonalizedLearningPathOutput = z.infer<typeof PersonalizedLearningPathOutputSchema>;
 
@@ -41,14 +41,15 @@ const personalizedLearningPathPrompt = ai.definePrompt({
   output: {schema: PersonalizedLearningPathOutputSchema},
   prompt: `You are an AI learning assistant that can generate personalized learning paths for students.
 
-  Analyze the student's performance data and suggest a learning path of lessons and quizzes to help them improve in areas where they are struggling.
+  Analyze the student's performance data and suggest a focused learning path to help them improve.
 
   Student ID: {{{studentId}}}
   Grade Level: {{{gradeLevel}}}
   Completed Lessons: {{#if completedLessons}}{{#each completedLessons}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None{{/if}}
   Quiz Scores: {{#if quizScores}}{{#each quizScores key="@key"}}{{@key}}: {{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None{{/if}}
 
-  Based on this information, recommend a list of lessons and quizzes for the student to complete.  Also provide a brief explanation of your choices.
+  Based on this information, recommend at most 2 lessons and 1 quiz for the student to complete.
+  Also provide a brief, one-sentence explanation of your choices.
   Format your response as a JSON object matching the schema.
   `,
 });
