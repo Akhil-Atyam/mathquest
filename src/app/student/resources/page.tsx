@@ -1,13 +1,13 @@
 'use client';
 
-import type { Lesson } from '@/lib/types';
+import type { Lesson, Student } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import React from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -82,17 +82,27 @@ function LessonView({ lesson, onBack }: { lesson: Lesson; onBack: () => void; })
  * It now handles displaying the lesson content on the same page.
  */
 export default function ResourcesPage() {
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [selectedLesson, setSelectedLesson] = React.useState<Lesson | null>(null);
+
+  const studentDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
 
   const lessonsQuery = useMemoFirebase(() => {
       if (!firestore) return null;
       return collection(firestore, 'lessons');
   }, [firestore]);
 
-  const { data: lessons, isLoading } = useCollection<Lesson>(lessonsQuery);
+  const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
   
   const grades = [1, 2, 3, 4, 5];
+  
+  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading;
 
   if (isLoading) {
     return (
@@ -112,13 +122,15 @@ export default function ResourcesPage() {
         </div>
     )
   }
+
+  const defaultGradeTab = student?.grade ? `grade-${student.grade}` : 'grade-1';
   
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-3xl font-bold font-headline">Resources</h1>
       <p className="text-muted-foreground">Explore lessons created by our teachers!</p>
 
-      <Tabs defaultValue="grade-1" className="w-full">
+      <Tabs defaultValue={defaultGradeTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           {grades.map(grade => (
             <TabsTrigger key={grade} value={`grade-${grade}`}>Grade {grade}</TabsTrigger>
