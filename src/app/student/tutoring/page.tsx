@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookingForm } from './BookingForm';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -13,9 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import type { Teacher, Booking } from '@/lib/types';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import type { Teacher } from '@/lib/types';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -23,7 +23,6 @@ import { Skeleton } from '@/components/ui/skeleton';
  * It allows students to select a teacher and a date, view available times, and fill out a booking form.
  */
 export default function TutoringPage() {
-  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   // --- State Management ---
@@ -34,23 +33,6 @@ export default function TutoringPage() {
   // --- Data Fetching ---
   const teachersCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
   const { data: teachers, isLoading: areTeachersLoading } = useCollection<Teacher>(teachersCollectionRef);
-
-  const bookingsQuery = useMemoFirebase(() => {
-    // CRITICAL: Do not run this query unless all dependencies are loaded.
-    if (!firestore || !selectedTeacherId || !date || !user) {
-      return null;
-    }
-    const dayStart = startOfDay(date);
-    const dayEnd = endOfDay(date);
-    return query(
-        collection(firestore, 'tutoring_sessions'), 
-        where('teacherId', '==', selectedTeacherId),
-        where('startTime', '>=', dayStart),
-        where('startTime', '<=', dayEnd)
-    );
-  }, [firestore, selectedTeacherId, date, user]);
-
-  const { data: todaysBookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
 
   // --- Effects ---
   React.useEffect(() => {
@@ -74,7 +56,6 @@ export default function TutoringPage() {
   const allAvailableDays = React.useMemo(() => {
     if (!selectedTeacher?.availability) return [];
     
-    // Ensure availability is a valid object.
     if (typeof selectedTeacher.availability !== 'object' || selectedTeacher.availability === null) {
       return [];
     }
@@ -100,15 +81,10 @@ export default function TutoringPage() {
     
     const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
-    const allSlotsForDay = selectedTeacher.availability[String(dayOffset)]?.sort() || [];
-    
-    const bookedTimes = (todaysBookings || []).map(booking => format(booking.startTime.toDate(), 'HH:mm'));
-    
-    return allSlotsForDay.filter(time => !bookedTimes.includes(time));
-  }, [date, selectedTeacher, todaysBookings]);
+    return selectedTeacher.availability[String(dayOffset)]?.sort() || [];
+  }, [date, selectedTeacher]);
   
-  // --- Render Logic ---
-  const isLoading = isUserLoading || areTeachersLoading;
+  const isLoading = areTeachersLoading;
 
   if (isLoading) {
       return (
@@ -208,7 +184,7 @@ export default function TutoringPage() {
                 selectedDay={date}
                 availableTimes={availableTimesForSelectedDay}
                 teacher={selectedTeacher}
-                isLoadingTimes={areBookingsLoading}
+                isLoadingTimes={false} // Since we are not fetching bookings, this is always false
               />
             </CardContent>
           </Card>
