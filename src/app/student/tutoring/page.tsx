@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import type { Teacher, Booking } from '@/lib/types';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -23,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  * It allows students to select a teacher and a date, view available times, and fill out a booking form.
  */
 export default function TutoringPage() {
+  const { user } = useUser();
   const firestore = useFirestore();
   const teachersCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
   const { data: teachers, isLoading: areTeachersLoading } = useCollection<Teacher>(teachersCollectionRef);
@@ -53,7 +55,7 @@ export default function TutoringPage() {
   }, [selectedTeacherId, teachers]);
 
   const bookingsQuery = useMemoFirebase(() => {
-    if (!firestore || !selectedTeacherId || !date) return null;
+    if (!firestore || !selectedTeacherId || !date || !user) return null;
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
     return query(
@@ -62,7 +64,7 @@ export default function TutoringPage() {
         where('startTime', '>=', dayStart),
         where('startTime', '<=', dayEnd)
     );
-  }, [firestore, selectedTeacherId, date]);
+  }, [firestore, selectedTeacherId, date, user]);
 
   const { data: todaysBookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
 
@@ -76,7 +78,7 @@ export default function TutoringPage() {
           futureDate.setDate(futureDate.getDate() + Number(dayOffset));
           return startOfDay(futureDate);
       })
-      .filter(d => (selectedTeacher.availability?.[String(Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))]?.length || 0) > 0);
+      .filter(d => (selectedTeacher.availability?.[String(Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))]?.length || 0) > 0);
   }, [selectedTeacher]);
 
 
@@ -88,7 +90,7 @@ export default function TutoringPage() {
     const selectedDayStart = startOfDay(date);
     
     // Calculate the day offset between today and the selected date.
-    const dayOffset = Math.ceil((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
     // Get the potential availability for that day
     const allSlots = selectedTeacher.availability[String(dayOffset)]?.sort() || [];
@@ -171,7 +173,7 @@ export default function TutoringPage() {
                       if (!selectedTeacher) return true;
                       if (day < startOfDay(new Date())) return true;
                       // Check if the day is in the array of available dates
-                      return !allAvailableDays.some(availableDay => availableDay.getTime() === startOfDay(day).getTime());
+                      return !allAvailableDays.some(availableDay => startOfDay(availableDay).getTime() === startOfDay(day).getTime());
                   }}
                 />
               ) : (
@@ -206,3 +208,5 @@ export default function TutoringPage() {
     </div>
   );
 }
+
+    
