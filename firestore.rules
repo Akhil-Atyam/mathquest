@@ -77,7 +77,7 @@ service cloud.firestore {
       // Allow a user to create their own teacher profile.
       allow create: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId;
       // Allow teachers to update and delete their own profiles.
-      allow update, delete: if isTeacherOwner(teacherId) && request.resource.data.id == teacherId && isTeacher();
+      allow update, delete: if isTeacherOwner(teacherId);
     }
 
     /**
@@ -125,9 +125,9 @@ service cloud.firestore {
         return request.auth != null && (request.auth.uid == studentId || request.auth.uid == teacherId);
       }
 
-      // Allow a user to list sessions only if they are querying by their own teacherId.
-      // This is crucial for securely fetching a teacher's schedule.
-      allow list: if request.auth != null && request.query.where.teacherId == request.auth.uid;
+      // Allow a user to list sessions only if they are querying by their own teacherId or studentId.
+      // This is crucial for securely fetching a user's schedule.
+      allow list: if request.auth != null && (request.query.where.teacherId == request.auth.uid || request.query.where.studentId == request.auth.uid);
 
       // Allow participants to get, create, update, and delete the session document.
       allow get: if isParticipant(resource.data.studentId, resource.data.teacherId);
