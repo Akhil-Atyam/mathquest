@@ -40,8 +40,8 @@ export function PersonalizedPathClient({ student }: { student: Student }) {
         const input = {
           studentId: student.id,
           gradeLevel: student.grade,
-          completedLessons: student.completedLessons,
-          quizScores: student.quizScores,
+          completedLessons: student.completedLessons || [],
+          quizScores: student.quizScores || {},
         };
         // Call the server action that triggers the Genkit flow.
         const path = await generatePersonalizedLearningPath(input);
@@ -108,7 +108,7 @@ export function PersonalizedPathClient({ student }: { student: Student }) {
           <h4 className="font-semibold mb-2 flex items-center gap-2"><Book className="w-4 h-4" />Recommended Lessons</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {recommendedResources.length > 0 ? recommendedResources.map(res => (
-                <Card key={res.id} className="p-3 flex justify-between items-center">
+                <Card key={res.id} className="p-3 flex justify-between items-center hover:bg-accent/10 transition-colors">
                     <div>
                         <p className="font-medium">{res.title}</p>
                         <p className="text-sm text-muted-foreground">Grade {res.grade} &middot; {res.topic}</p>
@@ -125,13 +125,13 @@ export function PersonalizedPathClient({ student }: { student: Student }) {
           <h4 className="font-semibold mb-2 flex items-center gap-2"><CheckSquare className="w-4 h-4"/>Recommended Quizzes</h4>
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {recommendedQuizzes.length > 0 ? recommendedQuizzes.map(quiz => (
-                <Card key={quiz.id} className="p-3 flex justify-between items-center">
+                <Card key={quiz.id} className="p-3 flex justify-between items-center hover:bg-accent/10 transition-colors">
                     <div>
                         <p className="font-medium">{quiz.title}</p>
                         <p className="text-sm text-muted-foreground">Grade {quiz.grade} &middot; {quiz.topic}</p>
                     </div>
                     <Button size="sm" variant="ghost" asChild>
-                        <Link href="/student/resources">Start</Link>
+                        <Link href={`/student/quizzes/${quiz.id}`}>Start</Link>
                     </Button>
                 </Card>
             )) : <p className="text-sm text-muted-foreground">No new quizzes recommended. You're on a roll!</p>}
@@ -148,7 +148,7 @@ export function PersonalizedPathClient({ student }: { student: Student }) {
  */
 function PersonalizedPathSkeleton() {
   return (
-    <Card>
+    <Card className="bg-primary/5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Lightbulb className="text-accent" />
