@@ -15,6 +15,7 @@ import { AvailabilityManager } from './AvailabilityManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar, Clock, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Component to display a list of bookings.
