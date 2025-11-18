@@ -89,8 +89,10 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
 
     useEffect(() => {
         setIsClient(true);
-        const now = new Date();
-        setUpcomingBookings(bookings.filter(b => b.startTime.toDate() >= now));
+        if (bookings) {
+            const now = new Date();
+            setUpcomingBookings(bookings.filter(b => b.startTime.toDate() >= now));
+        }
     }, [bookings]);
 
     if (!isClient) {
@@ -155,8 +157,10 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
 
     useEffect(() => {
         setIsClient(true);
-        const now = new Date();
-        setPastBookings(bookings.filter(b => b.startTime.toDate() < now));
+        if (bookings) {
+            const now = new Date();
+            setPastBookings(bookings.filter(b => b.startTime.toDate() < now));
+        }
     }, [bookings]);
 
      if (!isClient) {
