@@ -19,12 +19,13 @@ import { Skeleton } from '@/components/ui/skeleton';
  * @param {string} props.params.id - The ID of the lesson to display.
  */
 export default function LessonPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const firestore = useFirestore();
 
   const lessonRef = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
-    return doc(firestore, 'lessons', params.id);
-  }, [firestore, params.id]);
+    if (!firestore || !id) return null;
+    return doc(firestore, 'lessons', id);
+  }, [firestore, id]);
 
   const { data: lesson, isLoading } = useDoc<Lesson>(lessonRef);
   
@@ -83,5 +84,3 @@ export default function LessonPage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    

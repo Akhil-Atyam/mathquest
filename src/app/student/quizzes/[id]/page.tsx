@@ -18,8 +18,9 @@ import { Label } from '@/components/ui/label';
  * @param {string} props.params.id - The ID of the quiz to display.
  */
 export default function QuizPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   // Find the specific quiz from the mock data array using the ID from the URL.
-  const quiz = quizzes.find(q => q.id === params.id);
+  const quiz = quizzes.find(q => q.id === id);
 
   // If no quiz is found with the given ID, render the 404 Not Found page.
   if (!quiz) {
