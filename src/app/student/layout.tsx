@@ -4,6 +4,28 @@ import { StudentSidebarNav, StudentProfile } from "./StudentSidebarNav";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+
+/**
+ * A client component that extracts the current path and determines if a "Back" button should be shown.
+ * We extract this to its own component to avoid making the entire header a client component.
+ */
+function PageHeader() {
+    return (
+        <header className="flex items-center justify-between p-2 border-b md:p-3">
+            {/* The `SidebarTrigger` is a button that is only visible on mobile to open the sidebar. */}
+            <SidebarTrigger className="md:hidden" />
+            <div className="flex-1" />
+            {/* Logout button that links back to the home page. */}
+            <Button variant="ghost" size="sm" asChild>
+                <Link href="/">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                </Link>
+            </Button>
+        </header>
+    )
+}
 
 /**
  * The layout component for all pages within the `/student` route.
@@ -39,19 +61,10 @@ export default function StudentLayout({
             </Sidebar>
             {/* `SidebarInset` is the main content area of the page, which is pushed to the right of the sidebar. */}
             <SidebarInset>
-                {/* A simple header for the main content area. */}
-                <header className="flex items-center justify-between p-2 border-b md:p-3">
-                    {/* The `SidebarTrigger` is a button that is only visible on mobile to open the sidebar. */}
-                    <SidebarTrigger className="md:hidden" />
-                    <div className="flex-1" />
-                    {/* Logout button that links back to the home page. */}
-                    <Button variant="ghost" size="sm" asChild>
-                        <Link href="/">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Logout
-                        </Link>
-                    </Button>
-                </header>
+                {/* A simple header for the main content area. Using Suspense to handle client-side path logic. */}
+                <Suspense fallback={<header className="h-[53px] border-b" />}>
+                   <PageHeader />
+                </Suspense>
                 {/* Renders the actual page content. */}
                 {children}
             </SidebarInset>
