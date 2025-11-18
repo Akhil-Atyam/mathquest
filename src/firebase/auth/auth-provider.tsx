@@ -61,7 +61,7 @@ export async function initiateEmailSignUp(
  */
 export function createUserProfile(
   userId: string,
-  profileData: Omit<Student, 'grade' | 'completedLessons' | 'quizScores' | 'badges'> | Omit<Teacher, 'availability'>,
+  profileData: Omit<Student, 'completedLessons' | 'quizScores' | 'badges'> | Omit<Teacher, 'availability'>,
   role: 'student' | 'teacher'
 ): void {
   const { firestore } = initializeFirebase();

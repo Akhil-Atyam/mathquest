@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import type { Student, Teacher } from '@/lib/types';
 import { FirebaseError } from 'firebase/app';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Zod schema for validating the student sign-up form.
 const studentSignUpSchema = z.object({
@@ -43,6 +44,7 @@ const studentSignUpSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters.'),
   email: z.string().email('Please enter a valid email.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
+  grade: z.string().refine(val => !isNaN(parseInt(val)), { message: "Please select a grade." }),
 });
 
 // Zod schema for validating the teacher sign-up form.
@@ -93,6 +95,7 @@ function AuthForm({
       username: '',
       password: '',
       ...(isSignUp && { name: '', email: '' }),
+      ...(isSignUp && role === 'student' && { grade: '' }),
     },
   });
 
@@ -117,23 +120,30 @@ function AuthForm({
             const user = userCredential.user;
             // If sign-up is successful, create a user profile document in Firestore.
             if ('name' in values && 'username' in values) {
-            const profileData = {
-                id: user.uid,
-                name: values.name,
-                username: values.username,
-                email: user.email!,
-            };
     
-            if (role === 'student') {
+            if (role === 'student' && 'grade' in values) {
+                const profileData = {
+                    id: user.uid,
+                    name: values.name,
+                    username: values.username,
+                    email: user.email!,
+                    grade: parseInt(values.grade, 10),
+                };
                 createUserProfile(
                     user.uid,
                     profileData as Omit<
                         Student,
-                        'grade' | 'completedLessons' | 'quizScores' | 'badges'
+                        'completedLessons' | 'quizScores' | 'badges'
                     >,
                     'student'
                 );
-            } else {
+            } else if (role === 'teacher') {
+                const profileData = {
+                    id: user.uid,
+                    name: values.name,
+                    username: values.username,
+                    email: user.email!,
+                };
                 createUserProfile(
                     user.uid,
                     profileData as Omit<Teacher, 'availability'>,
@@ -234,6 +244,30 @@ function AuthForm({
                     {...field}
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        {isSignUp && role === 'student' && (
+          <FormField
+            control={form.control}
+            name="grade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Grade</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your grade level" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map(grade => (
+                        <SelectItem key={grade} value={String(grade)}>Grade {grade}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
