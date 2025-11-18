@@ -53,21 +53,23 @@ export default function QuizPage({ params }: { params: { id: string } }) {
             Grade {quiz.grade} &middot; {quiz.topic}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8">
-            {questions.map((question, index) => (
-                <div key={question.id}>
-                    <p className="font-medium mb-4">{index + 1}. {question.text}</p>
-                    <RadioGroup>
-                        {question.options.map(option => (
-                            <div key={option} className="flex items-center space-x-2">
-                                <RadioGroupItem value={option} id={`${question.id}-${option}`} />
-                                <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
-                            </div>
-                        ))}
-                    </RadioGroup>
-                </div>
-            ))}
-            <Button className='mt-6'>Submit Quiz</Button>
+        <CardContent>
+            <form className="space-y-8">
+                {questions.map((question, index) => (
+                    <div key={question.id}>
+                        <p className="font-medium mb-4">{index + 1}. {question.text}</p>
+                        <RadioGroup>
+                            {question.options.map(option => (
+                                <div key={option} className="flex items-center space-x-2">
+                                    <RadioGroupItem value={option} id={`${question.id}-${option}`} />
+                                    <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+                    </div>
+                ))}
+                <Button className='mt-6'>Submit Quiz</Button>
+            </form>
         </CardContent>
       </Card>
     </div>

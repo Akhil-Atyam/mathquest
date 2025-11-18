@@ -22,7 +22,7 @@ export default function StudentDashboardPage() {
   const studentDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
   

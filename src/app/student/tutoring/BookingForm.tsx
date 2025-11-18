@@ -48,7 +48,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
   const studentDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
   
   const { data: student } = useDoc<Student>(studentDocRef);
 

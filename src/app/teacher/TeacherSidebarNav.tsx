@@ -47,7 +47,7 @@ export function TeacherProfile() {
     const teacherDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return doc(firestore, 'teachers', user.uid);
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
 
     const { data: teacher, isLoading: isTeacherLoading } = useDoc<Teacher>(teacherDocRef);
 
