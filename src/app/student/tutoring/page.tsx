@@ -23,38 +23,23 @@ import { Skeleton } from '@/components/ui/skeleton';
  * It allows students to select a teacher and a date, view available times, and fill out a booking form.
  */
 export default function TutoringPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+
+  // --- State Management ---
+  const [selectedTeacherId, setSelectedTeacherId] = React.useState<string | undefined>();
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [isClient, setIsClient] = React.useState(false);
+
+  // --- Data Fetching ---
   const teachersCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
   const { data: teachers, isLoading: areTeachersLoading } = useCollection<Teacher>(teachersCollectionRef);
 
-  // State to manage the ID of the selected teacher.
-  const [selectedTeacherId, setSelectedTeacherId] = React.useState<string | undefined>(undefined);
-  // State for the date selected in the calendar, initialized to undefined.
-  const [date, setDate] = React.useState<Date | undefined>(undefined);
-  const [isClient, setIsClient] = React.useState(false);
-  
-  // Set initial date and client flag on the client-side to avoid hydration errors.
-  React.useEffect(() => {
-    setDate(new Date());
-    setIsClient(true);
-  }, []);
-
-  // Effect to set the default selected teacher once teachers are loaded.
-  React.useEffect(() => {
-    if (teachers && teachers.length > 0 && !selectedTeacherId) {
-        setSelectedTeacherId(teachers[0].id);
-    }
-  }, [teachers, selectedTeacherId]);
-
-  // Memoized value to find the full teacher object based on the selected ID.
-  const selectedTeacher = React.useMemo(() => {
-    if (!teachers) return undefined;
-    return teachers.find((t) => t.id === selectedTeacherId);
-  }, [selectedTeacherId, teachers]);
-
   const bookingsQuery = useMemoFirebase(() => {
-    if (!firestore || !selectedTeacherId || !date || !user) return null;
+    // CRITICAL: Do not run this query unless all dependencies are loaded.
+    if (!firestore || !selectedTeacherId || !date || !user) {
+      return null;
+    }
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
     return query(
@@ -67,50 +52,65 @@ export default function TutoringPage() {
 
   const { data: todaysBookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
 
-  // Memoized value to get a list of all dates the selected teacher is available.
+  // --- Effects ---
+  React.useEffect(() => {
+    // Set client flag on mount to avoid hydration errors.
+    setIsClient(true);
+  }, []);
+
+  React.useEffect(() => {
+    // Set a default teacher once the list has loaded.
+    if (teachers && teachers.length > 0 && !selectedTeacherId) {
+        setSelectedTeacherId(teachers[0].id);
+    }
+  }, [teachers, selectedTeacherId]);
+
+  // --- Memoized Calculations ---
+  const selectedTeacher = React.useMemo(() => {
+    if (!teachers || !selectedTeacherId) return undefined;
+    return teachers.find((t) => t.id === selectedTeacherId);
+  }, [selectedTeacherId, teachers]);
+
   const allAvailableDays = React.useMemo(() => {
     if (!selectedTeacher?.availability) return [];
-    const today = startOfDay(new Date());
-    // Ensure availability is an object before trying to get its keys
+    
+    // Ensure availability is a valid object.
     if (typeof selectedTeacher.availability !== 'object' || selectedTeacher.availability === null) {
       return [];
     }
+
+    const today = startOfDay(new Date());
     return Object.keys(selectedTeacher.availability)
       .map(dayOffset => {
           const futureDate = new Date(today);
           futureDate.setDate(today.getDate() + Number(dayOffset));
           return startOfDay(futureDate);
       })
-       // Only include days that have at least one time slot.
       .filter(d => {
         const offset = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         return (selectedTeacher.availability?.[String(offset)]?.length || 0) > 0;
       });
   }, [selectedTeacher]);
 
-
-  // Memoized value to get the available time slots for the selected date.
   const availableTimesForSelectedDay = React.useMemo(() => {
-    if (!date || !selectedTeacher || !selectedTeacher.availability) return [];
+    if (!date || !selectedTeacher?.availability) return [];
     
     const today = startOfDay(new Date());
     const selectedDayStart = startOfDay(date);
     
-    // Calculate the day offset between today and the selected date.
     const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Get the potential availability for that day
-    const allSlots = selectedTeacher.availability[String(dayOffset)]?.sort() || [];
+    const allSlotsForDay = selectedTeacher.availability[String(dayOffset)]?.sort() || [];
     
-    // Get the times that are already booked
     const bookedTimes = (todaysBookings || []).map(booking => format(booking.startTime.toDate(), 'HH:mm'));
     
-    // Filter out the booked times
-    return allSlots.filter(time => !bookedTimes.includes(time));
-
+    return allSlotsForDay.filter(time => !bookedTimes.includes(time));
   }, [date, selectedTeacher, todaysBookings]);
+  
+  // --- Render Logic ---
+  const isLoading = isUserLoading || areTeachersLoading;
 
-  if (areTeachersLoading) {
+  if (isLoading) {
       return (
           <div className="p-4 sm:p-6 space-y-6">
               <Skeleton className="h-9 w-1/2" />
@@ -118,7 +118,7 @@ export default function TutoringPage() {
               <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-6">
                     <Skeleton className="h-48 w-full" />
-                    <Skeleton className="h-80 w-full" />
+                    <Skeleton className="h-[313px] w-full" />
                   </div>
                   <Skeleton className="h-[500px] w-full" />
               </div>
@@ -175,12 +175,14 @@ export default function TutoringPage() {
                   selected={date}
                   onSelect={setDate}
                   className="rounded-md"
-                  // Disable dates that are in the past or for which the teacher is not available.
                   disabled={(day) => {
                       if (!selectedTeacher) return true;
-                      if (day < startOfDay(new Date())) return true;
-                      // Check if the day is in the array of available dates
-                      return !allAvailableDays.some(availableDay => startOfDay(availableDay).getTime() === startOfDay(day).getTime());
+                      const today = startOfDay(new Date());
+                      if (day < today) return true;
+                      
+                      return !allAvailableDays.some(availableDay => 
+                        startOfDay(availableDay).getTime() === startOfDay(day).getTime()
+                      );
                   }}
                 />
               ) : (
