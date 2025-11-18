@@ -39,8 +39,9 @@ const formSchema = z.object({
  * @param {Date | undefined} props.selectedDay - The date selected by the user in the calendar.
  * @param {string[]} props.availableTimes - An array of available time slots for the selected day.
  * @param {Teacher | undefined} props.teacher - The currently selected teacher.
+ * @param {boolean} props.isLoadingTimes - Flag indicating if available times are being loaded.
  */
-export function BookingForm({ selectedDay, availableTimes, teacher }: { selectedDay: Date | undefined, availableTimes: string[], teacher: Teacher | undefined }) {
+export function BookingForm({ selectedDay, availableTimes, teacher, isLoadingTimes }: { selectedDay: Date | undefined, availableTimes: string[], teacher: Teacher | undefined, isLoadingTimes: boolean }) {
   const { toast } = useToast()
   const { user } = useUser();
   const firestore = useFirestore();
@@ -112,6 +113,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
         studentName: values.studentName,
         grade: Number(values.grade),
         teacherId: teacher.id,
+        teacherName: teacher.name, // Denormalize teacher name
         topic: values.topic,
         startTime: startTime,
         status: 'Confirmed',
@@ -191,10 +193,10 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
             <FormItem>
               <FormLabel>Preferred Time</FormLabel>
               {/* The time selection dropdown is disabled if there are no available times. */}
-              <Select onValueChange={field.onChange} value={field.value} disabled={availableTimes.length === 0}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingTimes || availableTimes.length === 0}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an available time" />
+                    <SelectValue placeholder={isLoadingTimes ? "Loading times..." : "Select an available time"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

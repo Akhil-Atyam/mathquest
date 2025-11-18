@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookingForm } from './BookingForm';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -13,9 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import type { Teacher } from '@/lib/types';
+import type { Teacher, Booking } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -52,6 +52,20 @@ export default function TutoringPage() {
     return teachers.find((t) => t.id === selectedTeacherId);
   }, [selectedTeacherId, teachers]);
 
+  const bookingsQuery = useMemoFirebase(() => {
+    if (!firestore || !selectedTeacherId || !date) return null;
+    const dayStart = startOfDay(date);
+    const dayEnd = endOfDay(date);
+    return query(
+        collection(firestore, 'tutoring_sessions'), 
+        where('teacherId', '==', selectedTeacherId),
+        where('startTime', '>=', dayStart),
+        where('startTime', '<=', dayEnd)
+    );
+  }, [firestore, selectedTeacherId, date]);
+
+  const { data: todaysBookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
+
   // Memoized value to get a list of all dates the selected teacher is available.
   const allAvailableDays = React.useMemo(() => {
     if (!selectedTeacher || !selectedTeacher.availability) return [];
@@ -76,10 +90,16 @@ export default function TutoringPage() {
     // Calculate the day offset between today and the selected date.
     const dayOffset = Math.ceil((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Return the availability for that specific day offset, or an empty array if none.
-    return selectedTeacher.availability[String(dayOffset)]?.sort() || [];
+    // Get the potential availability for that day
+    const allSlots = selectedTeacher.availability[String(dayOffset)]?.sort() || [];
+    
+    // Get the times that are already booked
+    const bookedTimes = (todaysBookings || []).map(booking => format(booking.startTime.toDate(), 'HH:mm'));
+    
+    // Filter out the booked times
+    return allSlots.filter(time => !bookedTimes.includes(time));
 
-  }, [date, selectedTeacher]);
+  }, [date, selectedTeacher, todaysBookings]);
 
   if (areTeachersLoading) {
       return (
@@ -147,11 +167,12 @@ export default function TutoringPage() {
                   onSelect={setDate}
                   className="rounded-md"
                   // Disable dates that are in the past or for which the teacher is not available.
-                  disabled={(day) =>
-                    !selectedTeacher ||
-                    day < startOfDay(new Date()) ||
-                    !allAvailableDays.some(d => d.getTime() === day.getTime())
-                  }
+                  disabled={(day) => {
+                      if (!selectedTeacher) return true;
+                      if (day < startOfDay(new Date())) return true;
+                      // Check if the day is in the array of available dates
+                      return !allAvailableDays.some(availableDay => availableDay.getTime() === startOfDay(day).getTime());
+                  }}
                 />
               ) : (
                 <div className="p-3">
@@ -176,6 +197,7 @@ export default function TutoringPage() {
                 selectedDay={date}
                 availableTimes={availableTimesForSelectedDay}
                 teacher={selectedTeacher}
+                isLoadingTimes={areBookingsLoading}
               />
             </CardContent>
           </Card>

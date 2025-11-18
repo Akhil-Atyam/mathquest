@@ -80,6 +80,7 @@ export type Booking = {
   startTime: Timestamp; // The exact start date and time of the session.
   status: 'Confirmed' | 'Completed' | 'Cancelled'; // The status of the booking.
   teacherId: string; // The ID of the teacher.
+  teacherName: string; // The name of the teacher (denormalized for easy display).
   meetingLink?: string; // An optional link to the virtual meeting.
   attended?: boolean; // An optional flag to mark if the student attended.
 };
