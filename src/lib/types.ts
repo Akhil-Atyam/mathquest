@@ -64,7 +64,7 @@ export type Teacher = {
   name: string; // The teacher's name.
   username: string; // The teacher's unique username.
   email: string; // The teacher's email address.
-  // A record mapping a day offset (as a string, e.g., "1" for tomorrow) to an array of available time slots (e.g., "09:00").
+  // A record mapping a day offset (as a string, e.g., "1" for tomorrow) to an array of available time slots (e.g., "09:00"). 
   availability?: Record<string, string[]>; 
 };
 
@@ -82,5 +82,5 @@ export type Booking = {
   teacherId: string; // The ID of the teacher.
   teacherName: string; // The name of the teacher (denormalized for easy display).
   meetingLink?: string; // An optional link to the virtual meeting.
-  attended?: boolean; // An optional flag to mark if the student attended.
+  attended: boolean; // A flag to mark if the student attended.
 };

@@ -110,7 +110,7 @@ export function BookingForm({
    * @param {object} values - The validated form values.
    */
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user || !teacher || !selectedDay || !firestore) {
+    if (!user || !teacher || !teacher.name || !selectedDay || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Booking Failed',
