@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -70,15 +69,23 @@ export default function TutoringPage() {
 
   // Memoized value to get a list of all dates the selected teacher is available.
   const allAvailableDays = React.useMemo(() => {
-    if (!selectedTeacher || !selectedTeacher.availability) return [];
+    if (!selectedTeacher?.availability) return [];
     const today = startOfDay(new Date());
+    // Ensure availability is an object before trying to get its keys
+    if (typeof selectedTeacher.availability !== 'object' || selectedTeacher.availability === null) {
+      return [];
+    }
     return Object.keys(selectedTeacher.availability)
       .map(dayOffset => {
           const futureDate = new Date(today);
-          futureDate.setDate(futureDate.getDate() + Number(dayOffset));
+          futureDate.setDate(today.getDate() + Number(dayOffset));
           return startOfDay(futureDate);
       })
-      .filter(d => (selectedTeacher.availability?.[String(Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))]?.length || 0) > 0);
+       // Only include days that have at least one time slot.
+      .filter(d => {
+        const offset = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return (selectedTeacher.availability?.[String(offset)]?.length || 0) > 0;
+      });
   }, [selectedTeacher]);
 
 
@@ -208,5 +215,3 @@ export default function TutoringPage() {
     </div>
   );
 }
-
-    
