@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { Timestamp } from "firebase/firestore";
 
 /**
  * @fileoverview This file contains TypeScript type definitions for the main data
@@ -76,7 +77,7 @@ export type Booking = {
   studentName: string; // The name of the student (denormalized for easy display).
   grade: number; // The grade of the student at the time of booking.
   topic: string; // The topic for the session.
-  startTime: Date; // The exact start date and time of the session.
+  startTime: Timestamp; // The exact start date and time of the session.
   status: 'Confirmed' | 'Completed' | 'Cancelled'; // The status of the booking.
   teacherId: string; // The ID of the teacher.
   meetingLink?: string; // An optional link to the virtual meeting.

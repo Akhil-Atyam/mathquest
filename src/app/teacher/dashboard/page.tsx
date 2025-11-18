@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import { bookings as initialBookings } from '@/lib/data';
 import type { Booking } from '@/lib/types';
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * A dialog component for adding or editing a meeting link for a booking.
@@ -42,7 +43,7 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking, onSave
                     {/* The title changes based on whether a link already exists. */}
                     <DialogTitle>{booking.meetingLink ? 'Edit' : 'Add'} Meeting Link</DialogTitle>
                     <DialogDescription>
-                        {booking.meetingLink ? 'Edit the' : 'Add a'} meeting link for your session with {booking.studentName} on {format(booking.startTime, "PPP 'at' p")}.
+                        {booking.meetingLink ? 'Edit the' : 'Add a'} meeting link for your session with {booking.studentName} on {format(booking.startTime.toDate(), "PPP 'at' p")}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -87,7 +88,7 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
 
     useEffect(() => {
         const now = new Date();
-        setUpcomingBookings(bookings.filter(b => b.startTime >= now));
+        setUpcomingBookings(bookings.filter(b => b.startTime.toDate() >= now));
     }, [bookings]);
 
     // Show a message if there are no upcoming bookings.
@@ -109,7 +110,7 @@ function BookingsList({ bookings, onUpdateLink }: { bookings: Booking[], onUpdat
                 {upcomingBookings.map(booking => (
                     <TableRow key={booking.id}>
                         <TableCell>{booking.studentName} (Grade {booking.grade})</TableCell>
-                        <TableCell>{format(booking.startTime, "PPP 'at' p")}</TableCell>
+                        <TableCell>{format(booking.startTime.toDate(), "PPP 'at' p")}</TableCell>
                         <TableCell>{booking.topic}</TableCell>
                         <TableCell>
                             <div className="flex items-center gap-2">
@@ -147,7 +148,7 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
 
     useEffect(() => {
         const now = new Date();
-        setPastBookings(bookings.filter(b => b.startTime < now));
+        setPastBookings(bookings.filter(b => b.startTime.toDate() < now));
     }, [bookings]);
 
     // Show a message if there are no past sessions.
@@ -169,7 +170,7 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
                 {pastBookings.map(booking => (
                     <TableRow key={booking.id}>
                         <TableCell>{booking.studentName}</TableCell>
-                        <TableCell>{format(booking.startTime, 'PPP')}</TableCell>
+                        <TableCell>{format(booking.startTime.toDate(), 'PPP')}</TableCell>
                         <TableCell>{booking.topic}</TableCell>
                         <TableCell className="text-right">
                             <Checkbox defaultChecked={booking.attended} />
@@ -186,8 +187,15 @@ function AttendanceList({ bookings }: { bookings: Booking[] }) {
  * It provides a tabbed interface for managing bookings, uploading resources, and tracking attendance.
  */
 export default function TeacherDashboardPage() {
-    // State to manage the list of bookings. Initialized with mock data.
-    const [bookings, setBookings] = useState(initialBookings);
+    const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
+
+    const bookingsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'tutoring_sessions'), where('teacherId', '==', user.uid));
+    }, [user, firestore]);
+
+    const { data: bookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
 
     /**
      * Handles updating the meeting link for a specific booking.
@@ -195,13 +203,27 @@ export default function TeacherDashboardPage() {
      * @param {string} bookingId - The ID of the booking to update.
      * @param {string} link - The new meeting link.
      */
-    const handleUpdateLink = (bookingId: string, link: string) => {
-        setBookings(currentBookings =>
-            currentBookings.map(b =>
-                b.id === bookingId ? { ...b, meetingLink: link } : b
-            )
-        );
+    const handleUpdateLink = async (bookingId: string, link: string) => {
+        if (!firestore) return;
+        const bookingRef = doc(firestore, 'tutoring_sessions', bookingId);
+        try {
+            await updateDoc(bookingRef, { meetingLink: link });
+        } catch (error) {
+            console.error("Error updating meeting link: ", error);
+        }
     };
+    
+    if (isUserLoading || areBookingsLoading) {
+        return (
+            <div className="p-4 sm:p-6 space-y-6">
+                <Skeleton className="h-9 w-1/2" />
+                <div className="w-full">
+                    <Skeleton className="h-10 w-1/3 mb-2" />
+                    <Skeleton className="h-64 w-full" />
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="p-4 sm:p-6 space-y-6">
@@ -222,7 +244,7 @@ export default function TeacherDashboardPage() {
                             <CardDescription>Manage your scheduled tutoring sessions.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <BookingsList bookings={bookings} onUpdateLink={handleUpdateLink} />
+                            <BookingsList bookings={bookings || []} onUpdateLink={handleUpdateLink} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -260,7 +282,7 @@ export default function TeacherDashboardPage() {
                             <CardDescription>Track which students attended past sessions.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <AttendanceList bookings={bookings} />
+                            <AttendanceList bookings={bookings || []} />
                         </CardContent>
                     </Card>
                 </TabsContent>

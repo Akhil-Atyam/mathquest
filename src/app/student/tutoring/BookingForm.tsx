@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { student, teachers, topics, bookings } from "@/lib/data"
+import { topics } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -18,7 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { CalendarCheck } from "lucide-react"
 import React from "react"
-import type { Teacher } from "@/lib/types"
+import type { Student, Teacher } from "@/lib/types"
+import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase"
+import { doc, addDoc, collection } from "firebase/firestore"
 
 // Zod schema to define the shape and validation rules for the booking form.
 const formSchema = z.object({
@@ -39,18 +41,38 @@ const formSchema = z.object({
  */
 export function BookingForm({ selectedDay, availableTimes, teacher }: { selectedDay: Date | undefined, availableTimes: string[], teacher: Teacher | undefined }) {
   const { toast } = useToast()
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const studentDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
   
+  const { data: student } = useDoc<Student>(studentDocRef);
+
   // Initialize react-hook-form with the schema and default values.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    // Default values are pre-filled with mock student data.
     defaultValues: {
-      studentName: student.name,
-      grade: String(student.grade),
+      studentName: "",
+      grade: "",
       topic: "",
       time: "",
     },
   })
+
+  // Effect to populate form with student data once loaded.
+  React.useEffect(() => {
+    if(student) {
+        form.reset({
+            studentName: student.name,
+            grade: String(student.grade),
+            topic: "",
+            time: ""
+        });
+    }
+  }, [student, form]);
 
   // This effect runs when the list of available times changes.
   // It checks if the currently selected time in the form is still valid.
@@ -68,14 +90,49 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
    * In a real app, this would make an API call to save the booking.
    * @param {object} values - The validated form values.
    */
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: "Booking Confirmed!",
-      description: `Your tutoring session for ${values.topic} has been booked.`,
-    })
-    console.log(values)
-    // Reset the form fields after successful submission.
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user || !teacher || !selectedDay) {
+        toast({
+            variant: "destructive",
+            title: "Booking Failed",
+            description: "Missing user, teacher, or date information."
+        });
+        return;
+    }
+
+    const [hour, minute] = values.time.split(':').map(Number);
+    const startTime = new Date(selectedDay);
+    startTime.setHours(hour, minute);
+
+    try {
+        const bookingsCollection = collection(firestore, "tutoring_sessions");
+        await addDoc(bookingsCollection, {
+            studentId: user.uid,
+            studentName: values.studentName,
+            grade: Number(values.grade),
+            teacherId: teacher.id,
+            topic: values.topic,
+            startTime: startTime,
+            status: 'Confirmed',
+            meetingLink: '',
+            attended: false,
+        });
+
+        toast({
+            title: "Booking Confirmed!",
+            description: `Your tutoring session for ${values.topic} has been booked.`,
+        });
+        // Reset the form fields after successful submission.
+        form.reset();
+
+    } catch (error) {
+        console.error("Error creating booking: ", error);
+        toast({
+            variant: "destructive",
+            title: "Booking Error",
+            description: "Could not save your booking. Please try again."
+        });
+    }
   }
 
   return (
@@ -88,7 +145,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
             <FormItem>
               <FormLabel>Student Name</FormLabel>
               <FormControl>
-                <Input placeholder="Your name" {...field} />
+                <Input placeholder="Your name" {...field} readOnly />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -100,7 +157,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
           render={({ field }) => (
             <FormItem>
               <FormLabel>Grade</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} disabled>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your grade" />
@@ -155,7 +212,7 @@ export function BookingForm({ selectedDay, availableTimes, teacher }: { selected
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={!selectedDay || !teacher || availableTimes.length === 0}>
+        <Button type="submit" className="w-full" disabled={!selectedDay || !teacher || availableTimes.length === 0 || !student}>
             <CalendarCheck className="mr-2 h-4 w-4"/>
             Book Session
         </Button>

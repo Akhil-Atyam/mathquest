@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookingForm } from './BookingForm';
-import { teachers } from '@/lib/data';
 import { format } from 'date-fns';
 import {
   Select,
@@ -15,6 +14,9 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import type { Teacher } from '@/lib/types';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * Helper function to get a date string for a future date.
@@ -33,10 +35,14 @@ const getFutureDate = (dayOffset: number) => {
  * It allows students to select a teacher and a date, view available times, and fill out a booking form.
  */
 export default function TutoringPage() {
+  const firestore = useFirestore();
+  const teachersCollectionRef = useMemoFirebase(() => collection(firestore, 'teachers'), [firestore]);
+  const { data: teachers, isLoading: areTeachersLoading } = useCollection<Teacher>(teachersCollectionRef);
+
   // State to manage the ID of the selected teacher. Defaults to the first teacher.
   const [selectedTeacherId, setSelectedTeacherId] = React.useState<
     string | undefined
-  >(teachers[0]?.id);
+  >(undefined);
   // State for the date selected in the calendar.
   const [date, setDate] = React.useState<Date | undefined>(undefined);
   
@@ -45,14 +51,22 @@ export default function TutoringPage() {
     setDate(new Date());
   }, []);
 
+  // Effect to set the default selected teacher once teachers are loaded.
+  React.useEffect(() => {
+    if (teachers && teachers.length > 0 && !selectedTeacherId) {
+        setSelectedTeacherId(teachers[0].id);
+    }
+  }, [teachers, selectedTeacherId]);
+
   // Memoized value to find the full teacher object based on the selected ID.
   const selectedTeacher = React.useMemo(() => {
+    if (!teachers) return undefined;
     return teachers.find((t) => t.id === selectedTeacherId);
-  }, [selectedTeacherId]);
+  }, [selectedTeacherId, teachers]);
 
   // Memoized value to get a list of all dates the selected teacher is available.
   const allAvailableDays = React.useMemo(() => {
-    if (!selectedTeacher) return [];
+    if (!selectedTeacher || !selectedTeacher.availability) return [];
     return Object.keys(selectedTeacher.availability).map((dayOffset) => {
       return new Date(getFutureDate(Number(dayOffset)));
     });
@@ -60,7 +74,7 @@ export default function TutoringPage() {
 
   // Memoized value to get the available time slots for the selected date.
   const availableTimesForSelectedDay = React.useMemo(() => {
-    if (!date || !selectedTeacher) return [];
+    if (!date || !selectedTeacher || !selectedTeacher.availability) return [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selectedDayStart = new Date(date);
@@ -74,6 +88,21 @@ export default function TutoringPage() {
 
   }, [date, selectedTeacher]);
 
+  if (areTeachersLoading) {
+      return (
+          <div className="p-4 sm:p-6 space-y-6">
+              <Skeleton className="h-9 w-1/2" />
+              <Skeleton className="h-6 w-1/3" />
+              <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-80 w-full" />
+                  </div>
+                  <Skeleton className="h-[500px] w-full" />
+              </div>
+          </div>
+      )
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -97,12 +126,13 @@ export default function TutoringPage() {
               <Select
                 value={selectedTeacherId}
                 onValueChange={setSelectedTeacherId}
+                disabled={!teachers || teachers.length === 0}
               >
                 <SelectTrigger id="teacher-select">
                   <SelectValue placeholder="Select a teacher" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers.map((teacher) => (
+                  {teachers && teachers.map((teacher) => (
                     <SelectItem key={teacher.id} value={teacher.id}>
                       {teacher.name}
                     </SelectItem>
