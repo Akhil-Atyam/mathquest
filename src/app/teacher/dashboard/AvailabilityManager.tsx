@@ -12,7 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { CalendarIcon, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import type { Teacher } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -79,7 +79,8 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
 
     try {
       const teacherRef = doc(firestore, 'teachers', user.uid);
-      await updateDoc(teacherRef, { availability: updatedAvailability });
+      // Use setDoc with merge:true to create or update the document.
+      await setDoc(teacherRef, { availability: updatedAvailability }, { merge: true });
       setCurrentAvailability(updatedAvailability);
       toast({ title: 'Success', description: `Added ${time} to your availability for ${format(day, 'PPP')}.` });
       form.reset({ day: undefined, time: '' });
@@ -102,7 +103,8 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
     
     try {
       const teacherRef = doc(firestore, 'teachers', user.uid);
-      await updateDoc(teacherRef, { availability: updatedAvailability });
+      // Use setDoc with merge:true to safely update the document.
+      await setDoc(teacherRef, { availability: updatedAvailability }, { merge: true });
       setCurrentAvailability(updatedAvailability);
       toast({ title: 'Success', description: `Removed ${time} from your availability.` });
     } catch (error) {
