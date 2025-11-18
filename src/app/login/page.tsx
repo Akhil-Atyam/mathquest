@@ -45,13 +45,12 @@ const studentSignUpSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
-// Zod schema for validating the teacher sign-up form, including the teacher code.
+// Zod schema for validating the teacher sign-up form.
 const teacherSignUpSchema = z.object({
   name: z.string().min(2, 'Name is too short.'),
   username: z.string().min(3, 'Username must be at least 3 characters.'),
   email: z.string().email('Please enter a valid email.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
-  teacherCode: z.string().min(1, 'Teacher code is required.'),
 });
 
 // Zod schema for validating the sign-in form.
@@ -94,7 +93,6 @@ function AuthForm({
       username: '',
       password: '',
       ...(isSignUp && { name: '', email: '' }),
-      ...(role === 'teacher' && isSignUp && { teacherCode: '' }),
     },
   });
 
@@ -108,17 +106,7 @@ function AuthForm({
     try {
       if (isSignUp) {
         if ('email' in values && 'password' in values) {
-            // For teacher sign-up, validate the secret code.
-            if (role === 'teacher') {
-                const teacherSecretCode = process.env.NEXT_PUBLIC_TEACHER_SECRET_CODE;
-                if (
-                    'teacherCode' in values &&
-                    values.teacherCode !== teacherSecretCode
-                ) {
-                    throw new Error('Invalid Teacher Code.');
-                }
-            }
-    
+            
             // Create the user account with email and password.
             const userCredential = await initiateEmailSignUp(
                 auth,
@@ -264,26 +252,6 @@ function AuthForm({
             </FormItem>
           )}
         />
-        {/* Conditionally render the 'Teacher Code' field for teacher sign-up. */}
-        {isSignUp && role === 'teacher' && (
-          <FormField
-            control={form.control}
-            name="teacherCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Teacher Code</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="Secret code"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
         <Button
           type="submit"
           className="w-full"
@@ -383,7 +351,7 @@ export default function LoginPage() {
                   <CardHeader>
                     <CardTitle>Create Teacher Account</CardTitle>
                     <CardDescription>
-                      Enter the teacher code to create an account.
+                      Create an account to manage sessions and resources.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
