@@ -9,12 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
-import type { Booking } from '@/lib/types';
+import type { Booking, Teacher } from '@/lib/types';
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AvailabilityManager } from './AvailabilityManager';
 
 /**
  * A dialog component for adding or editing a meeting link for a booking.
@@ -213,6 +214,14 @@ export default function TeacherDashboardPage() {
 
     const { data: bookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);
 
+    const teacherDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'teachers', user.uid);
+    }, [user, firestore]);
+
+    const { data: teacher, isLoading: isTeacherLoading } = useDoc<Teacher>(teacherDocRef);
+
+
     /**
      * Handles updating the meeting link for a specific booking.
      * This function is passed down to the BookingsList and AddLinkDialog components.
@@ -229,12 +238,12 @@ export default function TeacherDashboardPage() {
         }
     };
     
-    if (isUserLoading || areBookingsLoading) {
+    if (isUserLoading || areBookingsLoading || isTeacherLoading) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
                 <Skeleton className="h-9 w-1/2" />
                 <div className="w-full">
-                    <Skeleton className="h-10 w-1/3 mb-2" />
+                    <Skeleton className="h-10 w-full mb-2" />
                     <Skeleton className="h-64 w-full" />
                 </div>
             </div>
@@ -246,8 +255,9 @@ export default function TeacherDashboardPage() {
             <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
 
             <Tabs defaultValue="bookings" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="bookings">Bookings</TabsTrigger>
+                    <TabsTrigger value="availability">Availability</TabsTrigger>
                     <TabsTrigger value="resources">Upload Resources</TabsTrigger>
                     <TabsTrigger value="attendance">Attendance</TabsTrigger>
                 </TabsList>
@@ -263,6 +273,11 @@ export default function TeacherDashboardPage() {
                             <BookingsList bookings={bookings || []} onUpdateLink={handleUpdateLink} />
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                {/* Availability Tab */}
+                <TabsContent value="availability">
+                    <AvailabilityManager teacher={teacher} />
                 </TabsContent>
 
                 {/* Upload Resources Tab (UI only, no functionality) */}

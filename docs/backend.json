@@ -57,6 +57,16 @@
           "type": "string",
           "description": "The teacher's email address.",
           "format": "email"
+        },
+        "availability": {
+          "type": "object",
+          "description": "A map of day offsets to available time slots.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       },
       "required": [
