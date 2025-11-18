@@ -5,21 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import React from 'react';
+import React, { useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { BookOpen } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
- * It shows the lesson's title, topic, and provides a "Start" button to navigate to its page.
+ * It shows the lesson's title, topic, and provides a "Start" button to view its content.
  *
  * @param {object} props - The component props.
  * @param {Lesson} props.lesson - The lesson object to display.
+ * @param {(lesson: Lesson) => void} props.onSelect - Callback to execute when the lesson is selected.
  */
-function LessonCard({ lesson }: { lesson: Lesson }) {
+function LessonCard({ lesson, onSelect }: { lesson: Lesson; onSelect: (lesson: Lesson) => void; }) {
   return (
     <Card>
       <CardHeader>
@@ -30,8 +30,8 @@ function LessonCard({ lesson }: { lesson: Lesson }) {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">Topic: {lesson.topic}</p>
-        <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Link href={`/student/resources/${lesson.id}`}>Start Lesson</Link>
+        <Button onClick={() => onSelect(lesson)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+          Start Lesson
         </Button>
       </CardContent>
     </Card>
@@ -39,11 +39,47 @@ function LessonCard({ lesson }: { lesson: Lesson }) {
 }
 
 /**
+ * A component that displays the detailed content of a selected lesson.
+ *
+ * @param {object} props - The component props.
+ * @param {Lesson} props.lesson - The lesson to display.
+ * @param {() => void} props.onBack - Callback to return to the lesson list.
+ */
+function LessonView({ lesson, onBack }: { lesson: Lesson; onBack: () => void; }) {
+  return (
+    <div className="space-y-6">
+       <Button variant="ghost" onClick={onBack}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Resources
+       </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-2xl font-headline">
+             <BookOpen className="w-8 h-8 text-primary" />
+            {lesson.title}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Grade {lesson.grade} &middot; {lesson.topic}
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="prose dark:prose-invert max-w-none">
+            <p>{lesson.content}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/**
  * The main page for browsing all available learning lessons.
  * It organizes lessons into tabs by grade level and then into accordions by topic.
+ * It now handles displaying the lesson content on the same page.
  */
 export default function ResourcesPage() {
   const firestore = useFirestore();
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
 
   const lessonsQuery = useMemoFirebase(() => {
       if (!firestore) return null;
@@ -63,6 +99,14 @@ export default function ResourcesPage() {
             <Skeleton className="h-64 w-full" />
         </div>
     )
+  }
+  
+  if (selectedLesson) {
+    return (
+      <div className="p-4 sm:p-6">
+        <LessonView lesson={selectedLesson} onBack={() => setSelectedLesson(null)} />
+      </div>
+    );
   }
 
   return (
@@ -92,7 +136,7 @@ export default function ResourcesPage() {
                                     <AccordionContent>
                                         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                         {topicLessons.map(lesson => (
-                                            <LessonCard key={lesson.id} lesson={lesson} />
+                                            <LessonCard key={lesson.id} lesson={lesson} onSelect={setSelectedLesson} />
                                         ))}
                                         </div>
                                     </AccordionContent>
