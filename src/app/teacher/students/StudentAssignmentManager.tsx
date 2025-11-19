@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { Student, Lesson } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +27,7 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
     const [selectedGrade, setSelectedGrade] = useState<string>(String(student.grade));
     const [selectedTopic, setSelectedTopic] = useState<string>('');
 
-    const lessonsQuery = useMemo(() => {
+    const lessonsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return collection(firestore, 'lessons');
     }, [user, firestore]);
