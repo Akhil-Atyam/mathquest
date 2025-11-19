@@ -1,47 +1,38 @@
 'use client';
 
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { notFound } from 'next/navigation';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import type { Student, Lesson, Quiz } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Award, CheckCircle2, ListChecks } from 'lucide-react';
 import { badges as allBadges } from '@/lib/data';
 import { StudentAssignmentManager } from './StudentAssignmentManager';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 
 /**
- * A dynamic page that displays detailed progress for a single student.
- * @param {object} props - Component props from Next.js.
- * @param {object} props.params - Dynamic route parameters.
- * @param {string} props.params.id - The ID of the student to display.
+ * A component that displays detailed progress for a single student.
+ * @param {object} props - Component props.
+ * @param {Student} props.student - The student object to display progress for.
  */
-export default function StudentProgressPage({ params }: { params: { id: string } }) {
+export function StudentProgressDetail({ student }: { student: Student }) {
     const firestore = useFirestore();
-
-    const studentDocRef = useMemoFirebase(() => {
-        if (!firestore || !params.id) return null;
-        return doc(firestore, 'users', params.id);
-    }, [firestore, params.id]);
     
-    const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
-    
+    // We can assume student data is already loaded and passed as a prop.
+    // So we only need to fetch lessons and quizzes.
     const lessonsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'lessons') : null, [firestore]);
-    const { data: lessons, isLoading: areLessonsLoading } = useDoc<Lesson[]>(lessonsCollectionRef);
+    const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsCollectionRef);
     
+    // Note: Quizzes are currently from mock data, but this setup allows for easy Firestore integration.
     const quizzesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'quizzes') : null, [firestore]);
-    const { data: quizzes, isLoading: areQuizzesLoading } = useDoc<Quiz[]>(quizzesCollectionRef);
+    const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesCollectionRef);
 
-    const isLoading = isStudentLoading || areLessonsLoading || areQuizzesLoading;
+    const isLoading = areLessonsLoading || areQuizzesLoading;
 
     if (isLoading) {
         return (
-            <div className="p-4 sm:p-6 space-y-6">
+            <div className="space-y-6">
                 <Skeleton className="h-8 w-1/3 mb-4" />
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
                     <Skeleton className="h-40 w-full" />
@@ -52,10 +43,6 @@ export default function StudentProgressPage({ params }: { params: { id: string }
         )
     }
 
-    if (!student) {
-        return notFound();
-    }
-    
     const assignedLessons = student.assignedLessons || [];
     const completedLessons = student.completedLessons || [];
     const completedAssignedLessons = assignedLessons.filter(lessonId => completedLessons.includes(lessonId));
@@ -64,17 +51,12 @@ export default function StudentProgressPage({ params }: { params: { id: string }
         : 0;
 
     const completedLessonsData = lessons?.filter(l => completedLessons.includes(l.id)) || [];
+    // Assuming quizzes are still from mock data, otherwise fetch them.
     const completedQuizzesData = quizzes?.filter(q => Object.keys(student.quizScores || {}).includes(q.id)) || [];
     const earnedBadges = allBadges.filter(b => (student.badges || []).includes(b.id));
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
-            <Button variant="ghost" asChild className="mb-4">
-                <Link href="/teacher/students">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to All Students
-                </Link>
-            </Button>
+        <div className="space-y-6">
             <h1 className="text-3xl font-bold font-headline">Progress for {student.name}</h1>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
