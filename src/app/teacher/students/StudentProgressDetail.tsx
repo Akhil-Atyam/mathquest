@@ -2,13 +2,13 @@
 
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import type { Student, Lesson, Quiz } from '@/lib/types';
+import type { Student, Lesson } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Award, CheckCircle2, ListChecks } from 'lucide-react';
-import { badges as allBadges } from '@/lib/data';
+import { badges as allBadges, quizzes } from '@/lib/data';
 import { StudentAssignmentManager } from './StudentAssignmentManager';
 
 /**
@@ -20,19 +20,16 @@ export function StudentProgressDetail({ student }: { student: Student }) {
     const firestore = useFirestore();
     
     // We can assume student data is already loaded and passed as a prop.
-    // So we only need to fetch lessons and quizzes.
+    // So we only need to fetch lessons.
     const lessonsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'lessons') : null, [firestore]);
     const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsCollectionRef);
     
-    // Note: Quizzes are currently from mock data, but this setup allows for easy Firestore integration.
-    const quizzesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'quizzes') : null, [firestore]);
-    const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesCollectionRef);
-
-    const isLoading = areLessonsLoading || areQuizzesLoading;
+    const isLoading = areLessonsLoading;
 
     if (isLoading) {
         return (
             <div className="space-y-6">
+                <h1 className="text-3xl font-bold font-headline">Progress for {student.name}</h1>
                 <Skeleton className="h-8 w-1/3 mb-4" />
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
                     <Skeleton className="h-40 w-full" />
@@ -51,7 +48,6 @@ export function StudentProgressDetail({ student }: { student: Student }) {
         : 0;
 
     const completedLessonsData = lessons?.filter(l => completedLessons.includes(l.id)) || [];
-    // Assuming quizzes are still from mock data, otherwise fetch them.
     const completedQuizzesData = quizzes?.filter(q => Object.keys(student.quizScores || {}).includes(q.id)) || [];
     const earnedBadges = allBadges.filter(b => (student.badges || []).includes(b.id));
 
