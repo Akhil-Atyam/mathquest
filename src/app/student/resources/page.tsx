@@ -475,7 +475,7 @@ function ResourcesPageContent() {
         {grades.map(grade => {
             if (grade === 2) {
                 return (
-                    <TabsContent key={grade} value={`grade-2`}>
+                    <TabsContent key={grade} value={`grade-${grade}`}>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Grade 2 Learning Path</CardTitle>
@@ -494,7 +494,7 @@ function ResourcesPageContent() {
             }
              if (grade === 3) {
                 return (
-                    <TabsContent key={grade} value={`grade-3`}>
+                    <TabsContent key={grade} value={`grade-${grade}`}>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Grade 3 Learning Path</CardTitle>
