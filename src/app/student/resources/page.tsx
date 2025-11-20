@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import React, { useEffect } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Plus, Minus, GitCommitHorizontal, Lock } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Plus, Minus, GitCommitHorizontal, Lock, PiggyBank, Clock, BarChart, Shapes } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -155,48 +155,51 @@ const QuestNode = ({
   );
 };
 
-const Grade2QuestPath = ({ lessons, student, onSelect }: { lessons: Lesson[], student: Student | null, onSelect: (lesson: Lesson) => void; }) => {
-    // Define the quest path. In a real app, this might come from a configuration or be dynamically generated.
-    const questPath = [
-        { id: 'add-subtract-20', title: "Add and Subtract within 20", subtitle: "Practice your fluency.", icon: Plus, lessonMatcher: (l: Lesson) => l.title.includes("Add and Subtract") },
-        { id: 'place-value-100', title: "Place Value", subtitle: "Understand hundreds, tens, and ones.", icon: GitCommitHorizontal, lessonMatcher: (l: Lesson) => l.topic === "Place Value" },
-        { id: 'compare-numbers', title: "Compare Numbers", subtitle: "Use <, >, and = up to 1000.", icon: GitCommitHorizontal, lessonMatcher: (l: Lesson) => l.topic === "Comparing Numbers" },
-        { id: 'add-subtract-100', title: "Add and Subtract within 100", subtitle: "Use strategies to solve problems.", icon: Plus, lessonMatcher: (l: Lesson) => l.title.includes("within 100") },
-        { id: 'measurement', title: "Measurement", subtitle: "Measure and estimate lengths.", icon: GitCommitHorizontal, lessonMatcher: (l: Lesson) => l.topic === "Measurement" },
-    ];
-    
-    // Find the first lesson that matches each quest node
-    const questLessons = questPath.map(node => {
-        const lesson = lessons.find(l => l.grade === 2 && node.lessonMatcher(l));
-        return { ...node, lesson: lesson || null };
-    });
-    
+
+const TopicQuestPath = ({ 
+    lessons, 
+    student, 
+    onSelect,
+    topicName,
+}: { 
+    lessons: Lesson[], 
+    student: Student | null, 
+    onSelect: (lesson: Lesson) => void; 
+    topicName: string;
+}) => {
     const completedLessonIds = new Set(student?.completedLessons || []);
+    const topicLessons = lessons.filter(l => l.topic === topicName && l.grade === 2);
+
+    if (topicLessons.length === 0) {
+        return <p className="text-muted-foreground text-center py-8">No lessons for this topic yet. Check back soon!</p>
+    }
+    
+    // In a real app, the order of lessons would likely be defined in the database.
+    // For now, we'll just use the order they come in from Firestore.
+    const sortedLessons = topicLessons;
 
     return (
         <div className="py-10">
-            <h2 className="text-center text-3xl font-bold font-headline mb-4">Grade 2: The Number Forest</h2>
-            <p className="text-center text-muted-foreground mb-12">Complete the lessons to journey through the forest!</p>
             <div className="relative flex flex-col items-center gap-16">
-                 {/* This could be a decorative path background SVG or image */}
-                <div className="absolute top-12 left-1/2 -z-10 h-full w-2 max-w-sm rounded-full bg-primary/10"></div>
+                {/* Decorative path line */}
+                <div className="absolute top-12 left-1/2 -z-10 h-[calc(100%-6rem)] w-2 max-w-sm rounded-full bg-primary/10"></div>
                 
-                {questLessons.map((node, index) => {
-                    const isCompleted = node.lesson ? completedLessonIds.has(node.lesson.id) : false;
-                    // The first node is always unlocked. Subsequent nodes are unlocked if the previous one is complete.
-                    const isUnlocked = index === 0 || (questLessons[index-1] && questLessons[index-1].lesson && completedLessonIds.has(questLessons[index-1].lesson!.id));
+                {sortedLessons.map((lesson, index) => {
+                    const isCompleted = completedLessonIds.has(lesson.id);
+                    // The first lesson is unlocked. Subsequent lessons are unlocked if the previous one is completed.
+                    const isUnlocked = index === 0 || (sortedLessons[index-1] && completedLessonIds.has(sortedLessons[index-1].id));
 
                     return (
-                        <div key={node.id} className={cn("relative w-full flex", index % 2 === 0 ? 'justify-start' : 'justify-end')}>
+                        <div key={lesson.id} className={cn("relative w-full flex", index % 2 === 0 ? 'justify-start' : 'justify-end')}>
                              <div className={cn("w-1/2", index % 2 === 1 && "order-2")}></div>
                              <div className={cn("w-1/2 flex", index % 2 === 0 ? 'justify-start' : 'justify-end')}>
                                 <QuestNode 
-                                    title={node.lesson?.title || node.title}
-                                    subtitle={node.subtitle}
-                                    icon={node.icon}
+                                    title={lesson.title}
+                                    subtitle={`Grade ${lesson.grade}`}
+                                    icon={BookOpen}
                                     isCompleted={isCompleted}
-                                    isUnlocked={isUnlocked && !!node.lesson}
-                                    onClick={() => node.lesson && onSelect(node.lesson)}
+                                    isUnlocked={isUnlocked}
+                                    onClick={() => onSelect(lesson)}
                                 />
                              </div>
                         </div>
@@ -289,7 +292,13 @@ function ResourcesPageContent() {
         </div>
     )
   }
-
+  
+  // Define the topics for Grade 2 in order
+  const grade2Topics = [
+      "Addition", "Subtraction", "Place Value", "Comparing Numbers", 
+      "Money & Time", "Measurement", "Data & Graphs", "Geometry"
+  ];
+  
   const defaultGradeTab = student?.grade ? `grade-${student.grade}` : 'grade-1';
   
   return (
@@ -305,13 +314,35 @@ function ResourcesPageContent() {
         </TabsList>
         
         {grades.map(grade => {
+            // Special layout for Grade 2
             if (grade === 2) {
                 return (
                     <TabsContent key={grade} value={`grade-2`}>
-                        <Grade2QuestPath lessons={lessons || []} student={student} onSelect={setSelectedLesson} />
+                        <Accordion type="multiple" className="w-full" defaultValue={['Addition']}>
+                            {grade2Topics.map(topic => {
+                                // Filter lessons once for the current topic
+                                const topicLessons = lessons ? lessons.filter(l => l.grade === grade && l.topic === topic) : [];
+                                return (
+                                    <AccordionItem key={topic} value={topic}>
+                                        <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
+                                        <AccordionContent>
+                                            <TopicQuestPath 
+                                                lessons={topicLessons} 
+                                                student={student} 
+                                                onSelect={setSelectedLesson}
+                                                topicName={topic}
+                                            />
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                )
+                            })}
+                        </Accordion>
+                         {grade2Topics.length === 0 && <p className="text-muted-foreground text-center py-10">No topics available for Grade {grade} yet.</p>}
                     </TabsContent>
                 )
             }
+            
+            // Default layout for other grades
             const gradeLessons = lessons ? lessons.filter(l => l.grade === grade) : [];
             const gradeTopics = [...new Set(gradeLessons.map(l => l.topic))];
 
