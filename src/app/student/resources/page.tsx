@@ -388,7 +388,7 @@ const Grade2QuestPath = ({
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.completedQuizzes || []);
+    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(k => student.quizScores![k] >= 80) || []);
     const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
@@ -522,7 +522,7 @@ const Grade3QuestPath = ({
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.completedQuizzes || []);
+    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(k => student.quizScores![k] >= 80) || []);
     const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
