@@ -29,8 +29,28 @@ export type Lesson = {
   title: string;
   grade: number;
   topic: string;
-  content: string;
+  content: string; // For text-based lessons or a URL for video lessons
   teacherId: string;
+  type: 'Text' | 'Video' | 'Quiz';
+};
+
+
+/**
+ * Represents a single topic or unit in the curriculum.
+ */
+export type Topic = {
+    id: string;
+    name: string;
+}
+
+/**
+ * Represents a single question within a quiz.
+ */
+export type QuizQuestion = {
+    id: string;
+    questionText: string;
+    options: string[];
+    correctAnswer: string;
 }
 
 /**
@@ -41,7 +61,11 @@ export type Quiz = {
   title: string; // The title of the quiz.
   topic: string; // The math topic it covers.
   grade: number; // The target grade level.
+  lessonId: string; // The ID of the parent lesson
+  questions: QuizQuestion[]; // An array of question objects.
+  teacherId: string;
 };
+
 
 /**
  * Represents a badge that a student can earn for achievements.

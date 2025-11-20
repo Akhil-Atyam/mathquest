@@ -14,7 +14,7 @@ const menuItems = [
   { href: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/teacher/students', label: 'Students', icon: Users },
   { href: '/teacher/tutoring', label: 'Tutoring', icon: Calendar },
-  { href: '/teacher/lessons', label: 'Lessons', icon: BookOpen },
+  { href: '/teacher/learning', label: 'Learning', icon: BookOpen },
 ];
 
 /**

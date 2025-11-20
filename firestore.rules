@@ -53,13 +53,22 @@ service cloud.firestore {
       // Only the teacher who owns the lesson can update or delete it.
       allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
     }
-    
-    // Subcollection for quizzes within a lesson.
-    match /lessons/{lessonId}/quizzes/{quizId} {
+
+    // Quizzes created by teachers.
+    match /quizzes/{quizId} {
         // Any authenticated user can read quizzes.
         allow read: if request.auth != null;
-        // Only a teacher can create, update or delete a quiz.
-        allow write: if isTeacher();
+        // Only a teacher can create, update, or delete a quiz, and they must be the owner.
+        allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+        allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+    }
+    
+    // Topics (Units) for lessons and quizzes
+    match /topics/{topicId} {
+      // Any authenticated user can read topics.
+      allow read: if request.auth != null;
+      // Only teachers can create and delete topics.
+      allow create, delete: if isTeacher();
     }
 
     // --- Booking and Scheduling ---

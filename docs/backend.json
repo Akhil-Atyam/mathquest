@@ -107,7 +107,12 @@
         },
         "content": {
           "type": "string",
-          "description": "The text content of the lesson."
+          "description": "The text content of the lesson or a URL for video lessons."
+        },
+        "type": {
+            "type": "string",
+            "description": "The type of the lesson.",
+            "enum": ["Text", "Video", "Quiz"]
         },
         "teacherId": {
           "type": "string",
@@ -120,8 +125,26 @@
         "grade",
         "topic",
         "content",
-        "teacherId"
+        "teacherId",
+        "type"
       ]
+    },
+     "Topic": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Topic",
+      "type": "object",
+      "description": "Represents a curriculum topic or unit.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Topic entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the topic."
+        }
+      },
+      "required": [ "id", "name" ]
     },
     "Quiz": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -148,6 +171,23 @@
         "lessonId": {
           "type": "string",
           "description": "Reference to Lesson. (Relationship: Lesson 1:N Quiz)"
+        },
+        "questions": {
+            "type": "array",
+            "description": "An array of questions for the quiz.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "questionText": { "type": "string" },
+                    "options": { "type": "array", "items": { "type": "string" } },
+                    "correctAnswer": { "type": "string" }
+                },
+                "required": ["questionText", "options", "correctAnswer"]
+            }
+        },
+        "teacherId": {
+            "type": "string",
+            "description": "The ID of the teacher who created the quiz."
         }
       },
       "required": [
@@ -155,7 +195,9 @@
         "title",
         "grade",
         "topic",
-        "lessonId"
+        "lessonId",
+        "questions",
+        "teacherId"
       ]
     },
     "TutoringSession": {
@@ -300,6 +342,22 @@
           ]
         }
       },
+       {
+        "path": "/topics/{topicId}",
+        "definition": {
+          "entityName": "Topic",
+          "schema": {
+            "$ref": "#/backend/entities/Topic"
+          },
+          "description": "Collection for storing curriculum topics/units.",
+          "params": [
+            {
+              "name": "topicId",
+              "description": "The unique identifier for the topic."
+            }
+          ]
+        }
+      },
       {
         "path": "/lessons/{lessonId}",
         "definition": {
@@ -317,18 +375,14 @@
         }
       },
       {
-        "path": "/lessons/{lessonId}/quizzes/{quizId}",
+        "path": "/quizzes/{quizId}",
         "definition": {
           "entityName": "Quiz",
           "schema": {
             "$ref": "#/backend/entities/Quiz"
           },
-          "description": "Subcollection for quizzes associated with a lesson. ",
+          "description": "Collection for quizzes. Not a subcollection for easier querying.",
           "params": [
-            {
-              "name": "lessonId",
-              "description": "The unique identifier for the parent lesson."
-            },
             {
               "name": "quizId",
               "description": "The unique identifier for the quiz."

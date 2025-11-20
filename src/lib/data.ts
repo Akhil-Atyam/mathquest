@@ -7,10 +7,8 @@ import { Award, Star, Trophy } from 'lucide-react';
  * Using mock data is useful for rapid prototyping and UI development without a live backend.
  */
 
-// A simple array of math topics.
-export const topics: string[] = [
-  "Addition", "Subtraction", "Multiplication", "Division", "Fractions", "Geometry", "Measurement"
-];
+// This is now fetched from Firestore. An empty array is left to avoid breaking imports.
+export const topics: string[] = [];
 
 // Mock data for badges that students can earn.
 export const badges: Badge[] = [
@@ -24,13 +22,7 @@ export const badges: Badge[] = [
 export const resources: Resource[] = [];
 
 // Mock data for quizzes.
-export const quizzes: Quiz[] = [
-  { id: 'quiz-1', title: 'Addition Check', topic: 'Addition', grade: 1 },
-  { id: 'quiz-2', title: 'Subtraction Skills', topic: 'Subtraction', grade: 1 },
-  { id: 'quiz-3', title: 'Multiplication Test', topic: 'Multiplication', grade: 2 },
-  { id: 'quiz-4', title: 'Fractions Fun', topic: 'Fractions', grade: 3 },
-  { id: 'quiz-5', title: 'Division Drill', topic: 'Division', grade: 4 },
-];
+export const quizzes: Quiz[] = [];
 
 // A single mock student object for demonstration purposes.
 export const student: Student | null = null;
@@ -40,5 +32,3 @@ export const teachers: Teacher[] = [];
 
 // Mock data for tutoring session bookings.
 export const bookings: Booking[] = [];
-
-    
