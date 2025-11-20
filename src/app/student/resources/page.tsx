@@ -391,11 +391,12 @@ const Grade2QuestPath = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState('');
+    const [progressPathData, setProgressPathData] = useState('');
     const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(k => student.quizScores![k] >= 80) || []);
+    const completedQuizIds = new Set(student?.completedQuizzes || []);
     const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
 
     
@@ -423,9 +424,29 @@ const Grade2QuestPath = ({
                 return { x, y };
             });
 
-            setPathData(getCurvePath(points));
+            // Find last sequentially completed item
+            let lastCompletedIndex = -1;
+            for (let i = 0; i < sortedItems.length; i++) {
+                const item = sortedItems[i];
+                const isItemCompleted = isQuiz(item) ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
+                if (isItemCompleted) {
+                    lastCompletedIndex = i;
+                } else {
+                    break; // Stop at the first incomplete item
+                }
+            }
+            
+            const fullPath = getCurvePath(points);
+            setPathData(fullPath);
+
+            if(lastCompletedIndex > -1) {
+                const progressPoints = points.slice(0, lastCompletedIndex + 1);
+                setProgressPathData(getCurvePath(progressPoints));
+            } else {
+                setProgressPathData('');
+            }
         }
-    }, [sortedItems, containerRef.current?.offsetWidth]);
+    }, [sortedItems, containerRef.current?.offsetWidth, student]);
 
 
     if (sortedItems.length === 0) {
@@ -444,6 +465,15 @@ const Grade2QuestPath = ({
                             fill="none"
                             strokeLinecap="round"
                         />
+                        {progressPathData && (
+                            <path
+                                d={progressPathData}
+                                stroke="hsl(142 71% 45%)" // Green color
+                                strokeWidth="10"
+                                fill="none"
+                                strokeLinecap="round"
+                            />
+                        )}
                          {placementTestNode && (
                             <line 
                                 x1={placementTestNode.x} 
@@ -461,7 +491,7 @@ const Grade2QuestPath = ({
 
                 {sortedItems.map((item, index) => {
                     const isItemQuiz = isQuiz(item);
-                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) || (student?.completedQuizzes?.includes(item.id)) : completedLessonIds.has(item.id);
+                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
                     // --- Unlocking Logic ---
                     let isSequentiallyUnlocked = false;
@@ -472,14 +502,14 @@ const Grade2QuestPath = ({
                         // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
-                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id) || (student?.completedQuizzes?.includes(prevItem.id) || false);
+                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
                         } else {
                             isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
                         }
                     }
-
-                    const isAssigned = assignedIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isAssigned || isCompleted;
+                    
+                    const isExplicitlyAssigned = assignedIds.has(item.id);
+                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted;
                     // --- End Unlocking Logic ---
                     
                     const y = 80 + index * 160;
@@ -501,7 +531,7 @@ const Grade2QuestPath = ({
                                 icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                isAssigned={isAssigned}
+                                isAssigned={isExplicitlyAssigned}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
@@ -527,11 +557,12 @@ const Grade3QuestPath = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState('');
+    const [progressPathData, setProgressPathData] = useState('');
     const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(k => student.quizScores![k] >= 80) || []);
+    const completedQuizIds = new Set(student?.completedQuizzes || []);
     const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
 
     
@@ -559,9 +590,29 @@ const Grade3QuestPath = ({
                 return { x, y };
             });
 
-            setPathData(getCurvePath(points));
+            // Find last sequentially completed item
+            let lastCompletedIndex = -1;
+            for (let i = 0; i < sortedItems.length; i++) {
+                const item = sortedItems[i];
+                const isItemCompleted = isQuiz(item) ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
+                if (isItemCompleted) {
+                    lastCompletedIndex = i;
+                } else {
+                    break; // Stop at the first incomplete item
+                }
+            }
+
+            const fullPath = getCurvePath(points);
+            setPathData(fullPath);
+
+            if(lastCompletedIndex > -1) {
+                const progressPoints = points.slice(0, lastCompletedIndex + 1);
+                setProgressPathData(getCurvePath(progressPoints));
+            } else {
+                setProgressPathData('');
+            }
         }
-    }, [sortedItems, containerRef.current?.offsetWidth]);
+    }, [sortedItems, containerRef.current?.offsetWidth, student]);
 
 
     if (sortedItems.length === 0) {
@@ -580,6 +631,15 @@ const Grade3QuestPath = ({
                             fill="none"
                             strokeLinecap="round"
                         />
+                         {progressPathData && (
+                            <path
+                                d={progressPathData}
+                                stroke="hsl(142 71% 45%)" // Green color
+                                strokeWidth="10"
+                                fill="none"
+                                strokeLinecap="round"
+                            />
+                        )}
                          {placementTestNode && (
                             <line 
                                 x1={placementTestNode.x} 
@@ -596,7 +656,7 @@ const Grade3QuestPath = ({
 
                 {sortedItems.map((item, index) => {
                     const isItemQuiz = isQuiz(item);
-                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) || (student?.completedQuizzes?.includes(item.id)) : completedLessonIds.has(item.id);
+                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
                     // --- Unlocking Logic ---
                     let isSequentiallyUnlocked = false;
@@ -607,14 +667,14 @@ const Grade3QuestPath = ({
                         // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
-                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id) || (student?.completedQuizzes?.includes(prevItem.id) || false);
+                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
                         } else {
                             isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
                         }
                     }
 
-                    const isAssigned = assignedIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isAssigned || isCompleted;
+                    const isExplicitlyAssigned = assignedIds.has(item.id);
+                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted;
                     // --- End Unlocking Logic ---
 
                     const y = 80 + index * 160;
@@ -636,7 +696,7 @@ const Grade3QuestPath = ({
                                 icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                isAssigned={isAssigned}
+                                isAssigned={isExplicitlyAssigned}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
@@ -740,10 +800,6 @@ function ResourcesPageContent() {
                 .map(item => item.id);
             
             if (itemsToUnlock.length > 0) {
-              const assignedLessonsAndQuizzes = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
-              itemsToUnlock.forEach(id => assignedLessonsAndQuizzes.add(id));
-              
-              // We can just add all to assignedLessons for simplicity as the quest path checks both
               updates.assignedLessons = arrayUnion(...itemsToUnlock);
             }
 
