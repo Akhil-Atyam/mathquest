@@ -148,11 +148,13 @@ function QuizView({
   student,
   onBack,
   onQuizComplete,
+  onRetryQuiz,
 }: {
   quiz: Quiz;
   student: Student | null;
   onBack: () => void;
   onQuizComplete: (quizId: string, score: number) => void;
+  onRetryQuiz: (quizId: string) => void;
 }) {
   const form = useForm();
   const [view, setView] = useState<'quiz' | 'result'>('quiz');
@@ -184,6 +186,15 @@ function QuizView({
   
   const earnedBadges = view === 'result' ? allBadges.filter(b => b.id.includes(quiz.topic.toLowerCase())) : [];
 
+  const handleRetry = () => {
+    onRetryQuiz(quiz.id);
+    // Reset internal state to show the quiz questions again
+    setView('quiz');
+    setScore(null);
+    form.reset();
+  };
+
+
   if (view === 'result' && score !== null) {
     return (
         <div className="space-y-6">
@@ -213,8 +224,12 @@ function QuizView({
                         </div>
                      )}
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex justify-center gap-2">
                     <Button onClick={onBack}>Continue Learning</Button>
+                     <Button variant="outline" onClick={handleRetry}>
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Retry Quiz
+                    </Button>
                 </CardFooter>
             </Card>
         </div>
@@ -305,7 +320,7 @@ const QuestNode = ({
               isUnlocked ? "cursor-pointer" : "cursor-not-allowed",
               isCompleted ? "border-green-500 bg-green-100" : "border-primary",
               !isUnlocked && "border-muted bg-muted/50",
-              isUnlocked && !isCompleted && "bg-background" // Use a solid background color here
+              isUnlocked && !isCompleted && "bg-sidebar-background"
             )}
           >
             <Icon className={cn("h-10 w-10", isUnlocked ? "text-primary" : "text-muted-foreground", isCompleted && "text-green-600")} />
@@ -677,6 +692,41 @@ function ResourcesPageContent() {
     updateDoc(studentDocRef, updates);
   }
   
+  const handleRetryQuiz = (quizId: string) => {
+    if (!studentDocRef || !student) return;
+
+    const quiz = quizzes?.find(q => q.id === quizId);
+    if (!quiz) return;
+
+    // Find the badge related to the quiz topic
+    const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
+
+    // Prepare the updates to Firestore
+    const updates: { [key: string]: any } = {
+      // Use dot notation to remove a specific field from a map
+      [`quizScores.${quizId}`]: deleteField(),
+    };
+
+    // If a badge was associated and the student has it, remove it
+    if (badgeId && student.badges?.includes(badgeId)) {
+      updates.badges = arrayRemove(badgeId);
+    }
+    
+    updateDoc(studentDocRef, updates).then(() => {
+        toast({
+            title: "Quiz Reset",
+            description: "Your previous score has been cleared. Good luck!"
+        });
+    }).catch((error) => {
+        console.error("Error retrying quiz:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not reset your quiz progress. Please try again."
+        });
+    });
+  };
+  
   const handleBack = () => {
     setSelectedLesson(null);
     setSelectedQuiz(null);
@@ -715,6 +765,7 @@ function ResourcesPageContent() {
                 student={student}
                 onBack={handleBack}
                 onQuizComplete={handleQuizComplete}
+                onRetryQuiz={handleRetryQuiz}
             />
         </div>
     )
