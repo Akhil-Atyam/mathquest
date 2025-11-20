@@ -469,7 +469,7 @@ const Grade2QuestPath = ({
                             <path
                                 d={progressPathData}
                                 stroke="hsl(142 71% 45%)" // Green color
-                                strokeWidth="10"
+                                strokeWidth="11"
                                 fill="none"
                                 strokeLinecap="round"
                             />
@@ -531,7 +531,7 @@ const Grade2QuestPath = ({
                                 icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                isAssigned={isExplicitlyAssigned}
+                                isAssigned={isExplicitlyAssigned && !isCompleted}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
@@ -635,7 +635,7 @@ const Grade3QuestPath = ({
                             <path
                                 d={progressPathData}
                                 stroke="hsl(142 71% 45%)" // Green color
-                                strokeWidth="10"
+                                strokeWidth="11"
                                 fill="none"
                                 strokeLinecap="round"
                             />
@@ -696,7 +696,7 @@ const Grade3QuestPath = ({
                                 icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                isAssigned={isExplicitlyAssigned}
+                                isAssigned={isExplicitlyAssigned && !isCompleted}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
