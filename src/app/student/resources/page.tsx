@@ -712,24 +712,20 @@ function ResourcesPageContent() {
             updates.badges = arrayUnion(badgeId);
         }
       
-        // Placement test logic: if passed, complete all previous lessons/quizzes in the same grade path
+        // Placement test logic: if passed, unlock all previous lessons/quizzes in the same grade path
         if (quiz.isPlacementTest && quiz.order !== undefined) {
             const allItemsForGrade: (Lesson | Quiz)[] = [...lessons, ...quizzes].filter(item => item.grade === quiz.grade);
-            const itemsToComplete = allItemsForGrade.filter(item => (item.order || 0) < (quiz.order || 0));
+            const itemsToUnlock = allItemsForGrade
+                .filter(item => (item.order || 0) < (quiz.order || 0))
+                .map(item => item.id);
             
-            const lessonsToComplete = itemsToComplete.filter(item => 'content' in item).map(item => item.id);
-            const quizzesToComplete = itemsToComplete.filter(item => 'questions' in item).map(item => item.id);
-
-            if (lessonsToComplete.length > 0) {
-              updates.completedLessons = arrayUnion(...(student?.completedLessons || []), ...lessonsToComplete);
-            }
-            if (quizzesToComplete.length > 0) {
-              updates.completedQuizzes = arrayUnion(...(student?.completedQuizzes || []), ...quizzesToComplete);
+            if (itemsToUnlock.length > 0) {
+              updates.assignedLessons = arrayUnion(...(student?.assignedLessons || []), ...itemsToUnlock);
             }
 
             toast({
                 title: "Path Unlocked!",
-                description: "Great score! You've unlocked and completed previous steps.",
+                description: "Great score! You've unlocked previous steps.",
             });
         }
     }
