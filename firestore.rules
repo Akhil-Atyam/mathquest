@@ -62,6 +62,12 @@ service cloud.firestore {
         allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
         allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
     }
+    
+    // Topics (units) managed by teachers.
+    match /topics/{topicId} {
+      // Only teachers can create, read, update, or delete topics.
+      allow read, write: if isTeacher();
+    }
 
     // --- Booking and Scheduling ---
 
@@ -76,8 +82,8 @@ service cloud.firestore {
       allow delete: if false;
 
       // Users can only list sessions that they are a part of (either as student or teacher).
-      allow list: if (isStudent() && request.query.where.studentId == request.auth.uid) ||
-                     (isTeacher() && request.query.where.teacherId == request.auth.uid);
+      allow list: if (isStudent() && request.query.where[0][0] == 'studentId' && request.query.where[0][2] == request.auth.uid) ||
+                     (isTeacher() && request.query.where[0][0] == 'teacherId' && request.query.where[0][2] == request.auth.uid);
     }
 
     // --- Role and System Collections ---
