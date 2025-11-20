@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import type { Quiz, Lesson, Topic } from '@/lib/types';
-import { Edit, PlusCircle, Trash2, GripVertical } from 'lucide-react';
+import type { Quiz, Lesson } from '@/lib/types';
+import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 
@@ -45,7 +45,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
     },
   });
 
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "questions",
   });
@@ -53,14 +53,13 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
   const { toast } = useToast();
   
   const onSubmit = (data: z.infer<typeof quizSchema>) => {
-    // Validate that each question has a correct answer selected from its options.
-    for(const q of data.questions) {
-      if(!q.options.includes(q.correctAnswer)) {
+    for (const [index, q] of data.questions.entries()) {
+      if (!q.options.includes(q.correctAnswer)) {
         toast({
-            variant: "destructive",
-            title: "Invalid Question",
-            description: `The correct answer for "${q.questionText.substring(0, 20)}..." is not one of the available options.`
-        })
+          variant: 'destructive',
+          title: 'Invalid Correct Answer',
+          description: `The correct answer for question ${index + 1} is not one of the available options.`,
+        });
         return;
       }
     }
@@ -90,24 +89,45 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
         
         {/* Questions Field Array */}
         <div className="space-y-6">
+          <Label className='text-lg font-semibold'>Questions</Label>
           {fields.map((field, index) => (
-            <Card key={field.id} className="p-4 relative">
+            <Card key={field.id} className="p-4 relative bg-background border">
                  <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
                 <div className="space-y-4">
                     <FormField control={form.control} name={`questions.${index}.questionText`} render={({ field }) => (
-                        <FormItem><FormLabel>Question {index + 1}</FormLabel><FormControl><Input placeholder="What is...?" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Question {index + 1}</FormLabel><FormControl><Input placeholder="e.g., What is 2 + 2?" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     
-                    <div className="space-y-2">
-                         <Label>Options</Label>
-                         {field.options.map((_, optIndex) => (
-                             <FormField key={optIndex} control={form.control} name={`questions.${index}.options.${optIndex}`} render={({ field }) => (
-                                 <FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                             )} />
-                         ))}
-                    </div>
+                    <Controller
+                        control={form.control}
+                        name={`questions.${index}.options`}
+                        render={({ field }) => (
+                            <div className="space-y-2">
+                                <Label>Options</Label>
+                                {field.value.map((option, optIndex) => (
+                                    <div key={optIndex} className="flex items-center gap-2">
+                                        <Input 
+                                            value={option}
+                                            onChange={(e) => {
+                                                const newOptions = [...field.value];
+                                                newOptions[optIndex] = e.target.value;
+                                                field.onChange(newOptions);
+                                            }}
+                                        />
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                            const newOptions = field.value.filter((_, i) => i !== optIndex);
+                                            field.onChange(newOptions);
+                                        }}>
+                                            <XCircle className="w-4 h-4 text-muted-foreground" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                 <Button type="button" size="sm" variant="outline" onClick={() => field.onChange([...field.value, ''])}>Add Option</Button>
+                            </div>
+                        )}
+                    />
 
                     <FormField control={form.control} name={`questions.${index}.correctAnswer`} render={({ field: RHFfield }) => (
                         <FormItem>
