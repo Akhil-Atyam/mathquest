@@ -74,6 +74,10 @@ service cloud.firestore {
                              (isTeacher() && resource.data.teacherId == request.auth.uid);
       // Deletion is not allowed to preserve session history.
       allow delete: if false;
+
+      // Users can only list sessions that they are a part of (either as student or teacher).
+      allow list: if (isStudent() && request.query.where.studentId == request.auth.uid) ||
+                     (isTeacher() && request.query.where.teacherId == request.auth.uid);
     }
 
     // --- Role and System Collections ---
