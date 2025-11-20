@@ -404,7 +404,9 @@ const Grade2QuestPath = ({
                     const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
                     let isUnlocked = index === 0;
-                    if (index > 0) {
+                    if (isItemQuiz && item.isPlacementTest) {
+                        isUnlocked = true;
+                    } else if (index > 0) {
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
                             isUnlocked = completedQuizIds.has(prevItem.id);
@@ -513,7 +515,9 @@ const Grade3QuestPath = ({
                     const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
                     let isUnlocked = index === 0;
-                    if (index > 0) {
+                     if (isItemQuiz && item.isPlacementTest) {
+                        isUnlocked = true;
+                    } else if (index > 0) {
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
                             isUnlocked = completedQuizIds.has(prevItem.id);
