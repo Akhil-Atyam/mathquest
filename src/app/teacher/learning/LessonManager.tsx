@@ -28,6 +28,7 @@ const lessonSchema = z.object({
   type: z.enum(['Text', 'Video', 'Quiz']),
   content: z.string().min(10, 'Content must be at least 10 characters.'),
   order: z.coerce.number().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 // Component for the lesson form, used for both creating and editing
@@ -49,6 +50,7 @@ function LessonForm({
       type: lesson?.type || 'Text',
       content: lesson?.content || '',
       order: lesson?.order || 0,
+      imageUrl: lesson?.imageUrl || '',
     },
   });
 
@@ -160,6 +162,19 @@ function LessonForm({
             </FormItem>
           )}
         />
+        {lessonType === 'Text' && (
+             <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Image URL (Optional)</FormLabel>
+                    <FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+             />
+        )}
         <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
             <Button type="submit">Save Lesson</Button>
@@ -307,3 +322,5 @@ export function LessonManager() {
     </Card>
   );
 }
+
+    

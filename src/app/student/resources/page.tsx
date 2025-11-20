@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { badges as allBadges } from '@/lib/data';
 import { Progress } from '@/components/ui/progress';
+import Image from 'next/image';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
@@ -97,6 +98,17 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
               </p>
             </CardHeader>
             <CardContent>
+              {lesson.imageUrl && (
+                <div className="mb-6 relative h-60 w-full">
+                    <Image
+                        src={lesson.imageUrl}
+                        alt={lesson.title}
+                        fill
+                        className="object-cover rounded-md"
+                        data-ai-hint="lesson image"
+                    />
+                </div>
+              )}
               <div className="prose dark:prose-invert max-w-none">
                 <p>{lesson.content}</p>
               </div>
@@ -748,3 +760,5 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
+    

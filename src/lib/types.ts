@@ -33,6 +33,7 @@ export type Lesson = {
   teacherId: string;
   type: 'Text' | 'Video' | 'Quiz';
   order?: number; // Optional field to define sequence
+  imageUrl?: string; // Optional image URL for text lessons
 };
 
 
@@ -123,3 +124,5 @@ export type Booking = {
   meetingLink?: string; // An optional link to the virtual meeting.
   attended: boolean; // A flag to mark if the student attended.
 };
+
+    
