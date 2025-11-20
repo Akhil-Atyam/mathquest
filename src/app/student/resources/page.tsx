@@ -198,6 +198,15 @@ const Grade2QuestPath = ({
       // Topic: Place Value
       'Place value blocks',
       'Exercise: Place value',
+      'Forms of a number',
+      'Exercise: Forms of a number',
+      'Quiz 3: Place Value',
+      // Topic: Comparing Numbers
+      'Comparing numbers intro',
+      'Exercise: Comparing numbers',
+      'Ordering numbers',
+      'Exercise: Ordering numbers',
+      'Quiz 4: Comparing Numbers',
     ];
 
     const sortedLessons = React.useMemo(() => {
@@ -225,23 +234,31 @@ const Grade2QuestPath = ({
                 {/* SVG Path connecting the nodes */}
                 {sortedLessons.length > 1 && (
                      <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+                        <defs>
+                            <linearGradient id="path-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style={{stopColor: "hsl(var(--primary) / 0.1)", stopOpacity: 1}} />
+                                <stop offset="100%" style={{stopColor: "hsl(var(--accent) / 0.3)", stopOpacity: 1}} />
+                            </linearGradient>
+                        </defs>
                         <path
                             d={
                                 sortedLessons.slice(1).map((_, index) => {
                                     const y1 = 80 + index * 160;
                                     const y2 = 80 + (index + 1) * 160;
                                     
-                                    const x1 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
-                                    const x2 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
+                                    const x1 = 50 + 20 * Math.sin(index * Math.PI / 3);
+                                    const x2 = 50 + 20 * Math.sin((index + 1) * Math.PI / 3);
 
-                                    const controlX = (x1 + x2) / 2;
-                                    const controlY = (y1 + y2) / 2;
+                                    const controlX1 = 50 + 40 * Math.sin(index * Math.PI / 3 + Math.PI/2);
+                                    const controlY1 = (y1 + y2) / 2;
+                                    const controlX2 = 50 + 40 * Math.sin((index+1) * Math.PI / 3 - Math.PI/2);
+                                    const controlY2 = (y1 + y2) / 2;
 
-                                    return `M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`;
+                                    return `M ${x1}% ${y1} C ${controlX1}% ${controlY1}, ${controlX2}% ${controlY2}, ${x2}% ${y2}`;
                                 }).join(' ')
                             }
-                            stroke="hsl(var(--primary) / 0.2)"
-                            strokeWidth="8"
+                            stroke="url(#path-gradient)"
+                            strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
                         />
@@ -254,7 +271,7 @@ const Grade2QuestPath = ({
                     const isUnlocked = index === 0 || (sortedLessons[index-1] && (isQuiz(sortedLessons[index-1]) ? true : completedLessonIds.has(sortedLessons[index-1].id)));
                     
                     const y = 80 + index * 160;
-                    const xOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                    const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
 
                     return (
                         <div
@@ -262,7 +279,7 @@ const Grade2QuestPath = ({
                             className="absolute"
                             style={{
                                 top: `${y - 48}px`,
-                                left: `calc(50% + ${xOffset}px)`,
+                                left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
                                 transition: 'top 0.5s ease-out, left 0.5s ease-out'
                             }}
@@ -328,23 +345,31 @@ const Grade3QuestPath = ({
             <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
                 {sortedLessons.length > 1 && (
                      <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+                        <defs>
+                            <linearGradient id="path-gradient-g3" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style={{stopColor: "hsl(var(--primary) / 0.1)", stopOpacity: 1}} />
+                                <stop offset="100%" style={{stopColor: "hsl(var(--accent) / 0.3)", stopOpacity: 1}} />
+                            </linearGradient>
+                        </defs>
                         <path
                             d={
                                 sortedLessons.slice(1).map((_, index) => {
                                     const y1 = 80 + index * 160;
                                     const y2 = 80 + (index + 1) * 160;
                                     
-                                    const x1 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
-                                    const x2 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
+                                    const x1 = 50 + 20 * Math.sin(index * Math.PI / 3);
+                                    const x2 = 50 + 20 * Math.sin((index + 1) * Math.PI / 3);
 
-                                    const controlX = (x1 + x2) / 2;
-                                    const controlY = (y1 + y2) / 2;
+                                    const controlX1 = 50 + 40 * Math.sin(index * Math.PI / 3 + Math.PI/2);
+                                    const controlY1 = (y1 + y2) / 2;
+                                    const controlX2 = 50 + 40 * Math.sin((index+1) * Math.PI / 3 - Math.PI/2);
+                                    const controlY2 = (y1 + y2) / 2;
 
-                                    return `M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`;
+                                    return `M ${x1}% ${y1} C ${controlX1}% ${controlY1}, ${controlX2}% ${controlY2}, ${x2}% ${y2}`;
                                 }).join(' ')
                             }
-                            stroke="hsl(var(--primary) / 0.2)"
-                            strokeWidth="8"
+                            stroke="url(#path-gradient-g3)"
+                            strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
                         />
@@ -356,7 +381,7 @@ const Grade3QuestPath = ({
                     const isUnlocked = index === 0 || (sortedLessons[index-1] && (isQuiz(sortedLessons[index-1]) ? true : completedLessonIds.has(sortedLessons[index-1].id)));
                     
                     const y = 80 + index * 160;
-                    const xOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                    const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
 
                     return (
                         <div
@@ -364,7 +389,7 @@ const Grade3QuestPath = ({
                             className="absolute"
                             style={{
                                 top: `${y - 48}px`,
-                                left: `calc(50% + ${xOffset}px)`,
+                                left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
                                 transition: 'top 0.5s ease-out, left 0.5s ease-out'
                             }}
