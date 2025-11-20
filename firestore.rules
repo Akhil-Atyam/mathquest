@@ -29,8 +29,8 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       // A student can create and delete their own profile.
       allow create, delete: if isOwner(userId);
-      // A student can update their own profile. A teacher can only update the 'assignedLessons' field.
-      allow update: if isOwner(userId) || (isTeacher() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignedLessons']));
+      // A student can update their own profile. A teacher can only update the 'assignedLessons' or 'assignedQuizzes' fields.
+      allow update: if isOwner(userId) || (isTeacher() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignedLessons', 'assignedQuizzes']));
     }
     
     // Teacher user profiles.
@@ -111,3 +111,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

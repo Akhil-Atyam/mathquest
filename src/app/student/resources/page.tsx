@@ -10,7 +10,7 @@ import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@
 import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
 import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Tooltip,
   TooltipContent,
@@ -643,6 +643,7 @@ function ResourcesPageContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { toast } = useToast();
   const [selectedLesson, setSelectedLesson] = React.useState<Lesson | null>(null);
   const [selectedQuiz, setSelectedQuiz] = React.useState<Quiz | null>(null);
@@ -660,18 +661,20 @@ function ResourcesPageContent() {
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
   const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
   
-  // Effect to automatically select a lesson if an ID is in the URL params.
+  // Effect to automatically select a lesson or quiz if an ID is in the URL params.
   useEffect(() => {
-    if (lessons && lessons.length > 0) {
+    if (lessons && quizzes) {
       const lessonId = searchParams.get('lesson');
+      const quizId = searchParams.get('quiz');
       if (lessonId) {
         const lessonFromParam = lessons.find(l => l.id === lessonId);
-        if (lessonFromParam) {
-          setSelectedLesson(lessonFromParam);
-        }
+        if (lessonFromParam) setSelectedLesson(lessonFromParam);
+      } else if (quizId) {
+        const quizFromParam = quizzes.find(q => q.id === quizId);
+        if (quizFromParam) setSelectedQuiz(quizFromParam);
       }
     }
-  }, [lessons, searchParams]);
+  }, [lessons, quizzes, searchParams]);
   
   const grades = [1, 2, 3, 4, 5];
   
@@ -684,6 +687,7 @@ function ResourcesPageContent() {
     }).then(() => {
         toast({ title: "Lesson Complete!", description: "Great job! Keep up the good work." });
         setSelectedLesson(null);
+        router.replace('/student/resources');
     });
   }
 
@@ -705,7 +709,10 @@ function ResourcesPageContent() {
 
     // If score is 80% or higher, mark as complete and check for other unlocks
     if (score >= 80) {
-        updates.completedQuizzes = arrayUnion(quizId);
+        // Use a Set to avoid duplicate entries and merge with existing completed quizzes
+        const completedQuizzes = new Set(student?.completedQuizzes || []);
+        completedQuizzes.add(quizId);
+        updates.completedQuizzes = Array.from(completedQuizzes);
         
         const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
         if (badgeId) {
@@ -720,7 +727,9 @@ function ResourcesPageContent() {
                 .map(item => item.id);
             
             if (itemsToUnlock.length > 0) {
-              updates.assignedLessons = arrayUnion(...(student?.assignedLessons || []), ...itemsToUnlock);
+              const assignedLessons = new Set(student?.assignedLessons || []);
+              itemsToUnlock.forEach(id => assignedLessons.add(id));
+              updates.assignedLessons = Array.from(assignedLessons);
             }
 
             toast({
@@ -772,6 +781,7 @@ function ResourcesPageContent() {
   const handleBack = () => {
     setSelectedLesson(null);
     setSelectedQuiz(null);
+    router.replace('/student/resources');
   }
 
   if (isLoading) {
@@ -925,3 +935,5 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
+    

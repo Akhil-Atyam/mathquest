@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import type { Student, Lesson } from '@/lib/types';
+import type { Student, Lesson, Quiz } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,13 +13,13 @@ import { useToast } from '@/hooks/use-toast';
 import { topics as hardcodedTopics } from '@/lib/data';
 
 /**
- * A component for teachers to manage lesson assignments for a specific student.
- * It allows filtering lessons by grade and topic before assigning.
+ * A component for teachers to manage lesson and quiz assignments for a specific student.
+ * It allows filtering by grade and topic before assigning.
  * @param {object} props - Component props.
  * @param {Student} props.student - The student whose assignments are being managed.
  */
 export function StudentAssignmentManager({ student }: { student: Student }) {
-    const { user, isUserLoading } = useUser();
+    const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     
@@ -32,9 +32,15 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
         return collection(firestore, 'lessons');
     }, [user, firestore]);
     
-    const { data: allLessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
+    const quizzesQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'quizzes');
+    }, [user, firestore]);
     
-    const isLoading = isUserLoading || areLessonsLoading;
+    const { data: allLessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
+    const { data: allQuizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
+    
+    const isLoading = areLessonsLoading || areQuizzesLoading;
 
     // Memoized list of filtered lessons based on selected grade and topic
     const filteredLessons = useMemo(() => {
@@ -45,9 +51,18 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
             return gradeMatch && topicMatch;
         });
     }, [allLessons, selectedGrade, selectedTopic]);
+    
+    const filteredQuizzes = useMemo(() => {
+        if (!allQuizzes) return [];
+        return allQuizzes.filter(quiz => {
+            const gradeMatch = selectedGrade ? String(quiz.grade) === selectedGrade : true;
+            const topicMatch = selectedTopic && selectedTopic !== 'all' ? quiz.topic === selectedTopic : true;
+            return gradeMatch && topicMatch;
+        });
+    }, [allQuizzes, selectedGrade, selectedTopic]);
 
     // Handler for changing a lesson's assignment status
-    const handleAssignmentChange = async (lessonId: string, isAssigned: boolean) => {
+    const handleLessonAssignmentChange = async (lessonId: string, isAssigned: boolean) => {
         if (!firestore) return;
         const studentRef = doc(firestore, 'users', student.id);
         try {
@@ -59,11 +74,32 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
                 description: `${isAssigned ? 'Added' : 'Removed'} lesson for ${student?.name}.`
             });
         } catch (error) {
-            console.error("Error updating assignments: ", error);
+            console.error("Error updating lesson assignments: ", error);
             toast({
                 variant: "destructive",
                 title: "Update failed",
-                description: "Could not update the student's assignments."
+                description: "Could not update the student's lesson assignments."
+            });
+        }
+    };
+    
+    const handleQuizAssignmentChange = async (quizId: string, isAssigned: boolean) => {
+        if (!firestore) return;
+        const studentRef = doc(firestore, 'users', student.id);
+        try {
+            await updateDoc(studentRef, {
+                assignedQuizzes: isAssigned ? arrayUnion(quizId) : arrayRemove(quizId)
+            });
+            toast({
+                title: "Assignments updated",
+                description: `${isAssigned ? 'Added' : 'Removed'} quiz for ${student?.name}.`
+            });
+        } catch (error) {
+            console.error("Error updating quiz assignments: ", error);
+            toast({
+                variant: "destructive",
+                title: "Update failed",
+                description: "Could not update the student's quiz assignments."
             });
         }
     };
@@ -78,12 +114,13 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
     }
     
     const assignedLessonIds = new Set(student.assignedLessons || []);
+    const assignedQuizIds = new Set(student.assignedQuizzes || []);
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Manage Assignments</CardTitle>
-                <CardDescription>Filter by grade and topic, then select lessons to assign to {student.name}.</CardDescription>
+                <CardDescription>Filter by grade and topic, then select lessons and quizzes to assign to {student.name}.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -114,27 +151,57 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
                     </div>
                 </div>
 
-                <div className="space-y-3 rounded-md border p-4 max-h-60 overflow-y-auto">
-                    {filteredLessons.length > 0 ? (
-                        filteredLessons.map(lesson => (
-                            <div key={lesson.id} className="flex items-center space-x-3">
-                                <Checkbox
-                                    id={`assign-${student.id}-${lesson.id}`}
-                                    checked={assignedLessonIds.has(lesson.id)}
-                                    onCheckedChange={(checked) => handleAssignmentChange(lesson.id, !!checked)}
-                                />
-                                <Label htmlFor={`assign-${student.id}-${lesson.id}`} className="font-normal cursor-pointer">
-                                    {lesson.title}
-                                </Label>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                            No lessons found for the selected filters.
-                        </p>
-                    )}
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                         <h4 className="font-semibold">Lessons</h4>
+                         <div className="rounded-md border p-4 max-h-60 overflow-y-auto space-y-3">
+                            {filteredLessons.length > 0 ? (
+                                filteredLessons.map(lesson => (
+                                    <div key={lesson.id} className="flex items-center space-x-3">
+                                        <Checkbox
+                                            id={`assign-lesson-${student.id}-${lesson.id}`}
+                                            checked={assignedLessonIds.has(lesson.id)}
+                                            onCheckedChange={(checked) => handleLessonAssignmentChange(lesson.id, !!checked)}
+                                        />
+                                        <Label htmlFor={`assign-lesson-${student.id}-${lesson.id}`} className="font-normal cursor-pointer">
+                                            {lesson.title} (Lesson)
+                                        </Label>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                    No lessons found for the selected filters.
+                                </p>
+                            )}
+                         </div>
+                    </div>
+                    <div className="space-y-3">
+                        <h4 className="font-semibold">Quizzes</h4>
+                         <div className="rounded-md border p-4 max-h-60 overflow-y-auto space-y-3">
+                            {filteredQuizzes.length > 0 ? (
+                                filteredQuizzes.map(quiz => (
+                                    <div key={quiz.id} className="flex items-center space-x-3">
+                                        <Checkbox
+                                            id={`assign-quiz-${student.id}-${quiz.id}`}
+                                            checked={assignedQuizIds.has(quiz.id)}
+                                            onCheckedChange={(checked) => handleQuizAssignmentChange(quiz.id, !!checked)}
+                                        />
+                                        <Label htmlFor={`assign-quiz-${student.id}-${quiz.id}`} className="font-normal cursor-pointer">
+                                            {quiz.title} (Quiz)
+                                        </Label>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                    No quizzes found for the selected filters.
+                                </p>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </CardContent>
         </Card>
     );
 }
+
+    

@@ -4,7 +4,7 @@ import type { Student, Lesson, Quiz } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Award, ListChecks, BookOpen, Star } from 'lucide-react';
+import { CheckCircle2, Award, ListChecks, BookOpen, Star, CheckSquare } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, updateDoc, arrayUnion, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -87,14 +87,20 @@ export default function StudentDashboardPage() {
   
   useEffect(() => {
     const fetchQuizzes = async () => {
-        if (!firestore || !student || !student.quizScores || Object.keys(student.quizScores).length === 0) {
-            setQuizzes([]);
+        if (!firestore || !student) {
+             setQuizzes([]);
             setAreQuizzesLoading(false);
             return;
         }
 
-        const quizIds = Object.keys(student.quizScores);
-        if (quizIds.length === 0) {
+        const quizIds = [
+            ...(student.assignedQuizzes || []),
+            ...(student.quizScores ? Object.keys(student.quizScores) : []),
+        ];
+        
+        const uniqueQuizIds = [...new Set(quizIds)];
+
+        if (uniqueQuizIds.length === 0) {
             setQuizzes([]);
             setAreQuizzesLoading(false);
             return;
@@ -104,8 +110,8 @@ export default function StudentDashboardPage() {
             setAreQuizzesLoading(true);
             const quizzesCollection = collection(firestore, 'quizzes');
             const quizPromises = [];
-            for (let i = 0; i < quizIds.length; i += 30) {
-                const batchIds = quizIds.slice(i, i + 30);
+            for (let i = 0; i < uniqueQuizIds.length; i += 30) {
+                const batchIds = uniqueQuizIds.slice(i, i + 30);
                 const q = query(quizzesCollection, where('__name__', 'in', batchIds));
                 quizPromises.push(getDocs(q));
             }
@@ -145,16 +151,21 @@ export default function StudentDashboardPage() {
   // Once data is loaded, prepare it for rendering.
   const completedLessons = student.completedLessons || [];
   const assignedLessons = student.assignedLessons || [];
+  const assignedQuizzes = student.assignedQuizzes || [];
   
+  const totalAssignments = assignedLessons.length + assignedQuizzes.length;
   const completedAssignedLessons = assignedLessons.filter(lessonId => completedLessons.includes(lessonId));
+  const completedAssignedQuizzes = assignedQuizzes.filter(quizId => student.quizScores?.[quizId] !== undefined);
+  const totalCompletedAssignments = completedAssignedLessons.length + completedAssignedQuizzes.length;
 
-  const progressPercentage = assignedLessons.length > 0
-    ? (completedAssignedLessons.length / assignedLessons.length) * 100
+  const progressPercentage = totalAssignments > 0
+    ? (totalCompletedAssignments / totalAssignments) * 100
     : 0;
     
   const assignedLessonsData = lessons.filter(l => assignedLessons.includes(l.id));
+  const assignedQuizzesData = quizzes.filter(q => assignedQuizzes.includes(q.id));
   const completedLessonsData = lessons.filter(l => completedLessons.includes(l.id));
-  const completedQuizzesData = quizzes;
+  const completedQuizzesData = quizzes.filter(q => student.quizScores?.[q.id] !== undefined);
   const earnedBadges = allBadges.filter(b => (student.badges || []).includes(b.id));
   
   const handleMarkComplete = (lessonId: string) => {
@@ -184,11 +195,11 @@ export default function StudentDashboardPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground mb-2">
-                    {completedAssignedLessons.length} of {assignedLessons.length} assigned lessons completed
+                    {totalCompletedAssignments} of {totalAssignments} assigned items completed
                     </p>
                     <Progress value={progressPercentage} className="w-full" />
-                    {assignedLessons.length > 0 && <p className="text-center text-sm mt-2 font-medium text-primary animate-pulse">Keep up the great work!</p>}
-                    {assignedLessons.length === 0 && <p className="text-center text-sm mt-2 text-muted-foreground">Your teacher has not assigned any lessons yet.</p>}
+                    {totalAssignments > 0 && <p className="text-center text-sm mt-2 font-medium text-primary animate-pulse">Keep up the great work!</p>}
+                    {totalAssignments === 0 && <p className="text-center text-sm mt-2 text-muted-foreground">Your teacher has not assigned any items yet.</p>}
                 </CardContent>
                 </Card>
 
@@ -249,9 +260,9 @@ export default function StudentDashboardPage() {
         <TabsContent value="assignments">
             <Card>
                 <CardHeader>
-                    <CardTitle>Assigned Lessons</CardTitle>
+                    <CardTitle>My Assignments</CardTitle>
                     <CardContent>
-                        {assignedLessonsData.length > 0 ? (
+                        {totalAssignments > 0 ? (
                              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                                 {assignedLessonsData.map(lesson => {
                                     const isCompleted = completedLessons.includes(lesson.id);
@@ -274,9 +285,30 @@ export default function StudentDashboardPage() {
                                         </Card>
                                     )
                                 })}
+                                 {assignedQuizzesData.map(quiz => {
+                                    const isCompleted = student.quizScores?.[quiz.id] !== undefined;
+                                    return (
+                                        <Card key={quiz.id}>
+                                            <CardHeader>
+                                                <CardTitle className="flex items-center gap-2 text-base">
+                                                    {isCompleted ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <CheckSquare className="w-6 h-6 text-primary" />}
+                                                    {quiz.title}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-sm text-muted-foreground">Topic: {quiz.topic}</p>
+                                            </CardContent>
+                                            <CardFooter>
+                                                <Button className="w-full" onClick={() => router.push(`/student/resources?quiz=${quiz.id}`)}>
+                                                    {isCompleted ? 'Review Quiz' : 'Start Quiz'}
+                                                </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    )
+                                })}
                             </div>
                         ) : (
-                            <p className="text-center text-muted-foreground py-10">You have no assigned lessons. Explore the Resources tab to get started!</p>
+                            <p className="text-center text-muted-foreground py-10">You have no assigned work. Explore the Resources tab to get started!</p>
                         )}
                     </CardContent>
                 </CardHeader>
@@ -286,5 +318,7 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
 
     
