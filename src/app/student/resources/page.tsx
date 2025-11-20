@@ -388,7 +388,7 @@ const Grade2QuestPath = ({
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(quizId => (student?.quizScores?.[quizId] || 0) >= 80) || []);
+    const completedQuizIds = new Set(student?.completedQuizzes || []);
     const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
@@ -522,7 +522,7 @@ const Grade3QuestPath = ({
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(quizId => (student?.quizScores?.[quizId] || 0) >= 80) || []);
+    const completedQuizIds = new Set(student?.completedQuizzes || []);
     const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
@@ -695,29 +695,43 @@ function ResourcesPageContent() {
   }
   
   const handleQuizComplete = (quizId: string, score: number) => {
-    if (!studentDocRef) return;
-    const quiz = quizzes?.find(q => q.id === quizId);
+    if (!studentDocRef || !lessons || !quizzes) return;
+    const quiz = quizzes.find(q => q.id === quizId);
     if (!quiz) return;
     
     let updates: any = {
         [`quizScores.${quizId}`]: score,
     };
 
+    // If score is 80% or higher, mark as complete and check for other unlocks
     if (score >= 80) {
-      const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
-      if (badgeId) {
-          updates.badges = arrayUnion(badgeId);
-      }
+        updates.completedQuizzes = arrayUnion(quizId);
+        
+        const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
+        if (badgeId) {
+            updates.badges = arrayUnion(badgeId);
+        }
       
-      // Placement test logic
-      if (quiz.isPlacementTest) {
-          // Automatically complete the associated lesson
-          updates.completedLessons = arrayUnion(quiz.lessonId);
-          toast({
-              title: "Lesson Unlocked!",
-              description: "Great score! You've unlocked the next step.",
-          });
-      }
+        // Placement test logic: if passed, complete all previous lessons/quizzes in the same grade path
+        if (quiz.isPlacementTest && quiz.order !== undefined) {
+            const allItemsForGrade: (Lesson | Quiz)[] = [...lessons, ...quizzes].filter(item => item.grade === quiz.grade);
+            const itemsToComplete = allItemsForGrade.filter(item => (item.order || 0) < (quiz.order || 0));
+            
+            const lessonsToComplete = itemsToComplete.filter(item => 'content' in item).map(item => item.id);
+            const quizzesToComplete = itemsToComplete.filter(item => 'questions' in item).map(item => item.id);
+
+            if (lessonsToComplete.length > 0) {
+              updates.completedLessons = arrayUnion(...(student?.completedLessons || []), ...lessonsToComplete);
+            }
+            if (quizzesToComplete.length > 0) {
+              updates.completedQuizzes = arrayUnion(...(student?.completedQuizzes || []), ...quizzesToComplete);
+            }
+
+            toast({
+                title: "Path Unlocked!",
+                description: "Great score! You've unlocked and completed previous steps.",
+            });
+        }
     }
 
     updateDoc(studentDocRef, updates);
@@ -736,6 +750,7 @@ function ResourcesPageContent() {
     const updates: { [key: string]: any } = {
       // Use dot notation to remove a specific field from a map
       [`quizScores.${quizId}`]: deleteField(),
+      completedQuizzes: arrayRemove(quizId)
     };
 
     // If a badge was associated and the student has it, remove it
