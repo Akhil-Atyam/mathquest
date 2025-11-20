@@ -31,7 +31,7 @@ export type Lesson = {
   topic: string;
   content: string; // For text-based lessons or a URL for video lessons
   teacherId: string;
-  type: 'Text' | 'Video' | 'Quiz';
+  type: 'Text' | 'Video';
   imageUrl?: string;
   order?: number; // Optional field to define sequence
 };
@@ -49,7 +49,6 @@ export type Topic = {
  * Represents a single question within a quiz.
  */
 export type QuizQuestion = {
-    id: string;
     questionText: string;
     options: string[];
     correctAnswer: string;
@@ -67,6 +66,7 @@ export type Quiz = {
   questions: QuizQuestion[]; // An array of question objects.
   teacherId: string;
   order?: number; // Optional field to define sequence
+  isPlacementTest?: boolean; // If true, this quiz acts as a placement test.
 };
 
 

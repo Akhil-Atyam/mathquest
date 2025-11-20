@@ -14,10 +14,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import type { Quiz, Lesson, Topic } from '@/lib/types';
+import type { Quiz, Lesson } from '@/lib/types';
 import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Zod schema for a single question
 const questionSchema = z.object({
@@ -32,6 +33,7 @@ const quizSchema = z.object({
   lessonId: z.string().min(1, 'Please link this quiz to a lesson.').refine(val => val !== 'none', { message: "Please link this quiz to a lesson." }),
   questions: z.array(questionSchema).min(1, 'A quiz must have at least one question.'),
   order: z.coerce.number().optional(),
+  isPlacementTest: z.boolean().optional(),
 });
 
 
@@ -44,6 +46,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
       lessonId: quiz?.lessonId || '',
       questions: quiz?.questions || [{ questionText: '', options: ['', ''], correctAnswer: '' }],
       order: quiz?.order || 0,
+      isPlacementTest: quiz?.isPlacementTest || false,
     },
   });
 
@@ -98,6 +101,28 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
             )}
             />
         </div>
+         <FormField
+          control={form.control}
+          name="isPlacementTest"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>
+                  Make this a placement test
+                </FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  If a student scores 80% or higher, the linked lesson will be automatically marked as complete.
+                </p>
+              </div>
+            </FormItem>
+          )}
+        />
         <hr/>
         
         {/* Questions Field Array */}
@@ -275,7 +300,7 @@ export function QuizManager() {
             quizzes.map(quiz => (
               <Card key={quiz.id} className="p-4 flex justify-between items-center">
                 <div>
-                  <p className="font-medium">{quiz.title}</p>
+                  <p className="font-medium">{quiz.title} {quiz.isPlacementTest && <span className="text-xs font-semibold text-accent border border-accent/50 bg-accent/10 px-2 py-1 rounded-full ml-2">Placement Test</span>}</p>
                   <p className="text-sm text-muted-foreground">
                     Grade {quiz.grade} &middot; {quiz.topic} &middot; Order: {quiz.order ?? 'N/A'}
                   </p>

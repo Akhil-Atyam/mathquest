@@ -18,14 +18,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroup } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { badges as allBadges } from '@/lib/data';
 import { Progress } from '@/components/ui/progress';
-import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 
 /**
@@ -63,7 +61,7 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
         {linkedQuiz && (
             <Button onClick={() => onSelectQuiz(linkedQuiz)} variant="outline" className="w-full">
                 <FileQuestion className="mr-2 h-4 w-4" />
-                Start Quiz
+                {linkedQuiz.isPlacementTest ? 'Placement Test' : 'Start Quiz'}
             </Button>
         )}
       </CardFooter>
@@ -99,17 +97,6 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
               </p>
             </CardHeader>
             <CardContent>
-              {lesson.imageUrl && (
-                  <div className="mb-6">
-                      <Image 
-                        src={lesson.imageUrl} 
-                        alt={lesson.title} 
-                        width={800} 
-                        height={400} 
-                        className="rounded-lg w-full object-cover" 
-                      />
-                  </div>
-              )}
               <div className="prose dark:prose-invert max-w-none">
                 <ReactMarkdown>{lesson.content}</ReactMarkdown>
               </div>
@@ -141,7 +128,7 @@ function QuizView({
   quiz: Quiz;
   student: Student | null;
   onBack: () => void;
-  onQuizComplete: (quizId: string, score: number) => void;
+  onQuizComplete: (quiz: Quiz, score: number) => void;
 }) {
   const form = useForm();
   const [view, setView] = useState<'quiz' | 'result'>('quiz');
@@ -166,7 +153,7 @@ function QuizView({
     const finalScore = Math.round((correctAnswers / quiz.questions.length) * 100);
     setScore(finalScore);
     setView('result');
-    onQuizComplete(quiz.id, finalScore);
+    onQuizComplete(quiz, finalScore);
   };
   
   const earnedBadges = view === 'result' ? allBadges.filter(b => b.id.includes(quiz.topic.toLowerCase())) : [];
@@ -226,6 +213,7 @@ function QuizView({
           </CardTitle>
           <CardDescription>
             Grade {quiz.grade} &middot; {quiz.topic}
+            {quiz.isPlacementTest && <span className="text-xs font-semibold text-accent border border-accent/50 bg-accent/10 px-2 py-1 rounded-full ml-2">Placement Test</span>}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -247,7 +235,10 @@ function QuizView({
                         htmlFor={`${index}-${option}`}
                         className="flex items-center gap-2 cursor-pointer rounded-md p-2 border border-transparent peer-checked:border-primary peer-checked:bg-primary/10"
                       >
-                         <RadioGroupItem value={option} />
+                        {/* Custom radio button appearance */}
+                        <span className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
+                            <span className="w-2 h-2 rounded-full bg-transparent peer-checked:bg-primary"></span>
+                        </span>
                          {option}
                        </Label>
                     </div>
@@ -576,16 +567,28 @@ function ResourcesPageContent() {
     });
   }
   
-  const handleQuizComplete = (quizId: string, score: number) => {
+  const handleQuizComplete = (quiz: Quiz, score: number) => {
     if (!studentDocRef) return;
-    const badgeId = allBadges.find(b => b.id.includes(quizzes?.find(q=>q.id===quizId)?.topic.toLowerCase() ?? ''))?.id;
+    const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
 
-    updateDoc(studentDocRef, {
-        [`quizScores.${quizId}`]: score,
-        ...(badgeId && { badges: arrayUnion(badgeId) })
-    }).then(() => {
-        // The result screen is shown inside QuizView, no need for toast here.
-    });
+    let updates: any = {
+        [`quizScores.${quiz.id}`]: score,
+    };
+
+    if (badgeId) {
+        updates.badges = arrayUnion(badgeId);
+    }
+    
+    // Placement test logic
+    if (quiz.isPlacementTest && score >= 80) {
+        updates.completedLessons = arrayUnion(quiz.lessonId);
+        toast({
+            title: "Lesson Unlocked!",
+            description: "Great score! You've unlocked the next step.",
+        });
+    }
+
+    updateDoc(studentDocRef, updates);
   }
   
   const handleBack = () => {
