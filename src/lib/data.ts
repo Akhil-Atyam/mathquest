@@ -7,8 +7,17 @@ import { Award, Star, Trophy } from 'lucide-react';
  * Using mock data is useful for rapid prototyping and UI development without a live backend.
  */
 
-// This is now fetched from Firestore. An empty array is left to avoid breaking imports.
-export const topics: string[] = [];
+// A hardcoded list of curriculum topics.
+export const topics: string[] = [
+    "Addition",
+    "Subtraction",
+    "Multiplication",
+    "Division",
+    "Fractions",
+    "Geometry",
+    "Measurement",
+    "Data & Graphs"
+];
 
 // Mock data for badges that students can earn.
 export const badges: Badge[] = [

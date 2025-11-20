@@ -3,13 +3,14 @@
 import React, { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import type { Student, Lesson, Topic } from '@/lib/types';
+import type { Student, Lesson } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { topics as hardcodedTopics } from '@/lib/data';
 
 /**
  * A component for teachers to manage lesson assignments for a specific student.
@@ -30,12 +31,10 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
         if (!user || !firestore) return null;
         return collection(firestore, 'lessons');
     }, [user, firestore]);
-    const topicsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'topics') : null, [firestore]);
     
     const { data: allLessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
-    const { data: allTopics, isLoading: areTopicsLoading } = useCollection<Topic>(topicsQuery);
     
-    const isLoading = isUserLoading || areLessonsLoading || areTopicsLoading;
+    const isLoading = isUserLoading || areLessonsLoading;
 
     // Memoized list of filtered lessons based on selected grade and topic
     const filteredLessons = useMemo(() => {
@@ -109,7 +108,7 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Topics</SelectItem>
-                                {allTopics?.map(topic => <SelectItem key={topic.id} value={topic.name}>{topic.name}</SelectItem>)}
+                                {hardcodedTopics.map(topic => <SelectItem key={topic} value={topic}>{topic}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>

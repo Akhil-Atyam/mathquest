@@ -15,7 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import type { Lesson, Topic } from '@/lib/types';
+import type { Lesson } from '@/lib/types';
+import { topics } from '@/lib/data';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -31,12 +32,10 @@ const lessonSchema = z.object({
 // Component for the lesson form, used for both creating and editing
 function LessonForm({
   lesson,
-  topics,
   onSave,
   onClose,
 }: {
   lesson?: Lesson;
-  topics: Topic[];
   onSave: (data: z.infer<typeof lessonSchema>) => void;
   onClose: () => void;
 }) {
@@ -101,7 +100,7 @@ function LessonForm({
                     <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {topics.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
+                    {topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -167,14 +166,9 @@ export function LessonManager() {
     if (!user || !firestore) return null;
     return query(collection(firestore, 'lessons'), where('teacherId', '==', user.uid));
   }, [user, firestore]);
-  
-  const topicsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'topics') : null, [firestore]);
 
-  const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
-  const { data: topics, isLoading: areTopicsLoading } = useCollection<Topic>(topicsQuery);
+  const { data: lessons, isLoading } = useCollection<Lesson>(lessonsQuery);
   
-  const isLoading = areLessonsLoading || areTopicsLoading;
-
   const handleOpenForm = (lesson?: Lesson) => {
     setEditingLesson(lesson);
     setIsFormOpen(true);
@@ -247,7 +241,7 @@ export function LessonManager() {
             <DialogHeader>
               <DialogTitle>{editingLesson ? 'Edit Lesson' : 'Add New Lesson'}</DialogTitle>
             </DialogHeader>
-            <LessonForm lesson={editingLesson} topics={topics || []} onSave={handleSaveLesson} onClose={handleCloseForm} />
+            <LessonForm lesson={editingLesson} onSave={handleSaveLesson} onClose={handleCloseForm} />
           </DialogContent>
         </Dialog>
       </CardHeader>

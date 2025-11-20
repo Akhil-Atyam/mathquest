@@ -62,14 +62,6 @@ service cloud.firestore {
         allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
         allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
     }
-    
-    // Topics (Units) for lessons and quizzes
-    match /topics/{topicId} {
-      // Any authenticated user can read topics.
-      allow read: if request.auth != null;
-      // Only teachers can create and delete topics.
-      allow create, delete: if isTeacher();
-    }
 
     // --- Booking and Scheduling ---
 
