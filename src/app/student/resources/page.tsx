@@ -210,7 +210,7 @@ function QuizView({
                 <CardContent className="space-y-4">
                      <p className="text-7xl font-bold text-primary">{score}%</p>
                      <Progress value={score} className="w-1/2 mx-auto" />
-                     {earnedBadges.length > 0 && (
+                     {earnedBadges.length > 0 && score >= 80 && (
                         <div className="pt-4">
                             <p className="font-semibold">You earned a new badge!</p>
                             <div className="flex justify-center flex-wrap gap-2 mt-2">
@@ -320,7 +320,7 @@ const QuestNode = ({
               isUnlocked ? "cursor-pointer" : "cursor-not-allowed",
               isCompleted ? "border-green-500 bg-green-100" : "border-primary",
               !isUnlocked && "border-muted bg-muted/50",
-              isUnlocked && !isCompleted && "bg-sidebar-background"
+              isUnlocked && !isCompleted && "bg-card"
             )}
           >
             <Icon className={cn("h-10 w-10", isUnlocked ? "text-primary" : "text-muted-foreground", isCompleted && "text-green-600")} />
@@ -384,10 +384,11 @@ const Grade2QuestPath = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState('');
+    const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
+    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(quizId => (student?.quizScores?.[quizId] || 0) >= 80) || []);
     const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
@@ -405,9 +406,12 @@ const Grade2QuestPath = ({
             const yStep = 160;
             const initialY = 80;
 
-            const points = sortedItems.map((_, index) => {
+            const points = sortedItems.map((item, index) => {
                 const y = initialY + index * yStep;
                 const x = centerX + amplitude * Math.sin(index * Math.PI / 3);
+                if(isQuiz(item) && item.isPlacementTest) {
+                    setPlacementTestNode({x: 0, y});
+                }
                 return { x, y };
             });
 
@@ -432,6 +436,17 @@ const Grade2QuestPath = ({
                             fill="none"
                             strokeLinecap="round"
                         />
+                         {placementTestNode && (
+                            <line 
+                                x1={placementTestNode.x} 
+                                y1={placementTestNode.y} 
+                                x2="100%" 
+                                y2={placementTestNode.y} 
+                                stroke="hsl(var(--border))" 
+                                strokeWidth="2" 
+                                strokeDasharray="5,5" 
+                            />
+                        )}
                     </svg>
                 )}
 
@@ -503,10 +518,11 @@ const Grade3QuestPath = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState('');
+    const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
+    const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(quizId => (student?.quizScores?.[quizId] || 0) >= 80) || []);
     const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
@@ -524,9 +540,12 @@ const Grade3QuestPath = ({
             const yStep = 160;
             const initialY = 80;
 
-             const points = sortedItems.map((_, index) => {
+             const points = sortedItems.map((item, index) => {
                 const y = initialY + index * yStep;
                 const x = centerX + amplitude * Math.sin(index * Math.PI / 3);
+                if(isQuiz(item) && item.isPlacementTest) {
+                    setPlacementTestNode({x: 0, y});
+                }
                 return { x, y };
             });
 
@@ -551,6 +570,17 @@ const Grade3QuestPath = ({
                             fill="none"
                             strokeLinecap="round"
                         />
+                         {placementTestNode && (
+                            <line 
+                                x1={placementTestNode.x} 
+                                y1={placementTestNode.y} 
+                                x2="100%" 
+                                y2={placementTestNode.y} 
+                                stroke="hsl(var(--border))" 
+                                strokeWidth="2" 
+                                strokeDasharray="5,5" 
+                            />
+                        )}
                     </svg>
                 )}
 
@@ -669,24 +699,25 @@ function ResourcesPageContent() {
     const quiz = quizzes?.find(q => q.id === quizId);
     if (!quiz) return;
     
-    const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
-
     let updates: any = {
         [`quizScores.${quizId}`]: score,
     };
 
-    if (badgeId) {
-        updates.badges = arrayUnion(badgeId);
-    }
-    
-    // Placement test logic
-    if (quiz.isPlacementTest && score >= 80) {
-        // Automatically complete the associated lesson
-        updates.completedLessons = arrayUnion(quiz.lessonId);
-        toast({
-            title: "Lesson Unlocked!",
-            description: "Great score! You've unlocked the next step.",
-        });
+    if (score >= 80) {
+      const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
+      if (badgeId) {
+          updates.badges = arrayUnion(badgeId);
+      }
+      
+      // Placement test logic
+      if (quiz.isPlacementTest) {
+          // Automatically complete the associated lesson
+          updates.completedLessons = arrayUnion(quiz.lessonId);
+          toast({
+              title: "Lesson Unlocked!",
+              description: "Great score! You've unlocked the next step.",
+          });
+      }
     }
 
     updateDoc(studentDocRef, updates);
