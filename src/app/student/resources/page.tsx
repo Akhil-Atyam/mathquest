@@ -204,38 +204,14 @@ const Grade2QuestPath = ({
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
         const grade2Items = allItems.filter(l => l.grade === 2);
         
-        // Find the corresponding quiz object for title matching
-        const quiz1 = grade2Items.find(item => isQuiz(item) && item.title === 'Quiz 1: Addition');
-        const quiz2 = grade2Items.find(item => isQuiz(item) && item.title === 'Quiz 2: Subtraction');
-        
-        const itemsWithIdInTitle = grade2Items.map(item => {
-            if (isQuiz(item) && item.title === 'Quiz 1: Addition' && quiz1) {
-                return { ...item, title: `Quiz 1: Addition::${quiz1.id}` };
-            }
-            if (isQuiz(item) && item.title === 'Quiz 2: Subtraction' && quiz2) {
-                return { ...item, title: `Quiz 2: Subtraction::${quiz2.id}` };
-            }
-            return item;
-        })
+        return grade2Items.sort((a, b) => {
+            const indexA = lessonOrder.indexOf(a.title);
+            const indexB = lessonOrder.indexOf(b.title);
 
-        const lessonOrderWithIds = lessonOrder.map(title => {
-            if (title === 'Quiz 1: Addition' && quiz1) return `Quiz 1: Addition::${quiz1.id}`;
-            if (title === 'Quiz 2: Subtraction' && quiz2) return `Quiz 2: Subtraction::${quiz2.id}`;
-            return title;
-        })
-
-        return itemsWithIdInTitle
-            .sort((a, b) => {
-                const aTitle = isQuiz(a) ? a.title : a.title;
-                const bTitle = isQuiz(b) ? b.title : b.title;
-
-                const indexA = lessonOrderWithIds.indexOf(aTitle);
-                const indexB = lessonOrderWithIds.indexOf(bTitle);
-
-                if (indexA === -1) return 1;
-                if (indexB === -1) return -1;
-                return indexA - indexB;
-            });
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
     }, [lessons, quizzes]);
 
 
@@ -274,13 +250,11 @@ const Grade2QuestPath = ({
 
 
                 {sortedLessons.map((lesson, index) => {
-                    const isCompleted = completedLessonIds.has(lesson.id);
-                    const isUnlocked = index === 0 || (sortedLessons[index-1] && completedLessonIds.has(sortedLessons[index-1].id));
+                    const isCompleted = isQuiz(lesson) ? false : completedLessonIds.has(lesson.id);
+                    const isUnlocked = index === 0 || (sortedLessons[index-1] && (isQuiz(sortedLessons[index-1]) ? true : completedLessonIds.has(sortedLessons[index-1].id)));
                     
                     const y = 80 + index * 160;
                     const xOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
-
-                    const title = isQuiz(lesson) ? lesson.title.split('::')[0] : lesson.title;
 
                     return (
                         <div
@@ -294,7 +268,7 @@ const Grade2QuestPath = ({
                             }}
                         >
                             <QuestNode 
-                                title={title}
+                                title={lesson.title}
                                 subtitle={`Topic: ${lesson.topic}`}
                                 icon={isQuiz(lesson) ? FileQuestion : BookOpen}
                                 isCompleted={isCompleted}
@@ -320,6 +294,7 @@ const Grade3QuestPath = ({
     student: Student | null, 
     onSelect: (lesson: Lesson) => void;
 }) => {
+    const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     
     const topicOrder = [
@@ -347,8 +322,6 @@ const Grade3QuestPath = ({
     if (sortedLessons.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No Grade 3 lessons found. Check back soon!</p>
     }
-
-    const isQuiz = (item: any): item is Quiz => 'questions' in item;
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
@@ -379,8 +352,8 @@ const Grade3QuestPath = ({
                 )}
 
                 {sortedLessons.map((lesson, index) => {
-                    const isCompleted = completedLessonIds.has(lesson.id);
-                    const isUnlocked = index === 0 || (sortedLessons[index-1] && completedLessonIds.has(sortedLessons[index-1].id));
+                    const isCompleted = isQuiz(lesson) ? false : completedLessonIds.has(lesson.id);
+                    const isUnlocked = index === 0 || (sortedLessons[index-1] && (isQuiz(sortedLessons[index-1]) ? true : completedLessonIds.has(sortedLessons[index-1].id)));
                     
                     const y = 80 + index * 160;
                     const xOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
