@@ -1,119 +1,77 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Teacher, Booking } from '@/lib/types';
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AvailabilityManager } from './AvailabilityManager';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Clock, Edit } from 'lucide-react';
+import { Calendar, Clock, Video } from 'lucide-react';
 import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
-import { LessonManager } from './LessonManager';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 /**
- * Component to display a list of bookings.
- * @param bookings - Array of booking objects to display.
- * @param title - The title for this section of bookings (e.g., "Upcoming Sessions").
- * @param onUpdateLink - Function to call when updating a meeting link.
+ * A component to display the next upcoming session.
+ * @param bookings - Array of all booking objects.
  */
-function BookingsList({
-  bookings,
-  title,
-  onUpdateLink,
-}: {
-  bookings: Booking[];
-  title: string;
-  onUpdateLink: (bookingId: string, newLink: string) => void;
-}) {
+function NextSession({ bookings }: { bookings: Booking[] | null }) {
+    const nextSession = useMemo(() => {
+        if (!bookings) return null;
+        const now = new Date();
+        const upcoming = bookings
+            .filter(b => b.startTime.toDate() >= now)
+            .sort((a, b) => a.startTime.toMillis() - b.startTime.toMillis());
+        return upcoming[0] || null;
+    }, [bookings]);
 
-  if (bookings.length === 0) {
-    return (
-      <div>
-        <h3 className="font-semibold mb-2">{title}</h3>
-        <p className="text-sm text-muted-foreground">No {title.toLowerCase()} found.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h3 className="font-semibold mb-4">{title}</h3>
-      <div className="space-y-4">
-        {bookings.map((booking) => (
-          <Card key={booking.id} className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div className="grid gap-1">
-              <p className="font-medium">{booking.studentName} (Grade {booking.grade})</p>
-              <p className="text-sm text-muted-foreground">{booking.topic}</p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                 <span className='flex items-center gap-1'><Calendar className='w-4 h-4' /> {format(booking.startTime.toDate(), 'PPP')}</span>
-                 <span className='flex items-center gap-1'><Clock className='w-4 h-4' /> {format(booking.startTime.toDate(), 'p')}</span>
-              </div>
-              {booking.meetingLink && (
-                  <p className="text-xs text-blue-600 truncate">
-                      Link: <a href={booking.meetingLink} target="_blank" rel="noopener noreferrer" className="hover:underline">{booking.meetingLink}</a>
-                  </p>
-              )}
-            </div>
-             <AddLinkDialog booking={booking} onSave={onUpdateLink} />
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * A dialog component for adding or editing a meeting link for a booking.
- * @param booking - The booking object to update.
- * @param onSave - Function to call when saving the link.
- */
-function AddLinkDialog({ booking, onSave }: { booking: Booking; onSave: (bookingId: string, link: string) => void }) {
-    const [link, setLink] = useState(booking.meetingLink || '');
-    const [isOpen, setIsOpen] = useState(false);
-
-    const handleSave = () => {
-        onSave(booking.id, link);
-        setIsOpen(false);
+    if (!nextSession) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Next Tutoring Session</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">You have no upcoming sessions.</p>
+                    <Button asChild className="mt-4">
+                        <Link href="/teacher/tutoring">Manage Availability</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        )
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <Edit className="mr-2 h-4 w-4" />
-                    {booking.meetingLink ? 'Edit Link' : 'Add Link'}
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Meeting Link for {booking.studentName}</DialogTitle>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <p className="text-sm">
-                        Add or edit the meeting link for your session on {' '}
-                        <strong>{format(booking.startTime.toDate(), 'PPP')} at {format(booking.startTime.toDate(), 'p')}</strong>.
-                    </p>
-                    <div className="space-y-2">
-                        <Label htmlFor="meeting-link">Meeting Link</Label>
-                        <Input 
-                            id="meeting-link"
-                            value={link}
-                            onChange={(e) => setLink(e.target.value)}
-                            placeholder="https://meet.google.com/..."
-                        />
+        <Card>
+            <CardHeader>
+                <CardTitle>Next Tutoring Session</CardTitle>
+                <CardDescription>
+                    Your next session is with {nextSession.studentName}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <p className='font-semibold'>{nextSession.topic}</p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className='flex items-center gap-1'><Calendar className='w-4 h-4' /> {format(nextSession.startTime.toDate(), 'PPP')}</span>
+                        <span className='flex items-center gap-1'><Clock className='w-4 h-4' /> {format(nextSession.startTime.toDate(), 'p')}</span>
                     </div>
                 </div>
-                <Button onClick={handleSave}>Save Link</Button>
-            </DialogContent>
-        </Dialog>
-    );
+                {nextSession.meetingLink ? (
+                  <Button asChild>
+                    <Link href={nextSession.meetingLink} target="_blank">
+                      <Video className="mr-2 h-4 w-4" />
+                      Join Session
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" asChild>
+                      <Link href="/teacher/tutoring">Add Meeting Link</Link>
+                  </Button>
+                )}
+            </CardContent>
+        </Card>
+    )
 }
 
 
@@ -123,7 +81,6 @@ function AddLinkDialog({ booking, onSave }: { booking: Booking; onSave: (booking
 export default function TeacherDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const { toast } = useToast();
 
     const teacherDocRef = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -140,73 +97,19 @@ export default function TeacherDashboardPage() {
 
     const isLoading = isUserLoading || isTeacherLoading || areBookingsLoading;
     
-    const handleUpdateLink = async (bookingId: string, newLink: string) => {
-        if (!firestore) return;
-        const bookingRef = doc(firestore, 'tutoring_sessions', bookingId);
-        try {
-            await updateDoc(bookingRef, { meetingLink: newLink });
-            toast({
-                title: 'Success',
-                description: 'Meeting link has been updated.',
-            });
-        } catch (error) {
-            console.error('Error updating meeting link:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not update the meeting link.',
-            });
-        }
-    };
-    
-    const { upcomingBookings, pastBookings } = useMemo(() => {
-        if (!bookings) return { upcomingBookings: [], pastBookings: [] };
-        const now = new Date();
-        const upcoming = bookings.filter(b => b.startTime.toDate() >= now).sort((a, b) => a.startTime.toMillis() - b.startTime.toMillis());
-        const past = bookings.filter(b => b.startTime.toDate() < now).sort((a,b) => b.startTime.toMillis() - a.startTime.toMillis());
-        return { upcomingBookings: upcoming, pastBookings: past };
-    }, [bookings]);
-
     if (isLoading) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
                 <Skeleton className="h-9 w-1/2" />
-                <div className="w-full">
-                    <Skeleton className="h-10 w-full mb-2" />
-                    <Skeleton className="h-64 w-full" />
-                </div>
+                <Skeleton className="h-48 w-full md:w-1/2" />
             </div>
         )
     }
 
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
-
-            <Tabs defaultValue="tutoring" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="tutoring">Tutoring</TabsTrigger>
-                    <TabsTrigger value="lessons">Lessons</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="tutoring" className="space-y-8">
-                    <AvailabilityManager teacher={teacher} />
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>My Booked Sessions</CardTitle>
-                            <CardDescription>Here are your upcoming and past tutoring sessions.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <BookingsList bookings={upcomingBookings} title="Upcoming Sessions" onUpdateLink={handleUpdateLink} />
-                            <BookingsList bookings={pastBookings} title="Past Sessions" onUpdateLink={handleUpdateLink} />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="lessons">
-                   <LessonManager />
-                </TabsContent>
-            </Tabs>
+            <h1 className="text-3xl font-bold font-headline">Welcome, {teacher?.name || 'Teacher'}!</h1>
+            <NextSession bookings={bookings} />
         </div>
     );
 }

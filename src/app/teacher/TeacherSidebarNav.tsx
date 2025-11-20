@@ -2,7 +2,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LayoutDashboard, Users } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, BookOpen } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 const menuItems = [
   { href: '/teacher/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/teacher/students', label: 'Students', icon: Users },
+  { href: '/teacher/tutoring', label: 'Tutoring', icon: Calendar },
+  { href: '/teacher/lessons', label: 'Lessons', icon: BookOpen },
 ];
 
 /**
