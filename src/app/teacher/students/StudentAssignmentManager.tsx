@@ -25,7 +25,7 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
     
     // State for the filter dropdowns
     const [selectedGrade, setSelectedGrade] = useState<string>(String(student.grade));
-    const [selectedTopic, setSelectedTopic] = useState<string>('');
+    const [selectedTopic, setSelectedTopic] = useState<string>('all');
 
     const lessonsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -40,7 +40,7 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
         if (!allLessons) return [];
         return allLessons.filter(lesson => {
             const gradeMatch = selectedGrade ? String(lesson.grade) === selectedGrade : true;
-            const topicMatch = selectedTopic ? lesson.topic === selectedTopic : true;
+            const topicMatch = selectedTopic && selectedTopic !== 'all' ? lesson.topic === selectedTopic : true;
             return gradeMatch && topicMatch;
         });
     }, [allLessons, selectedGrade, selectedTopic]);
@@ -106,7 +106,7 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
                                 <SelectValue placeholder="Filter by topic..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">All Topics</SelectItem>
+                                <SelectItem value="all">All Topics</SelectItem>
                                 {allTopics.map(topic => <SelectItem key={topic} value={topic}>{topic}</SelectItem>)}
                             </SelectContent>
                         </Select>
