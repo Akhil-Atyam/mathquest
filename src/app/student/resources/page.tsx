@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, FileQuestion } from 'lucide-react';
@@ -19,6 +19,12 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { badges as allBadges } from '@/lib/data';
+import { Progress } from '@/components/ui/progress';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
@@ -30,7 +36,7 @@ import Link from 'next/link';
  * @param {boolean} props.isCompleted - Flag to indicate if the lesson is completed.
  * @param {boolean} props.isAssigned - Flag to indicate if the lesson is assigned.
  */
-function LessonCard({ lesson, linkedQuiz, onSelect, isCompleted, isAssigned }: { lesson: Lesson; linkedQuiz: Quiz | undefined; onSelect: (lesson: Lesson) => void; isCompleted: boolean; isAssigned: boolean; }) {
+function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, isAssigned }: { lesson: Lesson; linkedQuiz: Quiz | undefined; onSelect: (lesson: Lesson) => void; onSelectQuiz: (quiz: Quiz) => void; isCompleted: boolean; isAssigned: boolean; }) {
   return (
     <Card className="flex flex-col">
       <CardHeader>
@@ -53,11 +59,9 @@ function LessonCard({ lesson, linkedQuiz, onSelect, isCompleted, isAssigned }: {
           {isCompleted ? 'Review Lesson' : 'Start Lesson'}
         </Button>
         {linkedQuiz && (
-            <Button asChild variant="outline" className="w-full">
-                <Link href={`/student/quizzes/${linkedQuiz.id}`}>
-                    <FileQuestion className="mr-2 h-4 w-4" />
-                    Start Quiz
-                </Link>
+            <Button onClick={() => onSelectQuiz(linkedQuiz)} variant="outline" className="w-full">
+                <FileQuestion className="mr-2 h-4 w-4" />
+                Start Quiz
             </Button>
         )}
       </CardFooter>
@@ -114,6 +118,123 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
         </div>
       );
 }
+
+function QuizView({
+  quiz,
+  onBack,
+  onQuizComplete,
+}: {
+  quiz: Quiz;
+  onBack: () => void;
+  onQuizComplete: (quizId: string, score: number) => void;
+}) {
+  const form = useForm();
+  const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(0);
+
+  const onSubmit = (data: any) => {
+    let correctAnswers = 0;
+    quiz.questions.forEach((q, index) => {
+      if (data[`question-${index}`] === q.correctAnswer) {
+        correctAnswers++;
+      }
+    });
+    const finalScore = Math.round((correctAnswers / quiz.questions.length) * 100);
+    setScore(finalScore);
+    setSubmitted(true);
+    onQuizComplete(quiz.id, finalScore);
+  };
+  
+  const earnedBadges = submitted ? allBadges.filter(b => b.id.includes(quiz.topic.toLowerCase())) : [];
+
+  if (submitted) {
+    return (
+        <div className="space-y-6">
+             <Button variant="ghost" onClick={onBack}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Resources
+            </Button>
+            <Card className="text-center">
+                <CardHeader>
+                    <CardTitle className="text-4xl font-bold">Quiz Complete!</CardTitle>
+                    <CardDescription>You scored:</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <p className="text-7xl font-bold text-primary">{score}%</p>
+                     <Progress value={score} className="w-1/2 mx-auto" />
+                     {earnedBadges.length > 0 && (
+                        <div className="pt-4">
+                            <p className="font-semibold">You earned a new badge!</p>
+                            <div className="flex justify-center flex-wrap gap-2 mt-2">
+                               {earnedBadges.map(badge => (
+                                 <Badge key={badge.id} variant="secondary" className="text-lg py-2 px-4">
+                                     <badge.icon className="w-5 h-5 mr-2 text-accent"/>
+                                     {badge.name}
+                                 </Badge>
+                               ))}
+                            </div>
+                        </div>
+                     )}
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={onBack} className="mx-auto">Continue Learning</Button>
+                </CardFooter>
+            </Card>
+        </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <Button variant="ghost" onClick={onBack}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Resources
+      </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-2xl font-headline">
+            <CheckSquare className="w-8 h-8 text-primary" />
+            {quiz.title}
+          </CardTitle>
+          <CardDescription>
+            Grade {quiz.grade} &middot; {quiz.topic}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {quiz.questions.map((question, index) => (
+              <div key={index}>
+                <p className="font-medium mb-4">{index + 1}. {question.questionText}</p>
+                <RadioGroup name={`question-${index}`} onChange={(e) => form.setValue(`question-${index}`, (e.target as HTMLInputElement).value)}>
+                  {question.options.map(option => (
+                    <div key={option} className="flex items-center space-x-2">
+                       <input
+                        type="radio"
+                        id={`${index}-${option}`}
+                        value={option}
+                        {...form.register(`question-${index}`)}
+                        className="peer hidden"
+                      />
+                       <Label
+                        htmlFor={`${index}-${option}`}
+                        className="flex items-center gap-2 cursor-pointer rounded-md p-2 border border-transparent peer-checked:border-primary peer-checked:bg-primary/10"
+                      >
+                         <RadioGroupItem value={option} />
+                         {option}
+                       </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            ))}
+            <Button type="submit" className='mt-6'>Submit Quiz</Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 
 const QuestNode = ({
   title,
@@ -172,44 +293,27 @@ const Grade2QuestPath = ({
     lessons, 
     quizzes,
     student, 
-    onSelect,
+    onSelectLesson,
+    onSelectQuiz,
 }: { 
     lessons: Lesson[], 
     quizzes: Quiz[],
     student: Student | null, 
-    onSelect: (lesson: Lesson) => void;
+    onSelectLesson: (lesson: Lesson) => void;
+    onSelectQuiz: (quiz: Quiz) => void;
 }) => {
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
+    const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     
-    // Detailed lesson order for Grade 2 curriculum.
     const lessonOrder = [
-      // Topic: Add and Subtract within 20
-      'Add within 20 visually',
-      'Exercise: add within 20',
-      'Exercise: adding with arrays',
-      'Array word problems',
-      'Quiz 1: Addition',
-      'Subtract within 20 visually',
-      'Exercise: subtract within 20',
-      'Exercise: add and subtract within 20',
-      'Exercise: add and subtract within 20 word problems',
-      'Quiz 2: Subtraction',
-      // Topic: Place Value
-      'Place value blocks',
-      'Exercise: Place value',
-      'Forms of a number',
-      'Exercise: Forms of a number',
-      'Quiz 3: Place Value',
-      // Topic: Comparing Numbers
-      'Comparing numbers intro',
-      'Exercise: Comparing numbers',
-      'Ordering numbers',
-      'Exercise: Ordering numbers',
-      'Quiz 4: Comparing Numbers',
+      'Add within 20 visually', 'Exercise: add within 20', 'Exercise: adding with arrays', 'Array word problems', 'Quiz 1: Addition',
+      'Subtract within 20 visually', 'Exercise: subtract within 20', 'Exercise: add and subtract within 20', 'Exercise: add and subtract within 20 word problems', 'Quiz 2: Subtraction',
+      'Place value blocks', 'Exercise: Place value', 'Forms of a number', 'Exercise: Forms of a number', 'Quiz 3: Place Value',
+      'Comparing numbers intro', 'Exercise: Comparing numbers', 'Ordering numbers', 'Exercise: Ordering numbers', 'Quiz 4: Comparing Numbers',
     ];
 
-    const sortedLessons = React.useMemo(() => {
+    const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
         const grade2Items = allItems.filter(l => l.grade === 2);
         
@@ -224,15 +328,14 @@ const Grade2QuestPath = ({
     }, [lessons, quizzes]);
 
 
-    if (sortedLessons.length === 0) {
+    if (sortedItems.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No Grade 2 lessons found. Check back soon!</p>
     }
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
-            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
-                {/* SVG Path connecting the nodes */}
-                {sortedLessons.length > 1 && (
+            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedItems.length * 10}rem`}}>
+                {sortedItems.length > 1 && (
                      <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
                         <defs>
                             <linearGradient id="path-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -242,7 +345,7 @@ const Grade2QuestPath = ({
                         </defs>
                         <path
                             d={
-                                sortedLessons.slice(1).map((_, index) => {
+                                sortedItems.slice(1).map((_, index) => {
                                     const y1 = 80 + index * 160;
                                     const y2 = 80 + (index + 1) * 160;
                                     
@@ -266,16 +369,26 @@ const Grade2QuestPath = ({
                 )}
 
 
-                {sortedLessons.map((lesson, index) => {
-                    const isCompleted = isQuiz(lesson) ? false : completedLessonIds.has(lesson.id);
-                    const isUnlocked = index === 0 || (sortedLessons[index-1] && (isQuiz(sortedLessons[index-1]) ? true : completedLessonIds.has(sortedLessons[index-1].id)));
+                {sortedItems.map((item, index) => {
+                    const isItemQuiz = isQuiz(item);
+                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
+                    
+                    let isUnlocked = index === 0;
+                    if (index > 0) {
+                        const prevItem = sortedItems[index-1];
+                        if (isQuiz(prevItem)) {
+                            isUnlocked = completedQuizIds.has(prevItem.id);
+                        } else {
+                            isUnlocked = completedLessonIds.has(prevItem.id);
+                        }
+                    }
                     
                     const y = 80 + index * 160;
                     const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
 
                     return (
                         <div
-                            key={lesson.id}
+                            key={item.id}
                             className="absolute"
                             style={{
                                 top: `${y - 48}px`,
@@ -285,12 +398,12 @@ const Grade2QuestPath = ({
                             }}
                         >
                             <QuestNode 
-                                title={lesson.title}
-                                subtitle={`Topic: ${lesson.topic}`}
-                                icon={isQuiz(lesson) ? FileQuestion : BookOpen}
+                                title={item.title}
+                                subtitle={`Topic: ${item.topic}`}
+                                icon={isItemQuiz ? FileQuestion : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                onClick={() => isQuiz(lesson) ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson as Lesson)}
+                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
                     )
@@ -304,15 +417,18 @@ const Grade3QuestPath = ({
     lessons,
     quizzes,
     student, 
-    onSelect,
+    onSelectLesson,
+    onSelectQuiz,
 }: { 
     lessons: Lesson[], 
     quizzes: Quiz[],
     student: Student | null, 
-    onSelect: (lesson: Lesson) => void;
+    onSelectLesson: (lesson: Lesson) => void;
+    onSelectQuiz: (quiz: Quiz) => void;
 }) => {
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
+    const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     
     const topicOrder = [
       "Understanding Multiplication",
@@ -322,7 +438,7 @@ const Grade3QuestPath = ({
       "Two-Step Word Problems",
     ];
 
-    const sortedLessons = React.useMemo(() => {
+    const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
         return allItems
             .filter(l => l.grade === 3)
@@ -336,14 +452,14 @@ const Grade3QuestPath = ({
     }, [lessons, quizzes]);
 
 
-    if (sortedLessons.length === 0) {
+    if (sortedItems.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No Grade 3 lessons found. Check back soon!</p>
     }
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
-            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
-                {sortedLessons.length > 1 && (
+            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedItems.length * 10}rem`}}>
+                {sortedItems.length > 1 && (
                      <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
                         <defs>
                             <linearGradient id="path-gradient-g3" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -353,7 +469,7 @@ const Grade3QuestPath = ({
                         </defs>
                         <path
                             d={
-                                sortedLessons.slice(1).map((_, index) => {
+                                sortedItems.slice(1).map((_, index) => {
                                     const y1 = 80 + index * 160;
                                     const y2 = 80 + (index + 1) * 160;
                                     
@@ -376,16 +492,26 @@ const Grade3QuestPath = ({
                     </svg>
                 )}
 
-                {sortedLessons.map((lesson, index) => {
-                    const isCompleted = isQuiz(lesson) ? false : completedLessonIds.has(lesson.id);
-                    const isUnlocked = index === 0 || (sortedLessons[index-1] && (isQuiz(sortedLessons[index-1]) ? true : completedLessonIds.has(sortedLessons[index-1].id)));
+                {sortedItems.map((item, index) => {
+                    const isItemQuiz = isQuiz(item);
+                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
+                    
+                    let isUnlocked = index === 0;
+                    if (index > 0) {
+                        const prevItem = sortedItems[index-1];
+                        if (isQuiz(prevItem)) {
+                            isUnlocked = completedQuizIds.has(prevItem.id);
+                        } else {
+                            isUnlocked = completedLessonIds.has(prevItem.id);
+                        }
+                    }
                     
                     const y = 80 + index * 160;
                     const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
 
                     return (
                         <div
-                            key={lesson.id}
+                            key={item.id}
                             className="absolute"
                             style={{
                                 top: `${y - 48}px`,
@@ -395,12 +521,12 @@ const Grade3QuestPath = ({
                             }}
                         >
                             <QuestNode 
-                                title={lesson.title}
-                                subtitle={`Topic: ${lesson.topic}`}
-                                icon={isQuiz(lesson) ? FileQuestion : BookOpen}
+                                title={item.title}
+                                subtitle={`Topic: ${item.topic}`}
+                                icon={isItemQuiz ? FileQuestion : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                onClick={() => isQuiz(lesson) ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson as Lesson)}
+                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
                     )
@@ -417,7 +543,9 @@ function ResourcesPageContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [selectedLesson, setSelectedLesson] = React.useState<Lesson | null>(null);
+  const [selectedQuiz, setSelectedQuiz] = React.useState<Quiz | null>(null);
 
   const studentDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -454,7 +582,7 @@ function ResourcesPageContent() {
     updateDoc(studentDocRef, {
         completedLessons: arrayUnion(lessonId)
     }).then(() => {
-        // Go back to the list after marking as complete
+        toast({ title: "Lesson Complete!", description: "Great job! Keep up the good work." });
         setSelectedLesson(null);
     });
   }
@@ -464,7 +592,23 @@ function ResourcesPageContent() {
     updateDoc(studentDocRef, {
         completedLessons: arrayRemove(lessonId)
     });
-    // No need to navigate away, user can now re-complete it from the same view.
+  }
+  
+  const handleQuizComplete = (quizId: string, score: number) => {
+    if (!studentDocRef) return;
+    const badgeId = allBadges.find(b => b.id.includes(quizzes?.find(q=>q.id===quizId)?.topic.toLowerCase() ?? ''))?.id;
+
+    updateDoc(studentDocRef, {
+        [`quizScores.${quizId}`]: score,
+        ...(badgeId && { badges: arrayUnion(badgeId) })
+    }).then(() => {
+        // The result screen is shown inside QuizView, no need for toast here.
+    });
+  }
+  
+  const handleBack = () => {
+    setSelectedLesson(null);
+    setSelectedQuiz(null);
   }
 
   if (isLoading) {
@@ -483,11 +627,23 @@ function ResourcesPageContent() {
         <div className="p-4 sm:p-6">
             <LessonView 
                 lesson={selectedLesson} 
-                onBack={() => setSelectedLesson(null)}
+                onBack={handleBack}
                 onComplete={handleCompleteLesson}
                 onUncomplete={handleUncompleteLesson}
                 isCompleted={student?.completedLessons?.includes(selectedLesson.id) || false}
              />
+        </div>
+    )
+  }
+  
+  if (selectedQuiz) {
+    return (
+        <div className="p-4 sm:p-6">
+            <QuizView
+                quiz={selectedQuiz}
+                onBack={handleBack}
+                onQuizComplete={handleQuizComplete}
+            />
         </div>
     )
   }
@@ -520,7 +676,8 @@ function ResourcesPageContent() {
                                     lessons={lessons || []}
                                     quizzes={quizzes || []}
                                     student={student}
-                                    onSelect={setSelectedLesson}
+                                    onSelectLesson={setSelectedLesson}
+                                    onSelectQuiz={setSelectedQuiz}
                                 />
                             </CardContent>
                         </Card>
@@ -540,7 +697,8 @@ function ResourcesPageContent() {
                                     lessons={lessons || []}
                                     quizzes={quizzes || []}
                                     student={student}
-                                    onSelect={setSelectedLesson}
+                                    onSelectLesson={setSelectedLesson}
+                                    onSelectQuiz={setSelectedQuiz}
                                 />
                             </CardContent>
                         </Card>
@@ -568,7 +726,8 @@ function ResourcesPageContent() {
                                                   key={lesson.id} 
                                                   lesson={lesson}
                                                   linkedQuiz={linkedQuiz}
-                                                  onSelect={setSelectedLesson} 
+                                                  onSelect={setSelectedLesson}
+                                                  onSelectQuiz={setSelectedQuiz}
                                                   isCompleted={student?.completedLessons?.includes(lesson.id) || false}
                                                   isAssigned={student?.assignedLessons?.includes(lesson.id) || false}
                                               />
