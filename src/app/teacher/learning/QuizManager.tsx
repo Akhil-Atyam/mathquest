@@ -38,7 +38,7 @@ const quizSchema = z.object({
 
 
 // Form for creating/editing a quiz
-function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Lesson[]; onSave: (data: z.infer<typeof quizSchema>) => void; onClose: () => void; }) {
+function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; lessons: Lesson[]; onSave: (data: z.infer<typeof quizSchema>) => void; onClose: () => void; }) {
   const form = useForm<z.infer<typeof quizSchema>>({
     resolver: zodResolver(quizSchema),
     defaultValues: {
@@ -117,7 +117,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
                   Make this a placement test
                 </FormLabel>
                 <p className="text-sm text-muted-foreground">
-                  If a student scores 80% or higher, the linked lesson will be automatically marked as complete.
+                  If the student scores above an 80% on this, all previous lessons will be unlocked and so will the next lesson.
                 </p>
               </div>
             </FormItem>
@@ -203,7 +203,7 @@ export function QuizManager() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingQuiz, setEditingQuiz] = useState<Quiz | undefined>(undefined);
+  const [editingQuiz, setEditingQuiz] = useState<Partial<Quiz> | undefined>(undefined);
 
   const quizzesQuery = useMemoFirebase(() => user ? query(collection(firestore, 'quizzes'), where('teacherId', '==', user.uid)) : null, [user, firestore]);
   const lessonsQuery = useMemoFirebase(() => user ? query(collection(firestore, 'lessons'), where('teacherId', '==', user.uid)) : null, [user, firestore]);
@@ -219,7 +219,14 @@ export function QuizManager() {
   const isLoading = areQuizzesLoading || areLessonsLoading;
   
   const handleOpenForm = (quiz?: Quiz) => {
-    setEditingQuiz(quiz);
+    if (quiz) {
+      setEditingQuiz(quiz);
+    } else {
+      const nextOrder = (quizzes && quizzes.length > 0)
+        ? Math.max(...quizzes.map(l => l.order || 0)) + 1
+        : 1;
+      setEditingQuiz({ order: nextOrder });
+    }
     setIsFormOpen(true);
   };
   
@@ -245,8 +252,8 @@ export function QuizManager() {
     };
     
     try {
-        if (editingQuiz) {
-            const quizRef = doc(firestore, 'quizzes', editingQuiz.id);
+        if (editingQuiz && 'id' in editingQuiz) {
+            const quizRef = doc(firestore, 'quizzes', editingQuiz.id!);
             await updateDoc(quizRef, quizData);
             toast({ title: 'Success', description: 'Quiz updated successfully.' });
         } else {
@@ -293,7 +300,7 @@ export function QuizManager() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}</DialogTitle>
+              <DialogTitle>{editingQuiz && 'id' in editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}</DialogTitle>
             </DialogHeader>
             <QuizForm quiz={editingQuiz} lessons={lessons || []} onSave={handleSaveQuiz} onClose={handleCloseForm} />
           </DialogContent>
