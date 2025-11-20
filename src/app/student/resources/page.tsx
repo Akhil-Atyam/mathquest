@@ -306,25 +306,11 @@ const Grade2QuestPath = ({
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     
-    const lessonOrder = [
-      'Add within 20 visually', 'Exercise: add within 20', 'Exercise: adding with arrays', 'Array word problems', 'Quiz 1: Addition',
-      'Subtract within 20 visually', 'Exercise: subtract within 20', 'Exercise: add and subtract within 20', 'Exercise: add and subtract within 20 word problems', 'Quiz 2: Subtraction',
-      'Place value blocks', 'Exercise: Place value', 'Forms of a number', 'Exercise: Forms of a number', 'Quiz 3: Place Value',
-      'Comparing numbers intro', 'Exercise: Comparing numbers', 'Ordering numbers', 'Exercise: Ordering numbers', 'Quiz 4: Comparing Numbers',
-    ];
-
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
         const grade2Items = allItems.filter(l => l.grade === 2);
         
-        return grade2Items.sort((a, b) => {
-            const indexA = lessonOrder.indexOf(a.title);
-            const indexB = lessonOrder.indexOf(b.title);
-
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            return indexA - indexB;
-        });
+        return grade2Items.sort((a, b) => (a.order || 0) - (b.order || 0));
     }, [lessons, quizzes]);
 
 
@@ -430,25 +416,11 @@ const Grade3QuestPath = ({
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     
-    const topicOrder = [
-      "Understanding Multiplication",
-      "Properties of Multiplication",
-      "Relating Multiplication and Division",
-      "Multiplication Facts and Strategies",
-      "Two-Step Word Problems",
-    ];
-
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
         return allItems
             .filter(l => l.grade === 3)
-            .sort((a, b) => {
-                const indexA = topicOrder.indexOf(a.topic);
-                const indexB = topicOrder.indexOf(b.topic);
-                if (indexA === -1) return 1;
-                if (indexB === -1) return -1;
-                return indexA - indexB;
-            });
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
     }, [lessons, quizzes]);
 
 

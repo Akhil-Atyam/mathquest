@@ -15,8 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import type { Lesson } from '@/lib/types';
-import { topics } from '@/lib/data';
+import type { Lesson, Topic } from '@/lib/types';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -27,15 +26,18 @@ const lessonSchema = z.object({
   topic: z.string().min(1, 'Please select a topic.'),
   type: z.enum(['Text', 'Video', 'Quiz']),
   content: z.string().min(10, 'Content must be at least 10 characters.'),
+  order: z.coerce.number().optional(),
 });
 
 // Component for the lesson form, used for both creating and editing
 function LessonForm({
   lesson,
+  topics,
   onSave,
   onClose,
 }: {
   lesson?: Lesson;
+  topics: Topic[];
   onSave: (data: z.infer<typeof lessonSchema>) => void;
   onClose: () => void;
 }) {
@@ -47,6 +49,7 @@ function LessonForm({
       topic: lesson?.topic || '',
       type: lesson?.type || 'Text',
       content: lesson?.content || '',
+      order: lesson?.order || 0,
     },
   });
 
@@ -100,7 +103,7 @@ function LessonForm({
                     <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {topics.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -108,26 +111,39 @@ function LessonForm({
             )}
           />
         </div>
-        <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Lesson Type</FormLabel>
-                 <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Text">Text</SelectItem>
-                    <SelectItem value="Video">Video</SelectItem>
-                    <SelectItem value="Quiz">Quiz</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+         <div className="grid grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Lesson Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="Text">Text</SelectItem>
+                        <SelectItem value="Video">Video</SelectItem>
+                        <SelectItem value="Quiz">Quiz</SelectItem>
+                    </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="order"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Order</FormLabel>
+                    <FormControl><Input type="number" placeholder="e.g., 1" {...field} /></FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+        </div>
         <FormField
           control={form.control}
           name="content"
@@ -167,7 +183,12 @@ export function LessonManager() {
     return query(collection(firestore, 'lessons'), where('teacherId', '==', user.uid));
   }, [user, firestore]);
 
-  const { data: lessons, isLoading } = useCollection<Lesson>(lessonsQuery);
+  const topicsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'topics') : null, [firestore]);
+
+  const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
+  const { data: topics, isLoading: areTopicsLoading } = useCollection<Topic>(topicsQuery);
+  
+  const isLoading = areLessonsLoading || areTopicsLoading;
   
   const handleOpenForm = (lesson?: Lesson) => {
     setEditingLesson(lesson);
@@ -241,7 +262,7 @@ export function LessonManager() {
             <DialogHeader>
               <DialogTitle>{editingLesson ? 'Edit Lesson' : 'Add New Lesson'}</DialogTitle>
             </DialogHeader>
-            <LessonForm lesson={editingLesson} onSave={handleSaveLesson} onClose={handleCloseForm} />
+            <LessonForm lesson={editingLesson} topics={topics || []} onSave={handleSaveLesson} onClose={handleCloseForm} />
           </DialogContent>
         </Dialog>
       </CardHeader>
@@ -253,7 +274,7 @@ export function LessonManager() {
                 <div>
                   <p className="font-medium">{lesson.title}</p>
                   <p className="text-sm text-muted-foreground">
-                    Grade {lesson.grade} &middot; {lesson.topic} &middot; <span className="capitalize">{lesson.type}</span>
+                    Grade {lesson.grade} &middot; {lesson.topic} &middot; Order: {lesson.order ?? 'N/A'} &middot; <span className="capitalize">{lesson.type}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

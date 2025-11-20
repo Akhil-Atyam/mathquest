@@ -7,17 +7,8 @@ import { Award, Star, Trophy } from 'lucide-react';
  * Using mock data is useful for rapid prototyping and UI development without a live backend.
  */
 
-// A hardcoded list of curriculum topics.
-export const topics: string[] = [
-    "Addition",
-    "Subtraction",
-    "Multiplication",
-    "Division",
-    "Fractions",
-    "Geometry",
-    "Measurement",
-    "Data & Graphs"
-];
+// A hardcoded list of curriculum topics. This is now deprecated in favor of the dynamic topics collection.
+export const topics: string[] = [];
 
 // Mock data for badges that students can earn.
 export const badges: Badge[] = [

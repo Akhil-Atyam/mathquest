@@ -117,6 +117,10 @@
         "teacherId": {
           "type": "string",
           "description": "Reference to Teacher. (Relationship: Teacher 1:N Lesson)"
+        },
+        "order": {
+          "type": "number",
+          "description": "A number used to define the order of the lesson in a learning path."
         }
       },
       "required": [
@@ -171,6 +175,10 @@
         "teacherId": {
             "type": "string",
             "description": "The ID of the teacher who created the quiz."
+        },
+        "order": {
+            "type": "number",
+            "description": "A number used to define the order of the quiz in a learning path."
         }
       },
       "required": [

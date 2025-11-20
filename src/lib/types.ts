@@ -32,6 +32,7 @@ export type Lesson = {
   content: string; // For text-based lessons or a URL for video lessons
   teacherId: string;
   type: 'Text' | 'Video' | 'Quiz';
+  order?: number; // Optional field to define sequence
 };
 
 
@@ -64,6 +65,7 @@ export type Quiz = {
   lessonId: string; // The ID of the parent lesson
   questions: QuizQuestion[]; // An array of question objects.
   teacherId: string;
+  order?: number; // Optional field to define sequence
 };
 
 

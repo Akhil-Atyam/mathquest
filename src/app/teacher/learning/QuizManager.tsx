@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import type { Quiz, Lesson } from '@/lib/types';
+import type { Quiz, Lesson, Topic } from '@/lib/types';
 import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,7 @@ const quizSchema = z.object({
   title: z.string().min(3, 'Title is too short.'),
   lessonId: z.string().min(1, 'Please link this quiz to a lesson.').refine(val => val !== 'none', { message: "Please link this quiz to a lesson." }),
   questions: z.array(questionSchema).min(1, 'A quiz must have at least one question.'),
+  order: z.coerce.number().optional(),
 });
 
 
@@ -42,6 +43,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
       title: quiz?.title || '',
       lessonId: quiz?.lessonId || '',
       questions: quiz?.questions || [{ questionText: '', options: ['', ''], correctAnswer: '' }],
+      order: quiz?.order || 0,
     },
   });
 
@@ -75,7 +77,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
             <FormItem className="col-span-2"><FormLabel>Quiz Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
           )} />
           <FormField control={form.control} name="lessonId" render={({ field }) => (
-            <FormItem className="col-span-2">
+            <FormItem>
               <FormLabel>Linked Lesson</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl><SelectTrigger><SelectValue placeholder="Select a lesson" /></SelectTrigger></FormControl>
@@ -84,6 +86,17 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
               <FormMessage />
             </FormItem>
           )} />
+          <FormField
+            control={form.control}
+            name="order"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Order</FormLabel>
+                <FormControl><Input type="number" placeholder="e.g., 2" {...field} /></FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
         </div>
         <hr/>
         
@@ -264,7 +277,7 @@ export function QuizManager() {
                 <div>
                   <p className="font-medium">{quiz.title}</p>
                   <p className="text-sm text-muted-foreground">
-                    Grade {quiz.grade} &middot; {quiz.topic}
+                    Grade {quiz.grade} &middot; {quiz.topic} &middot; Order: {quiz.order ?? 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
