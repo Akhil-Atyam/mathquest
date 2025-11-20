@@ -628,7 +628,6 @@ function ResourcesPageContent() {
     
     // Placement test logic
     if (quiz.isPlacementTest && score >= 80) {
-        updates.completedLessons = arrayUnion(quiz.lessonId);
         toast({
             title: "Lesson Unlocked!",
             description: "Great score! You've unlocked the next step.",
