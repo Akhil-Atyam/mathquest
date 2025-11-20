@@ -170,10 +170,12 @@ const QuestNode = ({
 
 const Grade2QuestPath = ({ 
     lessons, 
+    quizzes,
     student, 
     onSelect,
 }: { 
     lessons: Lesson[], 
+    quizzes: Quiz[],
     student: Student | null, 
     onSelect: (lesson: Lesson) => void;
 }) => {
@@ -198,42 +200,45 @@ const Grade2QuestPath = ({
       // ... more topics will follow this structure
     ];
 
-    const sortedLessons = (lessons || [])
-      .filter(l => l.grade === 2)
-      .sort((a, b) => {
-        const indexA = lessonOrder.indexOf(a.title);
-        const indexB = lessonOrder.indexOf(b.title);
-        // If a lesson isn't in our explicit order, put it at the end.
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-      });
+    const sortedLessons = React.useMemo(() => {
+        const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
+        return allItems
+            .filter(l => l.grade === 2)
+            .sort((a, b) => {
+                const indexA = lessonOrder.indexOf(a.title);
+                const indexB = lessonOrder.indexOf(b.title);
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+    }, [lessons, quizzes]);
+
 
     if (sortedLessons.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No Grade 2 lessons found. Check back soon!</p>
     }
+
+    const isQuiz = (item: any): item is Quiz => 'questions' in item;
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
             <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
                 {/* SVG Path connecting the nodes */}
                 {sortedLessons.length > 1 && (
-                    <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+                     <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
                         <path
                             d={
-                                `M ${window.innerWidth / 2} 80 ` +
                                 sortedLessons.slice(1).map((_, index) => {
-                                    const y = 80 + (index + 1) * 160;
-                                    const xOffset = (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
-                                    const prevXOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                                    const y1 = 80 + index * 160;
+                                    const y2 = 80 + (index + 1) * 160;
                                     
-                                    const controlY1 = y - 80;
-                                    const controlX1 = window.innerWidth / 2 + prevXOffset;
-                                    
-                                    const controlY2 = y-80;
-                                    const controlX2 = window.innerWidth / 2 + xOffset;
+                                    const x1 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                                    const x2 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
 
-                                    return `C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${window.innerWidth / 2 + xOffset} ${y}`;
+                                    const controlX = (x1 + x2) / 2;
+                                    const controlY = (y1 + y2) / 2;
+
+                                    return `M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`;
                                 }).join(' ')
                             }
                             stroke="hsl(var(--primary) / 0.2)"
@@ -266,10 +271,10 @@ const Grade2QuestPath = ({
                             <QuestNode 
                                 title={lesson.title}
                                 subtitle={`Topic: ${lesson.topic}`}
-                                icon={lesson.type === 'Quiz' ? FileQuestion : BookOpen}
+                                icon={isQuiz(lesson) ? FileQuestion : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                onClick={() => lesson.type === 'Quiz' ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson)}
+                                onClick={() => isQuiz(lesson) ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson as Lesson)}
                             />
                         </div>
                     )
@@ -280,11 +285,13 @@ const Grade2QuestPath = ({
 }
 
 const Grade3QuestPath = ({ 
-    lessons, 
+    lessons,
+    quizzes,
     student, 
     onSelect,
 }: { 
     lessons: Lesson[], 
+    quizzes: Quiz[],
     student: Student | null, 
     onSelect: (lesson: Lesson) => void;
 }) => {
@@ -298,40 +305,44 @@ const Grade3QuestPath = ({
       "Two-Step Word Problems",
     ];
 
-    const sortedLessons = (lessons || [])
-      .filter(l => l.grade === 3)
-      .sort((a, b) => {
-        const indexA = topicOrder.indexOf(a.topic);
-        const indexB = topicOrder.indexOf(b.topic);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-      });
+    const sortedLessons = React.useMemo(() => {
+        const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
+        return allItems
+            .filter(l => l.grade === 3)
+            .sort((a, b) => {
+                const indexA = topicOrder.indexOf(a.topic);
+                const indexB = topicOrder.indexOf(b.topic);
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+    }, [lessons, quizzes]);
+
 
     if (sortedLessons.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No Grade 3 lessons found. Check back soon!</p>
     }
 
+    const isQuiz = (item: any): item is Quiz => 'questions' in item;
+
     return (
         <div className="relative w-full overflow-x-auto p-4">
             <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
                 {sortedLessons.length > 1 && (
-                    <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+                     <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
                         <path
                             d={
-                                `M ${window.innerWidth / 2} 80 ` +
                                 sortedLessons.slice(1).map((_, index) => {
-                                    const y = 80 + (index + 1) * 160;
-                                    const xOffset = (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
-                                    const prevXOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                                    const y1 = 80 + index * 160;
+                                    const y2 = 80 + (index + 1) * 160;
                                     
-                                    const controlY1 = y - 80;
-                                    const controlX1 = window.innerWidth / 2 + prevXOffset;
-                                    
-                                    const controlY2 = y-80;
-                                    const controlX2 = window.innerWidth / 2 + xOffset;
+                                    const x1 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                                    const x2 = window.innerWidth / 2 + (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
 
-                                    return `C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${window.innerWidth / 2 + xOffset} ${y}`;
+                                    const controlX = (x1 + x2) / 2;
+                                    const controlY = (y1 + y2) / 2;
+
+                                    return `M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`;
                                 }).join(' ')
                             }
                             stroke="hsl(var(--primary) / 0.2)"
@@ -363,10 +374,10 @@ const Grade3QuestPath = ({
                             <QuestNode 
                                 title={lesson.title}
                                 subtitle={`Topic: ${lesson.topic}`}
-                                icon={lesson.type === 'Quiz' ? FileQuestion : BookOpen}
+                                icon={isQuiz(lesson) ? FileQuestion : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                onClick={() => lesson.type === 'Quiz' ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson)}
+                                onClick={() => isQuiz(lesson) ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson as Lesson)}
                             />
                         </div>
                     )
@@ -484,6 +495,7 @@ function ResourcesPageContent() {
                             <CardContent className="overflow-x-auto">
                                 <Grade2QuestPath 
                                     lessons={lessons || []}
+                                    quizzes={quizzes || []}
                                     student={student}
                                     onSelect={setSelectedLesson}
                                 />
@@ -503,6 +515,7 @@ function ResourcesPageContent() {
                             <CardContent className="overflow-x-auto">
                                 <Grade3QuestPath 
                                     lessons={lessons || []}
+                                    quizzes={quizzes || []}
                                     student={student}
                                     onSelect={setSelectedLesson}
                                 />
