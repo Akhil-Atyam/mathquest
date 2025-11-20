@@ -29,7 +29,7 @@ const questionSchema = z.object({
 // Zod schema for the entire quiz
 const quizSchema = z.object({
   title: z.string().min(3, 'Title is too short.'),
-  lessonId: z.string().min(1, 'Please link this quiz to a lesson.'),
+  lessonId: z.string().min(1, 'Please link this quiz to a lesson.').refine(val => val !== 'none', { message: "Please link this quiz to a lesson." }),
   questions: z.array(questionSchema).min(1, 'A quiz must have at least one question.'),
 });
 
@@ -79,7 +79,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
               <FormLabel>Linked Lesson</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl><SelectTrigger><SelectValue placeholder="Select a lesson" /></SelectTrigger></FormControl>
-                <SelectContent><SelectItem value="">None</SelectItem>{lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">None</SelectItem>{lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}</SelectContent>
               </Select>
               <FormMessage />
             </FormItem>
