@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import React, { useEffect, useState } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, FileQuestion, CheckSquare } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -136,12 +136,14 @@ function QuizView({
 
   useEffect(() => {
     // If there's already a score for this quiz, show the result screen first.
-    if (score !== null) {
+    if (student?.quizScores?.[quiz.id] !== undefined) {
+      setScore(student.quizScores[quiz.id]);
       setView('result');
     } else {
       setView('quiz');
+      setScore(null);
     }
-  }, [quiz.id, score]);
+  }, [quiz.id, student?.quizScores]);
 
   const onSubmit = (data: any) => {
     let correctAnswers = 0;
@@ -341,13 +343,7 @@ const Grade2QuestPath = ({
         <div className="relative w-full overflow-x-auto p-4">
             <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedItems.length * 10}rem`}}>
                 {sortedItems.length > 1 && (
-                     <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
-                        <defs>
-                            <linearGradient id="path-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" style={{stopColor: "hsl(var(--primary) / 0.1)", stopOpacity: 1}} />
-                                <stop offset="100%" style={{stopColor: "hsl(var(--accent) / 0.3)", stopOpacity: 1}} />
-                            </linearGradient>
-                        </defs>
+                     <svg className="absolute top-0 left-0 w-full h-full">
                         <path
                             d={
                                 'M ' + sortedItems.map((_, index) => {
@@ -356,7 +352,7 @@ const Grade2QuestPath = ({
                                     return `${x}% ${y}`;
                                 }).join(' L ')
                             }
-                            stroke="url(#path-gradient)"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
@@ -390,7 +386,8 @@ const Grade2QuestPath = ({
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                transition: 'top 0.5s ease-out, left 0.5s ease-out'
+                                transition: 'top 0.5s ease-out, left 0.5s ease-out',
+                                zIndex: 1,
                             }}
                         >
                             <QuestNode 
@@ -442,13 +439,7 @@ const Grade3QuestPath = ({
         <div className="relative w-full overflow-x-auto p-4">
             <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedItems.length * 10}rem`}}>
                 {sortedItems.length > 1 && (
-                     <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
-                        <defs>
-                            <linearGradient id="path-gradient-g3" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" style={{stopColor: "hsl(var(--primary) / 0.1)", stopOpacity: 1}} />
-                                <stop offset="100%" style={{stopColor: "hsl(var(--accent) / 0.3)", stopOpacity: 1}} />
-                            </linearGradient>
-                        </defs>
+                     <svg className="absolute top-0 left-0 w-full h-full">
                         <path
                            d={
                                 'M ' + sortedItems.map((_, index) => {
@@ -457,7 +448,7 @@ const Grade3QuestPath = ({
                                     return `${x}% ${y}`;
                                 }).join(' L ')
                             }
-                            stroke="url(#path-gradient-g3)"
+                            stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
@@ -490,7 +481,8 @@ const Grade3QuestPath = ({
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                transition: 'top 0.5s ease-out, left 0.5s ease-out'
+                                transition: 'top 0.5s ease-out, left 0.5s ease-out',
+                                zIndex: 1,
                             }}
                         >
                             <QuestNode 
