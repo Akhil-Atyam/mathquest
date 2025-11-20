@@ -79,7 +79,19 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
  * @param {(lessonId: string) => void} props.onUncomplete - Callback to mark the lesson as incomplete.
  * @param {boolean} props.isCompleted - Whether the lesson has already been completed.
  */
-function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; onUncomplete: (lessonId: string) => void; isCompleted: boolean }) {
+function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted, onCompleteAndContinue }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; onUncomplete: (lessonId: string) => void; isCompleted: boolean, onCompleteAndContinue: (lessonId: string) => void; }) {
+    const getYouTubeEmbedUrl = (url: string) => {
+        let videoId = '';
+        if (url.includes('youtube.com/watch?v=')) {
+            videoId = url.split('v=')[1].split('&')[0];
+        } else if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1].split('?')[0];
+        }
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+
+    const embedUrl = lesson.type === 'Video' ? getYouTubeEmbedUrl(lesson.content) : null;
+    
     return (
         <div className="space-y-6">
            <Button variant="ghost" onClick={onBack}>
@@ -97,9 +109,22 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="prose dark:prose-invert max-w-none">
-                <ReactMarkdown>{lesson.content}</ReactMarkdown>
-              </div>
+              {lesson.type === 'Video' && embedUrl ? (
+                  <div className="aspect-video w-full">
+                      <iframe 
+                        className="w-full h-full rounded-md"
+                        src={embedUrl} 
+                        title={lesson.title} 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen>
+                      </iframe>
+                  </div>
+              ) : (
+                <div className="prose dark:prose-invert max-w-none">
+                  <ReactMarkdown>{lesson.content}</ReactMarkdown>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
                  {isCompleted ? (
@@ -108,10 +133,16 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
                         Redo Lesson
                     </Button>
                  ) : (
-                    <Button onClick={() => onComplete(lesson.id)}>
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Finish this lesson!
-                    </Button>
+                    <>
+                        <Button variant="outline" onClick={() => onComplete(lesson.id)}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Finish this lesson!
+                        </Button>
+                        <Button onClick={() => onCompleteAndContinue(lesson.id)}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Complete & Continue
+                        </Button>
+                    </>
                  )}
             </CardFooter>
           </Card>
@@ -610,14 +641,52 @@ function ResourcesPageContent() {
   const grades = [1, 2, 3, 4, 5];
   
   const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading;
+  
+  const findNextItem = (currentItem: Lesson | Quiz) => {
+    if (!lessons || !quizzes) return null;
 
-  const handleCompleteLesson = (lessonId: string) => {
+    const allItems: (Lesson | Quiz)[] = [...lessons, ...quizzes];
+    const gradeItems = allItems.filter(item => item.grade === currentItem.grade)
+                                .sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    const currentIndex = gradeItems.findIndex(item => item.id === currentItem.id);
+
+    if (currentIndex > -1 && currentIndex < gradeItems.length - 1) {
+        return gradeItems[currentIndex + 1];
+    }
+    return null;
+  };
+
+  const navigateToItem = (item: Lesson | Quiz | null) => {
+    if (item) {
+        if (isQuiz(item)) {
+            setSelectedLesson(null);
+            setSelectedQuiz(item);
+        } else {
+            setSelectedQuiz(null);
+            setSelectedLesson(item);
+        }
+    } else {
+        // Last item, just go back to the list
+        handleBack();
+    }
+  };
+
+  const handleCompleteLesson = (lessonId: string, andContinue: boolean = false) => {
     if (!studentDocRef) return;
     updateDoc(studentDocRef, {
         completedLessons: arrayUnion(lessonId)
     }).then(() => {
-        toast({ title: "Lesson Complete!", description: "Great job! Keep up the good work." });
-        setSelectedLesson(null);
+        if (!andContinue) {
+          toast({ title: "Lesson Complete!", description: "Great job! Keep up the good work." });
+          setSelectedLesson(null);
+        } else {
+            const currentLesson = lessons?.find(l => l.id === lessonId);
+            if (currentLesson) {
+                const nextItem = findNextItem(currentLesson);
+                navigateToItem(nextItem);
+            }
+        }
     });
   }
 
@@ -672,30 +741,12 @@ function ResourcesPageContent() {
   }
 
   const handleContinue = () => {
-    if (!selectedQuiz || !lessons || !quizzes) {
+    if (!selectedQuiz) {
         handleBack();
         return;
     }
-
-    const allItems: (Lesson | Quiz)[] = [...lessons, ...quizzes];
-    const gradeItems = allItems.filter(item => item.grade === selectedQuiz.grade)
-                                .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    const currentIndex = gradeItems.findIndex(item => item.id === selectedQuiz.id);
-
-    if (currentIndex > -1 && currentIndex < gradeItems.length - 1) {
-        const nextItem = gradeItems[currentIndex + 1];
-        if (isQuiz(nextItem)) {
-            setSelectedLesson(null);
-            setSelectedQuiz(nextItem);
-        } else {
-            setSelectedQuiz(null);
-            setSelectedLesson(nextItem);
-        }
-    } else {
-        // Last item, just go back to the list
-        handleBack();
-    }
+    const nextItem = findNextItem(selectedQuiz);
+    navigateToItem(nextItem);
 };
 
   if (isLoading) {
@@ -715,7 +766,8 @@ function ResourcesPageContent() {
             <LessonView 
                 lesson={selectedLesson} 
                 onBack={handleBack}
-                onComplete={handleCompleteLesson}
+                onComplete={(id) => handleCompleteLesson(id, false)}
+                onCompleteAndContinue={(id) => handleCompleteLesson(id, true)}
                 onUncomplete={handleUncompleteLesson}
                 isCompleted={student?.completedLessons?.includes(selectedLesson.id) || false}
              />
