@@ -45,7 +45,7 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
             {isCompleted ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <BookOpen className="w-6 h-6 text-primary" />}
             <span>{lesson.title}</span>
           </div>
-          {isAssigned && <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
+          {isAssigned && !isCompleted && <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
@@ -298,6 +298,7 @@ const QuestNode = ({
   icon,
   isUnlocked,
   isCompleted,
+  isAssigned,
   onClick,
 }: {
   title: string;
@@ -305,6 +306,7 @@ const QuestNode = ({
   icon: React.ElementType;
   isUnlocked: boolean;
   isCompleted: boolean;
+  isAssigned: boolean;
   onClick: () => void;
 }) => {
   const Icon = icon;
@@ -332,6 +334,11 @@ const QuestNode = ({
             {isCompleted && (
                 <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-green-500">
                     <CheckCircle2 className="h-5 w-5 text-white" />
+                </div>
+            )}
+            {isAssigned && !isCompleted && isUnlocked && (
+                <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400">
+                    <Star className="h-5 w-5 text-white" />
                 </div>
             )}
           </button>
@@ -453,7 +460,7 @@ const Grade2QuestPath = ({
 
                 {sortedItems.map((item, index) => {
                     const isItemQuiz = isQuiz(item);
-                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
+                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) || (student?.completedQuizzes?.includes(item.id)) : completedLessonIds.has(item.id);
                     
                     // --- Unlocking Logic ---
                     let isSequentiallyUnlocked = false;
@@ -464,7 +471,7 @@ const Grade2QuestPath = ({
                         // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
-                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
+                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id) || (student?.completedQuizzes?.includes(prevItem.id) || false);
                         } else {
                             isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
                         }
@@ -493,6 +500,7 @@ const Grade2QuestPath = ({
                                 icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
+                                isAssigned={isAssigned}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
@@ -586,7 +594,7 @@ const Grade3QuestPath = ({
 
                 {sortedItems.map((item, index) => {
                     const isItemQuiz = isQuiz(item);
-                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
+                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) || (student?.completedQuizzes?.includes(item.id)) : completedLessonIds.has(item.id);
                     
                     // --- Unlocking Logic ---
                     let isSequentiallyUnlocked = false;
@@ -597,7 +605,7 @@ const Grade3QuestPath = ({
                         // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
-                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
+                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id) || (student?.completedQuizzes?.includes(prevItem.id) || false);
                         } else {
                             isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
                         }
@@ -626,6 +634,7 @@ const Grade3QuestPath = ({
                                 icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
+                                isAssigned={isAssigned}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
                             />
                         </div>
@@ -935,5 +944,3 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
-
-    
