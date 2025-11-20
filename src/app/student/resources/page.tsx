@@ -179,24 +179,31 @@ const Grade2QuestPath = ({
 }) => {
     const completedLessonIds = new Set(student?.completedLessons || []);
     
-    const topicOrder = [
-      "Addition", 
-      "Subtraction", 
-      "Place Value", 
-      "Comparing Numbers",
-      "Add and Subtract within 100",
-      "Add and Subtract within 1000",
-      "Money & Time", 
-      "Measurement", 
-      "Data & Graphs", 
-      "Geometry"
+    // Detailed lesson order for Grade 2 curriculum.
+    const lessonOrder = [
+      // Topic: Add and Subtract within 20
+      'Add within 20 visually',
+      'Exercise: add within 20',
+      'Exercise: adding with arrays',
+      'Array word problems',
+      'Quiz 1: Addition',
+      'Subtract within 20 visually',
+      'Exercise: subtract within 20',
+      'Exercise: add and subtract within 20',
+      'Exercise: add and subtract within 20 word problems',
+      'Quiz 2: Subtraction',
+      // Topic: Place Value
+      'Place value blocks',
+      'Exercise: Place value',
+      // ... more topics will follow this structure
     ];
 
     const sortedLessons = (lessons || [])
       .filter(l => l.grade === 2)
       .sort((a, b) => {
-        const indexA = topicOrder.indexOf(a.topic);
-        const indexB = topicOrder.indexOf(b.topic);
+        const indexA = lessonOrder.indexOf(a.title);
+        const indexB = lessonOrder.indexOf(b.title);
+        // If a lesson isn't in our explicit order, put it at the end.
         if (indexA === -1) return 1;
         if (indexB === -1) return -1;
         return indexA - indexB;
@@ -207,32 +214,43 @@ const Grade2QuestPath = ({
     }
 
     return (
-        <div className="relative w-full overflow-x-hidden">
-            <div className="relative flex flex-col items-center py-10 px-4" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
+        <div className="relative w-full overflow-x-auto p-4">
+            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
                 {/* SVG Path connecting the nodes */}
-                <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
-                    <path
-                        d={
-                            `M ${window.innerWidth / 2} 80 ` +
-                            sortedLessons.slice(1).map((_, index) => {
-                                const y = 80 + (index + 1) * 160;
-                                const xOffset = 100 * Math.sin((index + 1) * Math.PI / 2.5);
-                                return `C ${window.innerWidth / 2 + 100 * Math.sin(index * Math.PI / 2.5)} ${y - 80}, ${window.innerWidth / 2 + xOffset} ${y - 80}, ${window.innerWidth / 2 + xOffset} ${y}`;
-                            }).join(' ')
-                        }
-                        stroke="hsl(var(--primary) / 0.2)"
-                        strokeWidth="8"
-                        fill="none"
-                        strokeLinecap="round"
-                    />
-                </svg>
+                {sortedLessons.length > 1 && (
+                    <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+                        <path
+                            d={
+                                `M ${window.innerWidth / 2} 80 ` +
+                                sortedLessons.slice(1).map((_, index) => {
+                                    const y = 80 + (index + 1) * 160;
+                                    const xOffset = (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
+                                    const prevXOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                                    
+                                    const controlY1 = y - 80;
+                                    const controlX1 = window.innerWidth / 2 + prevXOffset;
+                                    
+                                    const controlY2 = y-80;
+                                    const controlX2 = window.innerWidth / 2 + xOffset;
+
+                                    return `C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${window.innerWidth / 2 + xOffset} ${y}`;
+                                }).join(' ')
+                            }
+                            stroke="hsl(var(--primary) / 0.2)"
+                            strokeWidth="8"
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                )}
+
 
                 {sortedLessons.map((lesson, index) => {
                     const isCompleted = completedLessonIds.has(lesson.id);
                     const isUnlocked = index === 0 || (sortedLessons[index-1] && completedLessonIds.has(sortedLessons[index-1].id));
                     
                     const y = 80 + index * 160;
-                    const xOffset = 100 * Math.sin(index * Math.PI / 2.5);
+                    const xOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
 
                     return (
                         <div
@@ -242,15 +260,113 @@ const Grade2QuestPath = ({
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffset}px)`,
                                 transform: 'translateX(-50%)',
+                                transition: 'top 0.5s ease-out, left 0.5s ease-out'
                             }}
                         >
                             <QuestNode 
                                 title={lesson.title}
                                 subtitle={`Topic: ${lesson.topic}`}
-                                icon={BookOpen}
+                                icon={lesson.type === 'Quiz' ? FileQuestion : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
-                                onClick={() => onSelect(lesson)}
+                                onClick={() => lesson.type === 'Quiz' ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson)}
+                            />
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+const Grade3QuestPath = ({ 
+    lessons, 
+    student, 
+    onSelect,
+}: { 
+    lessons: Lesson[], 
+    student: Student | null, 
+    onSelect: (lesson: Lesson) => void;
+}) => {
+    const completedLessonIds = new Set(student?.completedLessons || []);
+    
+    const topicOrder = [
+      "Understanding Multiplication",
+      "Properties of Multiplication",
+      "Relating Multiplication and Division",
+      "Multiplication Facts and Strategies",
+      "Two-Step Word Problems",
+    ];
+
+    const sortedLessons = (lessons || [])
+      .filter(l => l.grade === 3)
+      .sort((a, b) => {
+        const indexA = topicOrder.indexOf(a.topic);
+        const indexB = topicOrder.indexOf(b.topic);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+
+    if (sortedLessons.length === 0) {
+        return <p className="text-muted-foreground text-center py-8">No Grade 3 lessons found. Check back soon!</p>
+    }
+
+    return (
+        <div className="relative w-full overflow-x-auto p-4">
+            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
+                {sortedLessons.length > 1 && (
+                    <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+                        <path
+                            d={
+                                `M ${window.innerWidth / 2} 80 ` +
+                                sortedLessons.slice(1).map((_, index) => {
+                                    const y = 80 + (index + 1) * 160;
+                                    const xOffset = (window.innerWidth / 5) * Math.sin((index + 1) * Math.PI / 3);
+                                    const prevXOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+                                    
+                                    const controlY1 = y - 80;
+                                    const controlX1 = window.innerWidth / 2 + prevXOffset;
+                                    
+                                    const controlY2 = y-80;
+                                    const controlX2 = window.innerWidth / 2 + xOffset;
+
+                                    return `C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${window.innerWidth / 2 + xOffset} ${y}`;
+                                }).join(' ')
+                            }
+                            stroke="hsl(var(--primary) / 0.2)"
+                            strokeWidth="8"
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                )}
+
+                {sortedLessons.map((lesson, index) => {
+                    const isCompleted = completedLessonIds.has(lesson.id);
+                    const isUnlocked = index === 0 || (sortedLessons[index-1] && completedLessonIds.has(sortedLessons[index-1].id));
+                    
+                    const y = 80 + index * 160;
+                    const xOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
+
+                    return (
+                        <div
+                            key={lesson.id}
+                            className="absolute"
+                            style={{
+                                top: `${y - 48}px`,
+                                left: `calc(50% + ${xOffset}px)`,
+                                transform: 'translateX(-50%)',
+                                transition: 'top 0.5s ease-out, left 0.5s ease-out'
+                            }}
+                        >
+                            <QuestNode 
+                                title={lesson.title}
+                                subtitle={`Topic: ${lesson.topic}`}
+                                icon={lesson.type === 'Quiz' ? FileQuestion : BookOpen}
+                                isCompleted={isCompleted}
+                                isUnlocked={isUnlocked}
+                                onClick={() => lesson.type === 'Quiz' ? window.location.href=`/student/quizzes/${lesson.id}` : onSelect(lesson)}
                             />
                         </div>
                     )
@@ -367,6 +483,25 @@ function ResourcesPageContent() {
                             </CardHeader>
                             <CardContent className="overflow-x-auto">
                                 <Grade2QuestPath 
+                                    lessons={lessons || []}
+                                    student={student}
+                                    onSelect={setSelectedLesson}
+                                />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                )
+            }
+             if (grade === 3) {
+                return (
+                    <TabsContent key={grade} value={`grade-3`}>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Grade 3 Learning Path</CardTitle>
+                                <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
+                            </CardHeader>
+                            <CardContent className="overflow-x-auto">
+                                <Grade3QuestPath 
                                     lessons={lessons || []}
                                     student={student}
                                     onSelect={setSelectedLesson}
