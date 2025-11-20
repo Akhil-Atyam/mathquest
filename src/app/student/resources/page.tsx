@@ -60,7 +60,7 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
         </Button>
         {linkedQuiz && (
             <Button onClick={() => onSelectQuiz(linkedQuiz)} variant="outline" className="w-full">
-                <FileQuestion className="mr-2 h-4 w-4" />
+                <CheckSquare className="mr-2 h-4 w-4" />
                 {linkedQuiz.isPlacementTest ? 'Placement Test' : 'Start Quiz'}
             </Button>
         )}
@@ -396,7 +396,7 @@ const Grade2QuestPath = ({
                             <QuestNode 
                                 title={item.title}
                                 subtitle={`Topic: ${item.topic}`}
-                                icon={isItemQuiz ? FileQuestion : BookOpen}
+                                icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
@@ -496,7 +496,7 @@ const Grade3QuestPath = ({
                             <QuestNode 
                                 title={item.title}
                                 subtitle={`Topic: ${item.topic}`}
-                                icon={isItemQuiz ? FileQuestion : BookOpen}
+                                icon={isItemQuiz ? CheckSquare : BookOpen}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
                                 onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
