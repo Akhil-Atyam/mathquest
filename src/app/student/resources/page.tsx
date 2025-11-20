@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import React, { useEffect, useState, useRef } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
 import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
@@ -124,11 +124,13 @@ function QuizView({
   student,
   onBack,
   onQuizComplete,
+  onQuizRedo,
 }: {
   quiz: Quiz;
   student: Student | null;
   onBack: () => void;
   onQuizComplete: (quiz: Quiz, score: number) => void;
+  onQuizRedo: (quizId: string) => void;
 }) {
   const form = useForm();
   const [view, setView] = useState<'quiz' | 'result'>('quiz');
@@ -159,6 +161,13 @@ function QuizView({
   };
   
   const earnedBadges = view === 'result' ? allBadges.filter(b => b.id.includes(quiz.topic.toLowerCase())) : [];
+
+  const handleRedo = () => {
+    onQuizRedo(quiz.id);
+    setView('quiz');
+    setScore(null);
+    form.reset();
+  }
 
   if (view === 'result' && score !== null) {
     return (
@@ -191,7 +200,7 @@ function QuizView({
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4">
                     <Button onClick={onBack} className="w-full sm:w-auto">Continue Learning</Button>
-                    <Button variant="outline" onClick={() => { setView('quiz'); setScore(null); form.reset(); }} className="w-full sm:w-auto">
+                    <Button variant="outline" onClick={handleRedo} className="w-full sm:w-auto">
                         <RotateCcw className="mr-2 h-4 w-4" />
                         Retry Quiz
                     </Button>
@@ -283,8 +292,9 @@ const QuestNode = ({
             className={cn(
               "relative flex h-24 w-24 items-center justify-center rounded-full border-4 shadow-lg transition-all duration-300 transform hover:scale-110",
               isUnlocked ? "cursor-pointer" : "cursor-not-allowed",
-              isCompleted ? "border-green-500 bg-green-100" : "border-primary bg-card",
-              !isUnlocked && "border-muted bg-muted/50"
+              isCompleted ? "border-green-500 bg-green-100" : "border-primary",
+              !isUnlocked && "border-muted bg-muted/50",
+              isUnlocked && !isCompleted && "bg-background" // Use a solid background color here
             )}
           >
             <Icon className={cn("h-10 w-10", isUnlocked ? "text-primary" : "text-muted-foreground", isCompleted && "text-green-600")} />
@@ -636,6 +646,21 @@ function ResourcesPageContent() {
 
     updateDoc(studentDocRef, updates);
   }
+
+  const handleQuizRedo = (quizId: string) => {
+    if (!studentDocRef) return;
+
+    updateDoc(studentDocRef, {
+      [`quizScores.${quizId}`]: deleteField()
+    }).catch(error => {
+      console.error("Error removing quiz score: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not reset quiz progress. Please try again."
+      });
+    });
+  };
   
   const handleBack = () => {
     setSelectedLesson(null);
@@ -675,6 +700,7 @@ function ResourcesPageContent() {
                 student={student}
                 onBack={handleBack}
                 onQuizComplete={handleQuizComplete}
+                onQuizRedo={handleQuizRedo}
             />
         </div>
     )
