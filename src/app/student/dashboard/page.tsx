@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Award, ListChecks, BookOpen, Star } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, collection, updateDoc, arrayUnion, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 /**
  * The main page for the student dashboard.
@@ -30,16 +31,61 @@ export default function StudentDashboardPage() {
 
   const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
 
-  const lessonsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'lessons');
-  }, [firestore]);
+  const [lessons, setLessons] = useState<Lesson[] | null>(null);
+  const [areLessonsLoading, setAreLessonsLoading] = useState(true);
 
-  const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
-  
+  useEffect(() => {
+    const fetchLessons = async () => {
+      if (!firestore || !student) return;
+
+      const lessonIds = [
+        ...(student.assignedLessons || []),
+        ...(student.completedLessons || []),
+      ];
+      
+      // Remove duplicates
+      const uniqueLessonIds = [...new Set(lessonIds)];
+
+      if (uniqueLessonIds.length === 0) {
+        setLessons([]);
+        setAreLessonsLoading(false);
+        return;
+      }
+
+      try {
+        setAreLessonsLoading(true);
+        const lessonsCollection = collection(firestore, 'lessons');
+        // Firestore 'in' queries are limited to 30 items. We fetch in batches if needed.
+        const lessonPromises = [];
+        for (let i = 0; i < uniqueLessonIds.length; i += 30) {
+          const batchIds = uniqueLessonIds.slice(i, i + 30);
+          const q = query(lessonsCollection, where('__name__', 'in', batchIds));
+          lessonPromises.push(getDocs(q));
+        }
+        
+        const querySnapshots = await Promise.all(lessonPromises);
+        const fetchedLessons: Lesson[] = [];
+        querySnapshots.forEach(snapshot => {
+          snapshot.forEach(doc => {
+            fetchedLessons.push({ id: doc.id, ...doc.data() } as Lesson);
+          });
+        });
+        
+        setLessons(fetchedLessons);
+      } catch (error) {
+        console.error("Error fetching lessons:", error);
+        setLessons([]);
+      } finally {
+        setAreLessonsLoading(false);
+      }
+    };
+
+    fetchLessons();
+  }, [firestore, student]);
+
   const isLoading = isUserLoading || isStudentLoading || areLessonsLoading;
   
-  if (isLoading || !student || !lessons) {
+  if (isLoading || !student || lessons === null) {
     return (
       <div className="p-4 sm:p-6 space-y-6">
         <Skeleton className="h-9 w-1/2" />
@@ -143,7 +189,7 @@ export default function StudentDashboardPage() {
                         {completedQuizzesData.length > 0 ? completedQuizzesData.map(quiz => (
                             <li key={quiz.id} className="flex justify-between items-center text-sm text-muted-foreground">
                             <span>{quiz.title}</span>
-                            <span className="font-bold text-primary">{student.quizScores[quiz.id]}%</span>
+                            <span className="font-bold text-primary">{student.quizScores?.[quiz.id]}%</span>
                             </li>
                         )) : <p className="text-sm text-muted-foreground">No quizzes completed yet.</p>}
                         </ul>
@@ -193,3 +239,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    
