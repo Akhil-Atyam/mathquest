@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import React, { useEffect, useState, useRef } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
+import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField, writeBatch } from 'firebase/firestore';
 import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -396,7 +396,8 @@ const Grade2QuestPath = ({
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(k => student.quizScores![k] >= 80) || []);
-    const assignedLessonIds = new Set(student?.assignedLessons || []);
+    const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
+
     
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
@@ -477,7 +478,7 @@ const Grade2QuestPath = ({
                         }
                     }
 
-                    const isAssigned = assignedLessonIds.has(item.id);
+                    const isAssigned = assignedIds.has(item.id);
                     const isUnlocked = isSequentiallyUnlocked || isAssigned || isCompleted;
                     // --- End Unlocking Logic ---
                     
@@ -531,7 +532,8 @@ const Grade3QuestPath = ({
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(student?.quizScores && Object.keys(student.quizScores).filter(k => student.quizScores![k] >= 80) || []);
-    const assignedLessonIds = new Set(student?.assignedLessons || []);
+    const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
+
     
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
@@ -611,7 +613,7 @@ const Grade3QuestPath = ({
                         }
                     }
 
-                    const isAssigned = assignedLessonIds.has(item.id);
+                    const isAssigned = assignedIds.has(item.id);
                     const isUnlocked = isSequentiallyUnlocked || isAssigned || isCompleted;
                     // --- End Unlocking Logic ---
 
@@ -707,11 +709,13 @@ function ResourcesPageContent() {
     });
   }
   
-  const handleQuizComplete = (quizId: string, score: number) => {
+  const handleQuizComplete = async (quizId: string, score: number) => {
     if (!studentDocRef || !lessons || !quizzes) return;
     const quiz = quizzes.find(q => q.id === quizId);
     if (!quiz) return;
     
+    const batch = writeBatch(firestore);
+
     let updates: any = {
         [`quizScores.${quizId}`]: score,
     };
@@ -736,9 +740,11 @@ function ResourcesPageContent() {
                 .map(item => item.id);
             
             if (itemsToUnlock.length > 0) {
-              const assignedLessons = new Set(student?.assignedLessons || []);
-              itemsToUnlock.forEach(id => assignedLessons.add(id));
-              updates.assignedLessons = Array.from(assignedLessons);
+              const assignedLessonsAndQuizzes = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
+              itemsToUnlock.forEach(id => assignedLessonsAndQuizzes.add(id));
+              
+              // We can just add all to assignedLessons for simplicity as the quest path checks both
+              updates.assignedLessons = arrayUnion(...itemsToUnlock);
             }
 
             toast({
@@ -748,14 +754,17 @@ function ResourcesPageContent() {
         }
     }
 
-    updateDoc(studentDocRef, updates);
+    batch.update(studentDocRef, updates);
+    await batch.commit();
   }
   
-  const handleRetryQuiz = (quizId: string) => {
-    if (!studentDocRef || !student) return;
+  const handleRetryQuiz = async (quizId: string) => {
+    if (!studentDocRef || !student || !lessons || !quizzes) return;
 
     const quiz = quizzes?.find(q => q.id === quizId);
     if (!quiz) return;
+
+    const batch = writeBatch(firestore);
 
     // Find the badge related to the quiz topic
     const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
@@ -772,19 +781,34 @@ function ResourcesPageContent() {
       updates.badges = arrayRemove(badgeId);
     }
     
-    updateDoc(studentDocRef, updates).then(() => {
+    // If it was a placement test, re-lock the lessons it unlocked.
+    if (quiz.isPlacementTest && quiz.order !== undefined) {
+        const allItemsForGrade: (Lesson | Quiz)[] = [...lessons, ...quizzes].filter(item => item.grade === quiz.grade);
+        const itemsToRelock = allItemsForGrade
+            .filter(item => (item.order || 0) < (quiz.order || 0))
+            .map(item => item.id);
+            
+        if (itemsToRelock.length > 0) {
+            updates.assignedLessons = arrayRemove(...itemsToRelock);
+        }
+    }
+
+    batch.update(studentDocRef, updates);
+    
+    try {
+        await batch.commit();
         toast({
             title: "Quiz Reset",
             description: "Your previous score has been cleared. Good luck!"
         });
-    }).catch((error) => {
+    } catch (error) {
         console.error("Error retrying quiz:", error);
         toast({
             variant: "destructive",
             title: "Error",
             description: "Could not reset your quiz progress. Please try again."
         });
-    });
+    }
   };
   
   const handleBack = () => {
