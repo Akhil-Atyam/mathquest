@@ -1,6 +1,6 @@
 'use client';
 
-import type { Lesson, Student } from '@/lib/types';
+import type { Lesson, Student, Quiz } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import React, { useEffect } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, FileQuestion } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -18,19 +18,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
  *
  * @param {object} props - The component props.
  * @param {Lesson} props.lesson - The lesson object to display.
+ * @param {Quiz | undefined} props.linkedQuiz - The quiz object linked to this lesson, if any.
  * @param {(lesson: Lesson) => void} props.onSelect - Callback function when lesson is selected.
  * @param {boolean} props.isCompleted - Flag to indicate if the lesson is completed.
  * @param {boolean} props.isAssigned - Flag to indicate if the lesson is assigned.
  */
-function LessonCard({ lesson, onSelect, isCompleted, isAssigned }: { lesson: Lesson; onSelect: (lesson: Lesson) => void; isCompleted: boolean; isAssigned: boolean; }) {
+function LessonCard({ lesson, linkedQuiz, onSelect, isCompleted, isAssigned }: { lesson: Lesson; linkedQuiz: Quiz | undefined; onSelect: (lesson: Lesson) => void; isCompleted: boolean; isAssigned: boolean; }) {
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-start justify-between text-base">
           <div className="flex items-center gap-2">
@@ -40,15 +42,25 @@ function LessonCard({ lesson, onSelect, isCompleted, isAssigned }: { lesson: Les
           {isAssigned && <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow">
         <p className="text-sm text-muted-foreground mb-4">Topic: {lesson.topic}</p>
+      </CardContent>
+      <CardFooter className="flex flex-col sm:flex-row gap-2">
         <Button 
             onClick={() => onSelect(lesson)} 
             className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
         >
           {isCompleted ? 'Review Lesson' : 'Start Lesson'}
         </Button>
-      </CardContent>
+        {linkedQuiz && (
+            <Button asChild variant="outline" className="w-full">
+                <Link href={`/student/quizzes/${linkedQuiz.id}`}>
+                    <FileQuestion className="mr-2 h-4 w-4" />
+                    Start Quiz
+                </Link>
+            </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }
@@ -167,25 +179,24 @@ const Grade2QuestPath = ({
 }) => {
     const completedLessonIds = new Set(student?.completedLessons || []);
     
-    // The specific order of topics for Grade 2
     const topicOrder = [
       "Addition", 
       "Subtraction", 
       "Place Value", 
-      "Comparing Numbers", 
+      "Comparing Numbers",
+      "Add and Subtract within 100",
+      "Add and Subtract within 1000",
       "Money & Time", 
       "Measurement", 
       "Data & Graphs", 
       "Geometry"
     ];
 
-    // Filter for Grade 2 lessons and sort them based on the defined topic order
     const sortedLessons = (lessons || [])
       .filter(l => l.grade === 2)
       .sort((a, b) => {
         const indexA = topicOrder.indexOf(a.topic);
         const indexB = topicOrder.indexOf(b.topic);
-        // If a topic isn't in our list, put it at the end
         if (indexA === -1) return 1;
         if (indexB === -1) return -1;
         return indexA - indexB;
@@ -196,29 +207,51 @@ const Grade2QuestPath = ({
     }
 
     return (
-        <div className="py-10">
-            <div className="relative flex flex-col items-center gap-16">
-                {/* Decorative path line */}
-                <div className="absolute top-12 left-1/2 -z-10 h-[calc(100%-6rem)] w-2 max-w-sm rounded-full bg-primary/10"></div>
-                
+        <div className="relative w-full overflow-x-hidden">
+            <div className="relative flex flex-col items-center py-10 px-4" style={{ minHeight: `${sortedLessons.length * 10}rem`}}>
+                {/* SVG Path connecting the nodes */}
+                <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: -1 }}>
+                    <path
+                        d={
+                            `M ${window.innerWidth / 2} 80 ` +
+                            sortedLessons.slice(1).map((_, index) => {
+                                const y = 80 + (index + 1) * 160;
+                                const xOffset = 100 * Math.sin((index + 1) * Math.PI / 2.5);
+                                return `C ${window.innerWidth / 2 + 100 * Math.sin(index * Math.PI / 2.5)} ${y - 80}, ${window.innerWidth / 2 + xOffset} ${y - 80}, ${window.innerWidth / 2 + xOffset} ${y}`;
+                            }).join(' ')
+                        }
+                        stroke="hsl(var(--primary) / 0.2)"
+                        strokeWidth="8"
+                        fill="none"
+                        strokeLinecap="round"
+                    />
+                </svg>
+
                 {sortedLessons.map((lesson, index) => {
                     const isCompleted = completedLessonIds.has(lesson.id);
-                    // The first lesson is always unlocked. Subsequent lessons are unlocked if the previous one is completed.
                     const isUnlocked = index === 0 || (sortedLessons[index-1] && completedLessonIds.has(sortedLessons[index-1].id));
+                    
+                    const y = 80 + index * 160;
+                    const xOffset = 100 * Math.sin(index * Math.PI / 2.5);
 
                     return (
-                        <div key={lesson.id} className={cn("relative w-full flex", index % 2 === 0 ? 'justify-start' : 'justify-end')}>
-                             <div className={cn("w-1/2", index % 2 === 1 && "order-2")}></div>
-                             <div className={cn("w-1/2 flex", index % 2 === 0 ? 'justify-start' : 'justify-end')}>
-                                <QuestNode 
-                                    title={lesson.title}
-                                    subtitle={`Topic: ${lesson.topic}`}
-                                    icon={BookOpen}
-                                    isCompleted={isCompleted}
-                                    isUnlocked={isUnlocked}
-                                    onClick={() => onSelect(lesson)}
-                                />
-                             </div>
+                        <div
+                            key={lesson.id}
+                            className="absolute"
+                            style={{
+                                top: `${y - 48}px`,
+                                left: `calc(50% + ${xOffset}px)`,
+                                transform: 'translateX(-50%)',
+                            }}
+                        >
+                            <QuestNode 
+                                title={lesson.title}
+                                subtitle={`Topic: ${lesson.topic}`}
+                                icon={BookOpen}
+                                isCompleted={isCompleted}
+                                isUnlocked={isUnlocked}
+                                onClick={() => onSelect(lesson)}
+                            />
                         </div>
                     )
                 })}
@@ -243,12 +276,11 @@ function ResourcesPageContent() {
 
   const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
 
-  const lessonsQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
-      return collection(firestore, 'lessons');
-  }, [firestore]);
+  const lessonsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'lessons') : null, [firestore]);
+  const quizzesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'quizzes') : null, [firestore]);
 
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
+  const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
   
   // Effect to automatically select a lesson if an ID is in the URL params.
   useEffect(() => {
@@ -265,7 +297,7 @@ function ResourcesPageContent() {
   
   const grades = [1, 2, 3, 4, 5];
   
-  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading;
+  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading;
 
   const handleCompleteLesson = (lessonId: string) => {
     if (!studentDocRef) return;
@@ -325,7 +357,6 @@ function ResourcesPageContent() {
         </TabsList>
         
         {grades.map(grade => {
-            // Special layout for Grade 2
             if (grade === 2) {
                 return (
                     <TabsContent key={grade} value={`grade-2`}>
@@ -334,7 +365,7 @@ function ResourcesPageContent() {
                                 <CardTitle>Grade 2 Learning Path</CardTitle>
                                 <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="overflow-x-auto">
                                 <Grade2QuestPath 
                                     lessons={lessons || []}
                                     student={student}
@@ -346,7 +377,6 @@ function ResourcesPageContent() {
                 )
             }
             
-            // Default layout for other grades
             const gradeLessons = lessons ? lessons.filter(l => l.grade === grade) : [];
             const gradeTopics = [...new Set(gradeLessons.map(l => l.topic))];
 
@@ -360,15 +390,19 @@ function ResourcesPageContent() {
                                     <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {topicLessons.map(lesson => (
-                                            <LessonCard 
-                                                key={lesson.id} 
-                                                lesson={lesson} 
-                                                onSelect={setSelectedLesson} 
-                                                isCompleted={student?.completedLessons?.includes(lesson.id) || false}
-                                                isAssigned={student?.assignedLessons?.includes(lesson.id) || false}
-                                            />
-                                        ))}
+                                        {topicLessons.map(lesson => {
+                                            const linkedQuiz = quizzes?.find(q => q.lessonId === lesson.id);
+                                            return (
+                                              <LessonCard 
+                                                  key={lesson.id} 
+                                                  lesson={lesson}
+                                                  linkedQuiz={linkedQuiz}
+                                                  onSelect={setSelectedLesson} 
+                                                  isCompleted={student?.completedLessons?.includes(lesson.id) || false}
+                                                  isAssigned={student?.assignedLessons?.includes(lesson.id) || false}
+                                              />
+                                            )
+                                        })}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>

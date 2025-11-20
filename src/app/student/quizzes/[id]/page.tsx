@@ -1,6 +1,5 @@
 'use client';
 
-import { quizzes } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -8,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckSquare } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Quiz } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * A dynamic page component that displays a single quiz.
@@ -19,20 +22,31 @@ import { Label } from '@/components/ui/label';
  */
 export default function QuizPage({ params }: { params: { id: string } }) {
   const { id } = params;
-  // Find the specific quiz from the mock data array using the ID from the URL.
-  const quiz = quizzes.find(q => q.id === id);
+  const firestore = useFirestore();
+
+  const quizDocRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'quizzes', id);
+  }, [firestore, id]);
+
+  const { data: quiz, isLoading } = useDoc<Quiz>(quizDocRef);
+
+  if (isLoading) {
+      return (
+          <div className="p-4 sm:p-6 space-y-6">
+              <Skeleton className="h-9 w-48" />
+              <Card>
+                  <CardHeader><Skeleton className="h-8 w-1/2" /><Skeleton className="h-4 w-1/3 mt-2" /></CardHeader>
+                  <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+              </Card>
+          </div>
+      )
+  }
 
   // If no quiz is found with the given ID, render the 404 Not Found page.
   if (!quiz) {
     notFound();
   }
-
-  // Placeholder for quiz questions. In a real app, this would come from your data.
-  const questions = [
-    { id: 'q1', text: 'What is 2 + 2?', options: ['3', '4', '5'] },
-    { id: 'q2', text: 'What is 5 - 3?', options: ['1', '2', '3'] },
-    { id: 'q3', text: 'What is 3 x 4?', options: ['10', '12', '14'] },
-  ];
 
   // Render the details of the found quiz.
   return (
@@ -56,14 +70,14 @@ export default function QuizPage({ params }: { params: { id: string } }) {
         </CardHeader>
         <CardContent>
             <form className="space-y-8">
-                {questions.map((question, index) => (
-                    <div key={question.id}>
-                        <p className="font-medium mb-4">{index + 1}. {question.text}</p>
+                {quiz.questions.map((question, index) => (
+                    <div key={index}>
+                        <p className="font-medium mb-4">{index + 1}. {question.questionText}</p>
                         <RadioGroup>
                             {question.options.map(option => (
                                 <div key={option} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={option} id={`${question.id}-${option}`} />
-                                    <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
+                                    <RadioGroupItem value={option} id={`${index}-${option}`} />
+                                    <Label htmlFor={`${index}-${option}`}>{option}</Label>
                                 </div>
                             ))}
                         </RadioGroup>
