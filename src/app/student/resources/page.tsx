@@ -80,6 +80,17 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
  * @param {boolean} props.isCompleted - Whether the lesson has already been completed.
  */
 function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; onUncomplete: (lessonId: string) => void; isCompleted: boolean}) {
+  const isVideoLesson = lesson.type === 'Video' && lesson.content.includes('youtube.com');
+  let videoId = '';
+  if (isVideoLesson) {
+    const url = new URL(lesson.content);
+    if (url.hostname === 'youtu.be') {
+      videoId = url.pathname.slice(1);
+    } else {
+      videoId = url.searchParams.get('v') || '';
+    }
+  }
+  
   return (
     <div className="space-y-6">
        <Button variant="ghost" onClick={onBack}>
@@ -97,9 +108,22 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="prose dark:prose-invert max-w-none">
-            <ReactMarkdown>{lesson.content}</ReactMarkdown>
-          </div>
+          {isVideoLesson && videoId ? (
+            <div className="aspect-video">
+              <iframe
+                className="w-full h-full rounded-md"
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title={lesson.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          ) : (
+            <div className="prose dark:prose-invert max-w-none">
+                <ReactMarkdown>{lesson.content}</ReactMarkdown>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
              {isCompleted ? (
@@ -385,7 +409,7 @@ const Grade2QuestPath = ({
         <div className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                 {pathData && (
-                     <svg className="absolute top-0 left-0 w-full h-full">
+                     <svg className="absolute top-0 left-0 w-full h-full z-0">
                         <path
                             d={pathData}
                             stroke="hsl(var(--primary))"
@@ -417,7 +441,7 @@ const Grade2QuestPath = ({
                     }
 
                     const isAssigned = assignedLessonIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isAssigned;
+                    const isUnlocked = isSequentiallyUnlocked || isAssigned || isCompleted;
                     // --- End Unlocking Logic ---
                     
                     const y = 80 + index * 160;
@@ -426,12 +450,11 @@ const Grade2QuestPath = ({
                     return (
                         <div
                             key={item.id}
-                            className="absolute"
+                            className="absolute z-10"
                             style={{
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                zIndex: 1,
                             }}
                         >
                             <QuestNode 
@@ -505,7 +528,7 @@ const Grade3QuestPath = ({
         <div className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                 {pathData && (
-                     <svg className="absolute top-0 left-0 w-full h-full">
+                     <svg className="absolute top-0 left-0 w-full h-full z-0">
                         <path
                            d={pathData}
                             stroke="hsl(var(--primary))"
@@ -536,7 +559,7 @@ const Grade3QuestPath = ({
                     }
 
                     const isAssigned = assignedLessonIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isAssigned;
+                    const isUnlocked = isSequentiallyUnlocked || isAssigned || isCompleted;
                     // --- End Unlocking Logic ---
 
                     const y = 80 + index * 160;
@@ -545,12 +568,11 @@ const Grade3QuestPath = ({
                     return (
                         <div
                             key={item.id}
-                            className="absolute"
+                            className="absolute z-10"
                             style={{
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                zIndex: 1,
                             }}
                         >
                             <QuestNode 
