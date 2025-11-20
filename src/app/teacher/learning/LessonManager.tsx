@@ -139,7 +139,7 @@ function LessonForm({
                 name="order"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Order</FormLabel>
+                    <FormLabel>Order (Advanced)</FormLabel>
                     <FormControl><Input type="number" placeholder="e.g., 1" {...field} /></FormControl>
                     <FormMessage />
                     </FormItem>
@@ -214,13 +214,14 @@ export function LessonManager() {
   }, [lessons]);
   
   const handleOpenForm = (lesson?: Lesson) => {
+    const allContent = [...(lessons || []), ...(quizzes || [])];
+    const nextOrder = (allContent && allContent.length > 0)
+      ? Math.max(...allContent.map(l => l.order || 0)) + 1
+      : 1;
+
     if (lesson) {
       setEditingLesson(lesson);
     } else {
-      const allContent = [...(lessons || []), ...(quizzes || [])];
-      const nextOrder = (allContent && allContent.length > 0)
-        ? Math.max(...allContent.map(l => l.order || 0)) + 1
-        : 1;
       setEditingLesson({ order: nextOrder });
     }
     setIsFormOpen(true);
