@@ -5,10 +5,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -323,6 +323,9 @@ const Grade2QuestPath = ({
     onSelectLesson: (lesson: Lesson) => void;
     onSelectQuiz: (quiz: Quiz) => void;
 }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [pathData, setPathData] = useState('');
+
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
@@ -333,6 +336,24 @@ const Grade2QuestPath = ({
         
         return grade2Items.sort((a, b) => (a.order || 0) - (b.order || 0));
     }, [lessons, quizzes]);
+    
+     useEffect(() => {
+        if (containerRef.current && sortedItems.length > 1) {
+            const containerWidth = containerRef.current.offsetWidth;
+            const centerX = containerWidth / 2;
+            const amplitude = containerWidth * 0.2; // 20% of width
+            const yStep = 160;
+            const initialY = 80;
+
+            const points = sortedItems.map((_, index) => {
+                const y = initialY + index * yStep;
+                const x = centerX + amplitude * Math.sin(index * Math.PI / 3);
+                return `${x},${y}`;
+            });
+
+            setPathData('M' + points.join(' L'));
+        }
+    }, [sortedItems, containerRef.current?.offsetWidth]);
 
 
     if (sortedItems.length === 0) {
@@ -341,17 +362,11 @@ const Grade2QuestPath = ({
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
-            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedItems.length * 10}rem`}}>
-                {sortedItems.length > 1 && (
+            <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
+                {pathData && (
                      <svg className="absolute top-0 left-0 w-full h-full">
                         <path
-                            d={
-                                'M ' + sortedItems.map((_, index) => {
-                                    const y = 80 + index * 160;
-                                    const x = 50 + 20 * Math.sin(index * Math.PI / 3);
-                                    return `${x}% ${y}`;
-                                }).join(' L ')
-                            }
+                            d={pathData}
                             stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
@@ -386,8 +401,7 @@ const Grade2QuestPath = ({
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                transition: 'top 0.5s ease-out, left 0.5s ease-out',
-                                zIndex: 1,
+                                zIndex: 10,
                             }}
                         >
                             <QuestNode 
@@ -419,6 +433,9 @@ const Grade3QuestPath = ({
     onSelectLesson: (lesson: Lesson) => void;
     onSelectQuiz: (quiz: Quiz) => void;
 }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [pathData, setPathData] = useState('');
+
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
@@ -430,6 +447,24 @@ const Grade3QuestPath = ({
             .sort((a, b) => (a.order || 0) - (b.order || 0));
     }, [lessons, quizzes]);
 
+    useEffect(() => {
+        if (containerRef.current && sortedItems.length > 1) {
+            const containerWidth = containerRef.current.offsetWidth;
+            const centerX = containerWidth / 2;
+            const amplitude = containerWidth * 0.2;
+            const yStep = 160;
+            const initialY = 80;
+
+            const points = sortedItems.map((_, index) => {
+                const y = initialY + index * yStep;
+                const x = centerX + amplitude * Math.sin(index * Math.PI / 3);
+                return `${x},${y}`;
+            });
+
+            setPathData('M' + points.join(' L'));
+        }
+    }, [sortedItems, containerRef.current?.offsetWidth]);
+
 
     if (sortedItems.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No Grade 3 lessons found. Check back soon!</p>
@@ -437,17 +472,11 @@ const Grade3QuestPath = ({
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
-            <div className="relative flex flex-col items-center py-10" style={{ minHeight: `${sortedItems.length * 10}rem`}}>
-                {sortedItems.length > 1 && (
+            <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
+                {pathData && (
                      <svg className="absolute top-0 left-0 w-full h-full">
                         <path
-                           d={
-                                'M ' + sortedItems.map((_, index) => {
-                                    const y = 80 + index * 160;
-                                    const x = 50 + 20 * Math.sin(index * Math.PI / 3);
-                                    return `${x}% ${y}`;
-                                }).join(' L ')
-                            }
+                           d={pathData}
                             stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
@@ -481,8 +510,7 @@ const Grade3QuestPath = ({
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                transition: 'top 0.5s ease-out, left 0.5s ease-out',
-                                zIndex: 1,
+                                zIndex: 10,
                             }}
                         >
                             <QuestNode 
