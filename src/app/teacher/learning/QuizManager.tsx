@@ -211,6 +211,11 @@ export function QuizManager() {
   const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
 
+  const sortedQuizzes = React.useMemo(() => {
+    if (!quizzes) return [];
+    return [...quizzes].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [quizzes]);
+
   const isLoading = areQuizzesLoading || areLessonsLoading;
   
   const handleOpenForm = (quiz?: Quiz) => {
@@ -296,8 +301,8 @@ export function QuizManager() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {quizzes && quizzes.length > 0 ? (
-            quizzes.map(quiz => (
+          {sortedQuizzes && sortedQuizzes.length > 0 ? (
+            sortedQuizzes.map(quiz => (
               <Card key={quiz.id} className="p-4 flex justify-between items-center">
                 <div>
                   <p className="font-medium">{quiz.title} {quiz.isPlacementTest && <span className="text-xs font-semibold text-accent border border-accent/50 bg-accent/10 px-2 py-1 rounded-full ml-2">Placement Test</span>}</p>

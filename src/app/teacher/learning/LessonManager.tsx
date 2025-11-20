@@ -49,7 +49,7 @@ function LessonForm({
       title: lesson?.title || '',
       grade: String(lesson?.grade || ''),
       topic: lesson?.topic || '',
-      type: lesson?.type === 'Quiz' ? 'Text' : (lesson?.type || 'Text'),
+      type: lesson?.type || 'Text',
       content: lesson?.content || '',
       imageUrl: lesson?.imageUrl || '',
       order: lesson?.order || 0,
@@ -199,6 +199,11 @@ export function LessonManager() {
   }, [user, firestore]);
 
   const { data: lessons, isLoading } = useCollection<Lesson>(lessonsQuery);
+
+  const sortedLessons = React.useMemo(() => {
+    if (!lessons) return [];
+    return [...lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [lessons]);
   
   const handleOpenForm = (lesson?: Lesson) => {
     setEditingLesson(lesson);
@@ -278,8 +283,8 @@ export function LessonManager() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {lessons && lessons.length > 0 ? (
-            lessons.map(lesson => (
+          {sortedLessons && sortedLessons.length > 0 ? (
+            sortedLessons.map(lesson => (
               <Card key={lesson.id} className="p-4 flex justify-between items-center">
                 <div>
                   <p className="font-medium">{lesson.title}</p>
