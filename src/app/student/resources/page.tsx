@@ -99,6 +99,17 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
               </p>
             </CardHeader>
             <CardContent>
+              {lesson.imageUrl && (
+                  <div className="mb-6">
+                      <Image 
+                        src={lesson.imageUrl} 
+                        alt={lesson.title} 
+                        width={800} 
+                        height={400} 
+                        className="rounded-lg w-full object-cover" 
+                      />
+                  </div>
+              )}
               <div className="prose dark:prose-invert max-w-none">
                 <ReactMarkdown>{lesson.content}</ReactMarkdown>
               </div>
@@ -191,7 +202,7 @@ function QuizView({
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4">
                     <Button onClick={onBack} className="w-full sm:w-auto">Continue Learning</Button>
-                    <Button variant="outline" onClick={() => setView('quiz')} className="w-full sm:w-auto">
+                    <Button variant="outline" onClick={() => { setView('quiz'); setScore(null); form.reset(); }} className="w-full sm:w-auto">
                         <RotateCcw className="mr-2 h-4 w-4" />
                         Retry Quiz
                     </Button>
@@ -348,20 +359,11 @@ const Grade2QuestPath = ({
                         </defs>
                         <path
                             d={
-                                sortedItems.slice(1).map((_, index) => {
-                                    const y1 = 80 + index * 160;
-                                    const y2 = 80 + (index + 1) * 160;
-                                    
-                                    const x1 = 50 + 20 * Math.sin(index * Math.PI / 3);
-                                    const x2 = 50 + 20 * Math.sin((index + 1) * Math.PI / 3);
-
-                                    const controlX1 = 50 + 40 * Math.sin(index * Math.PI / 3 + Math.PI/2);
-                                    const controlY1 = (y1 + y2) / 2;
-                                    const controlX2 = 50 + 40 * Math.sin((index+1) * Math.PI / 3 - Math.PI/2);
-                                    const controlY2 = (y1 + y2) / 2;
-
-                                    return `M ${x1}% ${y1} C ${controlX1}% ${controlY1}, ${controlX2}% ${controlY2}, ${x2}% ${y2}`;
-                                }).join(' ')
+                                'M ' + sortedItems.map((_, index) => {
+                                    const y = 80 + index * 160;
+                                    const x = 50 + 20 * Math.sin(index * Math.PI / 3);
+                                    return `${x}% ${y}`;
+                                }).join(' L ')
                             }
                             stroke="url(#path-gradient)"
                             strokeWidth="10"
@@ -457,21 +459,12 @@ const Grade3QuestPath = ({
                             </linearGradient>
                         </defs>
                         <path
-                            d={
-                                sortedItems.slice(1).map((_, index) => {
-                                    const y1 = 80 + index * 160;
-                                    const y2 = 80 + (index + 1) * 160;
-                                    
-                                    const x1 = 50 + 20 * Math.sin(index * Math.PI / 3);
-                                    const x2 = 50 + 20 * Math.sin((index + 1) * Math.PI / 3);
-
-                                    const controlX1 = 50 + 40 * Math.sin(index * Math.PI / 3 + Math.PI/2);
-                                    const controlY1 = (y1 + y2) / 2;
-                                    const controlX2 = 50 + 40 * Math.sin((index+1) * Math.PI / 3 - Math.PI/2);
-                                    const controlY2 = (y1 + y2) / 2;
-
-                                    return `M ${x1}% ${y1} C ${controlX1}% ${controlY1}, ${controlX2}% ${controlY2}, ${x2}% ${y2}`;
-                                }).join(' ')
+                           d={
+                                'M ' + sortedItems.map((_, index) => {
+                                    const y = 80 + index * 160;
+                                    const x = 50 + 20 * Math.sin(index * Math.PI / 3);
+                                    return `${x}% ${y}`;
+                                }).join(' L ')
                             }
                             stroke="url(#path-gradient-g3)"
                             strokeWidth="10"

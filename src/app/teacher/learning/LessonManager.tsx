@@ -29,6 +29,7 @@ const lessonSchema = z.object({
   topic: z.string().min(1, 'Please select a topic.'),
   type: z.enum(['Text', 'Video']),
   content: z.string().min(10, 'Content must be at least 10 characters.'),
+  imageUrl: z.string().url().optional().or(z.literal('')),
   order: z.coerce.number().optional(),
 });
 
@@ -50,6 +51,7 @@ function LessonForm({
       topic: lesson?.topic || '',
       type: lesson?.type === 'Quiz' ? 'Text' : (lesson?.type || 'Text'),
       content: lesson?.content || '',
+      imageUrl: lesson?.imageUrl || '',
       order: lesson?.order || 0,
     },
   });
@@ -144,6 +146,19 @@ function LessonForm({
                 )}
                 />
         </div>
+        {lessonType === 'Text' && (
+            <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Image URL (Optional)</FormLabel>
+                        <FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        )}
         <FormField
           control={form.control}
           name="content"
