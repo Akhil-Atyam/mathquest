@@ -179,6 +179,7 @@ const Grade2QuestPath = ({
     student: Student | null, 
     onSelect: (lesson: Lesson) => void;
 }) => {
+    const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     
     // Detailed lesson order for Grade 2 curriculum.
@@ -241,8 +242,6 @@ const Grade2QuestPath = ({
     if (sortedLessons.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No Grade 2 lessons found. Check back soon!</p>
     }
-
-    const isQuiz = (item: any): item is Quiz => 'questions' in item;
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
