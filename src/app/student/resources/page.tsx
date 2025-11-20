@@ -79,91 +79,56 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
  * @param {(lessonId: string) => void} props.onUncomplete - Callback to mark the lesson as incomplete.
  * @param {boolean} props.isCompleted - Whether the lesson has already been completed.
  */
-function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted, onCompleteAndContinue }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; onUncomplete: (lessonId: string) => void; isCompleted: boolean, onCompleteAndContinue: (lessonId: string) => void; }) {
-    const getYouTubeEmbedUrl = (url: string) => {
-        let videoId = '';
-        if (url.includes('youtube.com/watch?v=')) {
-            videoId = url.split('v=')[1].split('&')[0];
-        } else if (url.includes('youtu.be/')) {
-            videoId = url.split('youtu.be/')[1].split('?')[0];
-        }
-        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    }
-
-    const embedUrl = lesson.type === 'Video' ? getYouTubeEmbedUrl(lesson.content) : null;
-    
-    return (
-        <div className="space-y-6">
-           <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Resources
-           </Button>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-                 <BookOpen className="w-8 h-8 text-primary" />
-                {lesson.title}
-              </CardTitle>
-              <p className="text-muted-foreground">
-                Grade {lesson.grade} &middot; {lesson.topic}
-              </p>
-            </CardHeader>
-            <CardContent>
-              {lesson.type === 'Video' && embedUrl ? (
-                  <div className="aspect-video w-full">
-                      <iframe 
-                        className="w-full h-full rounded-md"
-                        src={embedUrl} 
-                        title={lesson.title} 
-                        frameBorder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowFullScreen>
-                      </iframe>
-                  </div>
-              ) : (
-                <div className="prose dark:prose-invert max-w-none">
-                  <ReactMarkdown>{lesson.content}</ReactMarkdown>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                 {isCompleted ? (
-                    <Button variant="outline" onClick={() => onUncomplete(lesson.id)}>
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Redo Lesson
-                    </Button>
-                 ) : (
-                    <>
-                        <Button variant="outline" onClick={() => onComplete(lesson.id)}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Finish this lesson!
-                        </Button>
-                        <Button onClick={() => onCompleteAndContinue(lesson.id)}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Complete & Continue
-                        </Button>
-                    </>
-                 )}
-            </CardFooter>
-          </Card>
-        </div>
-      );
+function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; onUncomplete: (lessonId: string) => void; isCompleted: boolean}) {
+  return (
+    <div className="space-y-6">
+       <Button variant="ghost" onClick={onBack}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Resources
+       </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-2xl font-headline">
+             <BookOpen className="w-8 h-8 text-primary" />
+            {lesson.title}
+          </CardTitle>
+          <p className="text-muted-foreground">
+            Grade {lesson.grade} &middot; {lesson.topic}
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="prose dark:prose-invert max-w-none">
+            <ReactMarkdown>{lesson.content}</ReactMarkdown>
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-end gap-2">
+             {isCompleted ? (
+                <Button variant="outline" onClick={() => onUncomplete(lesson.id)}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Redo Lesson
+                </Button>
+             ) : (
+                <Button onClick={() => onComplete(lesson.id)}>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Finish this lesson!
+                </Button>
+             )}
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }
 
 function QuizView({
   quiz,
   student,
   onBack,
-  onContinue,
   onQuizComplete,
-  onQuizRedo,
 }: {
   quiz: Quiz;
   student: Student | null;
   onBack: () => void;
-  onContinue: () => void;
-  onQuizComplete: (quiz: Quiz, score: number) => void;
-  onQuizRedo: (quizId: string) => void;
+  onQuizComplete: (quizId: string, score: number) => void;
 }) {
   const form = useForm();
   const [view, setView] = useState<'quiz' | 'result'>('quiz');
@@ -190,17 +155,10 @@ function QuizView({
     const finalScore = Math.round((correctAnswers / quiz.questions.length) * 100);
     setScore(finalScore);
     setView('result');
-    onQuizComplete(quiz, finalScore);
+    onQuizComplete(quiz.id, finalScore);
   };
   
   const earnedBadges = view === 'result' ? allBadges.filter(b => b.id.includes(quiz.topic.toLowerCase())) : [];
-
-  const handleRedo = () => {
-    onQuizRedo(quiz.id);
-    setView('quiz');
-    setScore(null);
-    form.reset();
-  }
 
   if (view === 'result' && score !== null) {
     return (
@@ -231,12 +189,8 @@ function QuizView({
                         </div>
                      )}
                 </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <Button onClick={onContinue} className="w-full sm:w-auto">Continue Learning</Button>
-                    <Button variant="outline" onClick={handleRedo} className="w-full sm:w-auto">
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Retry Quiz
-                    </Button>
+                <CardFooter className="flex justify-center">
+                    <Button onClick={onBack}>Continue Learning</Button>
                 </CardFooter>
             </Card>
         </div>
@@ -395,6 +349,7 @@ const Grade2QuestPath = ({
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
+    const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
@@ -446,17 +401,24 @@ const Grade2QuestPath = ({
                     const isItemQuiz = isQuiz(item);
                     const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
-                    let isUnlocked = index === 0;
-                    if (isItemQuiz && item.isPlacementTest) {
-                        isUnlocked = true;
-                    } else if (index > 0) {
+                    // --- Unlocking Logic ---
+                    let isSequentiallyUnlocked = false;
+                    if (index === 0 || (isItemQuiz && item.isPlacementTest)) {
+                        // The first item or any placement test is always unlocked by default.
+                        isSequentiallyUnlocked = true;
+                    } else {
+                        // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
-                            isUnlocked = completedQuizIds.has(prevItem.id);
+                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
                         } else {
-                            isUnlocked = completedLessonIds.has(prevItem.id);
+                            isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
                         }
                     }
+
+                    const isAssigned = assignedLessonIds.has(item.id);
+                    const isUnlocked = isSequentiallyUnlocked || isAssigned;
+                    // --- End Unlocking Logic ---
                     
                     const y = 80 + index * 160;
                     const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
@@ -469,7 +431,7 @@ const Grade2QuestPath = ({
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                zIndex: 10,
+                                zIndex: 1,
                             }}
                         >
                             <QuestNode 
@@ -507,6 +469,7 @@ const Grade3QuestPath = ({
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
+    const assignedLessonIds = new Set(student?.assignedLessons || []);
     
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
@@ -557,18 +520,25 @@ const Grade3QuestPath = ({
                     const isItemQuiz = isQuiz(item);
                     const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
-                    let isUnlocked = index === 0;
-                     if (isItemQuiz && item.isPlacementTest) {
-                        isUnlocked = true;
-                    } else if (index > 0) {
+                    // --- Unlocking Logic ---
+                    let isSequentiallyUnlocked = false;
+                    if (index === 0 || (isItemQuiz && item.isPlacementTest)) {
+                        // The first item or any placement test is always unlocked by default.
+                        isSequentiallyUnlocked = true;
+                    } else {
+                        // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
                         if (isQuiz(prevItem)) {
-                            isUnlocked = completedQuizIds.has(prevItem.id);
+                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
                         } else {
-                            isUnlocked = completedLessonIds.has(prevItem.id);
+                            isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
                         }
                     }
-                    
+
+                    const isAssigned = assignedLessonIds.has(item.id);
+                    const isUnlocked = isSequentiallyUnlocked || isAssigned;
+                    // --- End Unlocking Logic ---
+
                     const y = 80 + index * 160;
                     const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
 
@@ -580,7 +550,7 @@ const Grade3QuestPath = ({
                                 top: `${y - 48}px`,
                                 left: `calc(50% + ${xOffsetPercent}%)`,
                                 transform: 'translateX(-50%)',
-                                zIndex: 10,
+                                zIndex: 1,
                             }}
                         >
                             <QuestNode 
@@ -623,8 +593,6 @@ function ResourcesPageContent() {
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
   const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
   
-  const isQuiz = (item: any): item is Quiz => 'questions' in item;
-
   // Effect to automatically select a lesson if an ID is in the URL params.
   useEffect(() => {
     if (lessons && lessons.length > 0) {
@@ -641,52 +609,14 @@ function ResourcesPageContent() {
   const grades = [1, 2, 3, 4, 5];
   
   const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading;
-  
-  const findNextItem = (currentItem: Lesson | Quiz) => {
-    if (!lessons || !quizzes) return null;
 
-    const allItems: (Lesson | Quiz)[] = [...lessons, ...quizzes];
-    const gradeItems = allItems.filter(item => item.grade === currentItem.grade)
-                                .sort((a, b) => (a.order || 0) - (b.order || 0));
-    
-    const currentIndex = gradeItems.findIndex(item => item.id === currentItem.id);
-
-    if (currentIndex > -1 && currentIndex < gradeItems.length - 1) {
-        return gradeItems[currentIndex + 1];
-    }
-    return null;
-  };
-
-  const navigateToItem = (item: Lesson | Quiz | null) => {
-    if (item) {
-        if (isQuiz(item)) {
-            setSelectedLesson(null);
-            setSelectedQuiz(item);
-        } else {
-            setSelectedQuiz(null);
-            setSelectedLesson(item);
-        }
-    } else {
-        // Last item, just go back to the list
-        handleBack();
-    }
-  };
-
-  const handleCompleteLesson = (lessonId: string, andContinue: boolean = false) => {
+  const handleCompleteLesson = (lessonId: string) => {
     if (!studentDocRef) return;
     updateDoc(studentDocRef, {
         completedLessons: arrayUnion(lessonId)
     }).then(() => {
-        if (!andContinue) {
-          toast({ title: "Lesson Complete!", description: "Great job! Keep up the good work." });
-          setSelectedLesson(null);
-        } else {
-            const currentLesson = lessons?.find(l => l.id === lessonId);
-            if (currentLesson) {
-                const nextItem = findNextItem(currentLesson);
-                navigateToItem(nextItem);
-            }
-        }
+        toast({ title: "Lesson Complete!", description: "Great job! Keep up the good work." });
+        setSelectedLesson(null);
     });
   }
 
@@ -697,12 +627,15 @@ function ResourcesPageContent() {
     });
   }
   
-  const handleQuizComplete = (quiz: Quiz, score: number) => {
+  const handleQuizComplete = (quizId: string, score: number) => {
     if (!studentDocRef) return;
+    const quiz = quizzes?.find(q => q.id === quizId);
+    if (!quiz) return;
+    
     const badgeId = allBadges.find(b => b.id.includes(quiz.topic.toLowerCase()))?.id;
 
     let updates: any = {
-        [`quizScores.${quiz.id}`]: score,
+        [`quizScores.${quizId}`]: score,
     };
 
     if (badgeId) {
@@ -711,6 +644,8 @@ function ResourcesPageContent() {
     
     // Placement test logic
     if (quiz.isPlacementTest && score >= 80) {
+        // Automatically complete the associated lesson
+        updates.completedLessons = arrayUnion(quiz.lessonId);
         toast({
             title: "Lesson Unlocked!",
             description: "Great score! You've unlocked the next step.",
@@ -719,35 +654,11 @@ function ResourcesPageContent() {
 
     updateDoc(studentDocRef, updates);
   }
-
-  const handleQuizRedo = (quizId: string) => {
-    if (!studentDocRef) return;
-
-    updateDoc(studentDocRef, {
-      [`quizScores.${quizId}`]: deleteField()
-    }).catch(error => {
-      console.error("Error removing quiz score: ", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not reset quiz progress. Please try again."
-      });
-    });
-  };
   
   const handleBack = () => {
     setSelectedLesson(null);
     setSelectedQuiz(null);
   }
-
-  const handleContinue = () => {
-    if (!selectedQuiz) {
-        handleBack();
-        return;
-    }
-    const nextItem = findNextItem(selectedQuiz);
-    navigateToItem(nextItem);
-};
 
   if (isLoading) {
     return (
@@ -766,8 +677,7 @@ function ResourcesPageContent() {
             <LessonView 
                 lesson={selectedLesson} 
                 onBack={handleBack}
-                onComplete={(id) => handleCompleteLesson(id, false)}
-                onCompleteAndContinue={(id) => handleCompleteLesson(id, true)}
+                onComplete={handleCompleteLesson}
                 onUncomplete={handleUncompleteLesson}
                 isCompleted={student?.completedLessons?.includes(selectedLesson.id) || false}
              />
@@ -782,9 +692,7 @@ function ResourcesPageContent() {
                 quiz={selectedQuiz}
                 student={student}
                 onBack={handleBack}
-                onContinue={handleContinue}
                 onQuizComplete={handleQuizComplete}
-                onQuizRedo={handleQuizRedo}
             />
         </div>
     )
