@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import type { Quiz, Lesson } from '@/lib/types';
+import { topics } from '@/lib/data';
 import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -30,10 +31,17 @@ const questionSchema = z.object({
 // Zod schema for the entire quiz
 const quizSchema = z.object({
   title: z.string().min(3, 'Title is too short.'),
-  lessonId: z.string().min(1, 'Please link this quiz to a lesson.').refine(val => val !== 'none', { message: "Please link this quiz to a lesson." }),
+  lessonId: z.string().optional(),
+  grade: z.string().optional(),
+  topic: z.string().optional(),
   questions: z.array(questionSchema).min(1, 'A quiz must have at least one question.'),
   order: z.coerce.number().optional(),
   isPlacementTest: z.boolean().optional(),
+}).refine(data => {
+    return data.lessonId !== 'none' || (data.grade && data.topic);
+}, {
+    message: "If not linked to a lesson, Grade and Topic are required.",
+    path: ['grade'], // You can point to a specific field
 });
 
 
@@ -43,7 +51,9 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
     resolver: zodResolver(quizSchema),
     defaultValues: {
       title: quiz?.title || '',
-      lessonId: quiz?.lessonId || '',
+      lessonId: quiz?.lessonId || 'none',
+      grade: String(quiz?.grade || ''),
+      topic: quiz?.topic || '',
       questions: quiz?.questions || [{ questionText: '', options: ['', ''], correctAnswer: '' }],
       order: quiz?.order || 0,
       isPlacementTest: quiz?.isPlacementTest || false,
@@ -71,6 +81,8 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
     onSave(data);
   };
   
+  const lessonId = form.watch('lessonId');
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -84,7 +96,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
               <FormLabel>Linked Lesson</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl><SelectTrigger><SelectValue placeholder="Select a lesson" /></SelectTrigger></FormControl>
-                <SelectContent><SelectItem value="none">None</SelectItem>{lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">None (Standalone Quiz)</SelectItem>{lessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}</SelectContent>
               </Select>
               <FormMessage />
             </FormItem>
@@ -101,6 +113,48 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
             )}
             />
         </div>
+
+        {lessonId === 'none' && (
+             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="grade"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Grade</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select grade" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {[1, 2, 3, 4, 5].map(g => <SelectItem key={g} value={String(g)}>Grade {g}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="topic"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Topic</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+        )}
+
          <FormField
           control={form.control}
           name="isPlacementTest"
@@ -222,8 +276,9 @@ export function QuizManager() {
     if (quiz) {
       setEditingQuiz(quiz);
     } else {
-      const nextOrder = (quizzes && quizzes.length > 0)
-        ? Math.max(...quizzes.map(l => l.order || 0)) + 1
+      const allContent = [...(lessons || []), ...(quizzes || [])];
+      const nextOrder = (allContent && allContent.length > 0)
+        ? Math.max(...allContent.map(l => l.order || 0)) + 1
         : 1;
       setEditingQuiz({ order: nextOrder });
     }
@@ -238,26 +293,47 @@ export function QuizManager() {
   const handleSaveQuiz = async (data: z.infer<typeof quizSchema>) => {
      if (!user || !firestore || !lessons) return;
      
-     const linkedLesson = lessons.find(l => l.id === data.lessonId);
-     if (!linkedLesson) {
-         toast({ variant: "destructive", title: "Error", description: "Selected lesson not found." });
-         return;
-     }
+     let finalQuizData: Omit<Quiz, 'id'>;
 
-    const quizData = {
-        ...data,
-        grade: linkedLesson.grade,
-        topic: linkedLesson.topic,
-        teacherId: user.uid,
-    };
+     if (data.lessonId && data.lessonId !== 'none') {
+        const linkedLesson = lessons.find(l => l.id === data.lessonId);
+        if (!linkedLesson) {
+            toast({ variant: "destructive", title: "Error", description: "Selected lesson not found." });
+            return;
+        }
+        finalQuizData = {
+            title: data.title,
+            lessonId: data.lessonId,
+            questions: data.questions,
+            order: data.order,
+            isPlacementTest: data.isPlacementTest,
+            grade: linkedLesson.grade,
+            topic: linkedLesson.topic,
+            teacherId: user.uid,
+        };
+     } else {
+        if (!data.grade || !data.topic) {
+             toast({ variant: "destructive", title: "Error", description: "Grade and topic are required for standalone quizzes." });
+             return;
+        }
+        finalQuizData = {
+            title: data.title,
+            questions: data.questions,
+            order: data.order,
+            isPlacementTest: data.isPlacementTest,
+            grade: parseInt(data.grade),
+            topic: data.topic,
+            teacherId: user.uid,
+        };
+     }
     
     try {
         if (editingQuiz && 'id' in editingQuiz) {
             const quizRef = doc(firestore, 'quizzes', editingQuiz.id!);
-            await updateDoc(quizRef, quizData);
+            await updateDoc(quizRef, finalQuizData);
             toast({ title: 'Success', description: 'Quiz updated successfully.' });
         } else {
-            await addDoc(collection(firestore, 'quizzes'), quizData);
+            await addDoc(collection(firestore, 'quizzes'), finalQuizData);
             toast({ title: 'Success', description: 'Quiz created successfully.' });
         }
         handleCloseForm();

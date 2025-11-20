@@ -62,7 +62,7 @@ export type Quiz = {
   title: string; // The title of the quiz.
   topic: string; // The math topic it covers.
   grade: number; // The target grade level.
-  lessonId: string; // The ID of the parent lesson
+  lessonId?: string; // The ID of the parent lesson
   questions: QuizQuestion[]; // An array of question objects.
   teacherId: string;
   order?: number; // Optional field to define sequence

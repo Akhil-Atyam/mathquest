@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
-import type { Lesson } from '@/lib/types';
+import type { Lesson, Quiz } from '@/lib/types';
 import { topics } from '@/lib/data';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -197,8 +197,16 @@ export function LessonManager() {
     if (!user || !firestore) return null;
     return query(collection(firestore, 'lessons'), where('teacherId', '==', user.uid));
   }, [user, firestore]);
+  
+  const quizzesQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'quizzes'), where('teacherId', '==', user.uid));
+  }, [user, firestore]);
 
-  const { data: lessons, isLoading } = useCollection<Lesson>(lessonsQuery);
+  const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
+  const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
+
+  const isLoading = areLessonsLoading || areQuizzesLoading;
 
   const sortedLessons = React.useMemo(() => {
     if (!lessons) return [];
@@ -209,9 +217,9 @@ export function LessonManager() {
     if (lesson) {
       setEditingLesson(lesson);
     } else {
-      // Calculate the next order number for a new lesson.
-      const nextOrder = (lessons && lessons.length > 0)
-        ? Math.max(...lessons.map(l => l.order || 0)) + 1
+      const allContent = [...(lessons || []), ...(quizzes || [])];
+      const nextOrder = (allContent && allContent.length > 0)
+        ? Math.max(...allContent.map(l => l.order || 0)) + 1
         : 1;
       setEditingLesson({ order: nextOrder });
     }
