@@ -17,6 +17,7 @@ import { collection, doc, addDoc, updateDoc, deleteDoc, query, where } from 'fir
 import type { Quiz, Lesson, Topic } from '@/lib/types';
 import { Edit, PlusCircle, Trash2, GripVertical } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
 
 // Zod schema for a single question
 const questionSchema = z.object({
@@ -28,8 +29,6 @@ const questionSchema = z.object({
 // Zod schema for the entire quiz
 const quizSchema = z.object({
   title: z.string().min(3, 'Title is too short.'),
-  grade: z.string().refine(val => !isNaN(parseInt(val)), { message: "Please select a grade." }),
-  topic: z.string().min(1, 'Please select a topic.'),
   lessonId: z.string().min(1, 'Please link this quiz to a lesson.'),
   questions: z.array(questionSchema).min(1, 'A quiz must have at least one question.'),
 });
@@ -41,8 +40,6 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Quiz; lessons: Le
     resolver: zodResolver(quizSchema),
     defaultValues: {
       title: quiz?.title || '',
-      grade: String(quiz?.grade || ''),
-      topic: quiz?.topic || '',
       lessonId: quiz?.lessonId || '',
       questions: quiz?.questions || [{ questionText: '', options: ['', ''], correctAnswer: '' }],
     },
