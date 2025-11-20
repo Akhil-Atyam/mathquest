@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import React, { useEffect } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Plus, Minus, GitCommitHorizontal, Lock, PiggyBank, Clock, BarChart, Shapes } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -156,27 +156,44 @@ const QuestNode = ({
 };
 
 
-const TopicQuestPath = ({ 
+const Grade2QuestPath = ({ 
     lessons, 
     student, 
     onSelect,
-    topicName,
 }: { 
     lessons: Lesson[], 
     student: Student | null, 
-    onSelect: (lesson: Lesson) => void; 
-    topicName: string;
+    onSelect: (lesson: Lesson) => void;
 }) => {
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const topicLessons = lessons.filter(l => l.topic === topicName && l.grade === 2);
-
-    if (topicLessons.length === 0) {
-        return <p className="text-muted-foreground text-center py-8">No lessons for this topic yet. Check back soon!</p>
-    }
     
-    // In a real app, the order of lessons would likely be defined in the database.
-    // For now, we'll just use the order they come in from Firestore.
-    const sortedLessons = topicLessons;
+    // The specific order of topics for Grade 2
+    const topicOrder = [
+      "Addition", 
+      "Subtraction", 
+      "Place Value", 
+      "Comparing Numbers", 
+      "Money & Time", 
+      "Measurement", 
+      "Data & Graphs", 
+      "Geometry"
+    ];
+
+    // Filter for Grade 2 lessons and sort them based on the defined topic order
+    const sortedLessons = (lessons || [])
+      .filter(l => l.grade === 2)
+      .sort((a, b) => {
+        const indexA = topicOrder.indexOf(a.topic);
+        const indexB = topicOrder.indexOf(b.topic);
+        // If a topic isn't in our list, put it at the end
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+
+    if (sortedLessons.length === 0) {
+        return <p className="text-muted-foreground text-center py-8">No Grade 2 lessons found. Check back soon!</p>
+    }
 
     return (
         <div className="py-10">
@@ -186,7 +203,7 @@ const TopicQuestPath = ({
                 
                 {sortedLessons.map((lesson, index) => {
                     const isCompleted = completedLessonIds.has(lesson.id);
-                    // The first lesson is unlocked. Subsequent lessons are unlocked if the previous one is completed.
+                    // The first lesson is always unlocked. Subsequent lessons are unlocked if the previous one is completed.
                     const isUnlocked = index === 0 || (sortedLessons[index-1] && completedLessonIds.has(sortedLessons[index-1].id));
 
                     return (
@@ -195,7 +212,7 @@ const TopicQuestPath = ({
                              <div className={cn("w-1/2 flex", index % 2 === 0 ? 'justify-start' : 'justify-end')}>
                                 <QuestNode 
                                     title={lesson.title}
-                                    subtitle={`Grade ${lesson.grade}`}
+                                    subtitle={`Topic: ${lesson.topic}`}
                                     icon={BookOpen}
                                     isCompleted={isCompleted}
                                     isUnlocked={isUnlocked}
@@ -293,12 +310,6 @@ function ResourcesPageContent() {
     )
   }
   
-  // Define the topics for Grade 2 in order
-  const grade2Topics = [
-      "Addition", "Subtraction", "Place Value", "Comparing Numbers", 
-      "Money & Time", "Measurement", "Data & Graphs", "Geometry"
-  ];
-  
   const defaultGradeTab = student?.grade ? `grade-${student.grade}` : 'grade-1';
   
   return (
@@ -318,26 +329,19 @@ function ResourcesPageContent() {
             if (grade === 2) {
                 return (
                     <TabsContent key={grade} value={`grade-2`}>
-                        <Accordion type="multiple" className="w-full" defaultValue={['Addition']}>
-                            {grade2Topics.map(topic => {
-                                // Filter lessons once for the current topic
-                                const topicLessons = lessons ? lessons.filter(l => l.grade === grade && l.topic === topic) : [];
-                                return (
-                                    <AccordionItem key={topic} value={topic}>
-                                        <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
-                                        <AccordionContent>
-                                            <TopicQuestPath 
-                                                lessons={topicLessons} 
-                                                student={student} 
-                                                onSelect={setSelectedLesson}
-                                                topicName={topic}
-                                            />
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                )
-                            })}
-                        </Accordion>
-                         {grade2Topics.length === 0 && <p className="text-muted-foreground text-center py-10">No topics available for Grade {grade} yet.</p>}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Grade 2 Learning Path</CardTitle>
+                                <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Grade2QuestPath 
+                                    lessons={lessons || []}
+                                    student={student}
+                                    onSelect={setSelectedLesson}
+                                />
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                 )
             }
