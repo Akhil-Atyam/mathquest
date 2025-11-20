@@ -39,7 +39,7 @@ function LessonForm({
   onSave,
   onClose,
 }: {
-  lesson?: Lesson;
+  lesson?: Partial<Lesson>;
   onSave: (data: z.infer<typeof lessonSchema>) => void;
   onClose: () => void;
 }) {
@@ -191,7 +191,7 @@ export function LessonManager() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingLesson, setEditingLesson] = useState<Lesson | undefined>(undefined);
+  const [editingLesson, setEditingLesson] = useState<Partial<Lesson> | undefined>(undefined);
 
   const lessonsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -206,7 +206,15 @@ export function LessonManager() {
   }, [lessons]);
   
   const handleOpenForm = (lesson?: Lesson) => {
-    setEditingLesson(lesson);
+    if (lesson) {
+      setEditingLesson(lesson);
+    } else {
+      // Calculate the next order number for a new lesson.
+      const nextOrder = (lessons && lessons.length > 0)
+        ? Math.max(...lessons.map(l => l.order || 0)) + 1
+        : 1;
+      setEditingLesson({ order: nextOrder });
+    }
     setIsFormOpen(true);
   };
   
@@ -225,9 +233,9 @@ export function LessonManager() {
     };
 
     try {
-      if (editingLesson) {
+      if (editingLesson && 'id' in editingLesson) {
         // Update existing lesson
-        const lessonRef = doc(firestore, 'lessons', editingLesson.id);
+        const lessonRef = doc(firestore, 'lessons', editingLesson.id!);
         await updateDoc(lessonRef, lessonData);
         toast({ title: 'Success', description: 'Lesson updated successfully.' });
       } else {
@@ -275,7 +283,7 @@ export function LessonManager() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>{editingLesson ? 'Edit Lesson' : 'Add New Lesson'}</DialogTitle>
+              <DialogTitle>{editingLesson && 'id' in editingLesson ? 'Edit Lesson' : 'Add New Lesson'}</DialogTitle>
             </DialogHeader>
             <LessonForm lesson={editingLesson} onSave={handleSaveLesson} onClose={handleCloseForm} />
           </DialogContent>
