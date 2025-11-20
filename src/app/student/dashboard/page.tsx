@@ -1,6 +1,6 @@
 'use client';
-import { resources, quizzes, badges as allBadges } from '@/lib/data';
-import type { Student, Lesson } from '@/lib/types';
+import { resources, quizzes as allQuizzesData, badges as allBadges } from '@/lib/data';
+import type { Student, Lesson, Quiz } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -32,7 +32,9 @@ export default function StudentDashboardPage() {
   const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
 
   const [lessons, setLessons] = useState<Lesson[] | null>(null);
+  const [quizzes, setQuizzes] = useState<Quiz[] | null>(null);
   const [areLessonsLoading, setAreLessonsLoading] = useState(true);
+  const [areQuizzesLoading, setAreQuizzesLoading] = useState(true);
 
   useEffect(() => {
     const fetchLessons = async () => {
@@ -82,10 +84,55 @@ export default function StudentDashboardPage() {
 
     fetchLessons();
   }, [firestore, student]);
-
-  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading;
   
-  if (isLoading || !student || lessons === null) {
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+        if (!firestore || !student || !student.quizScores || Object.keys(student.quizScores).length === 0) {
+            setQuizzes([]);
+            setAreQuizzesLoading(false);
+            return;
+        }
+
+        const quizIds = Object.keys(student.quizScores);
+        if (quizIds.length === 0) {
+            setQuizzes([]);
+            setAreQuizzesLoading(false);
+            return;
+        }
+
+        try {
+            setAreQuizzesLoading(true);
+            const quizzesCollection = collection(firestore, 'quizzes');
+            const quizPromises = [];
+            for (let i = 0; i < quizIds.length; i += 30) {
+                const batchIds = quizIds.slice(i, i + 30);
+                const q = query(quizzesCollection, where('__name__', 'in', batchIds));
+                quizPromises.push(getDocs(q));
+            }
+            
+            const querySnapshots = await Promise.all(quizPromises);
+            const fetchedQuizzes: Quiz[] = [];
+            querySnapshots.forEach(snapshot => {
+                snapshot.forEach(doc => {
+                    fetchedQuizzes.push({ id: doc.id, ...doc.data() } as Quiz);
+                });
+            });
+            
+            setQuizzes(fetchedQuizzes);
+        } catch (error) {
+            console.error("Error fetching quizzes:", error);
+            setQuizzes([]);
+        } finally {
+            setAreQuizzesLoading(false);
+        }
+    };
+
+    fetchQuizzes();
+}, [firestore, student]);
+
+  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading;
+  
+  if (isLoading || !student || lessons === null || quizzes === null) {
     return (
       <div className="p-4 sm:p-6 space-y-6">
         <Skeleton className="h-9 w-1/2" />
@@ -107,7 +154,7 @@ export default function StudentDashboardPage() {
     
   const assignedLessonsData = lessons.filter(l => assignedLessons.includes(l.id));
   const completedLessonsData = lessons.filter(l => completedLessons.includes(l.id));
-  const completedQuizzesData = quizzes.filter(q => Object.keys(student.quizScores || {}).includes(q.id));
+  const completedQuizzesData = quizzes;
   const earnedBadges = allBadges.filter(b => (student.badges || []).includes(b.id));
   
   const handleMarkComplete = (lessonId: string) => {

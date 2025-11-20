@@ -1,6 +1,6 @@
 'use client';
 
-import type { Lesson, Student, Quiz } from '@/lib/types';
+import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -121,16 +121,27 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
 
 function QuizView({
   quiz,
+  student,
   onBack,
   onQuizComplete,
 }: {
   quiz: Quiz;
+  student: Student | null;
   onBack: () => void;
   onQuizComplete: (quizId: string, score: number) => void;
 }) {
   const form = useForm();
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
+  const [view, setView] = useState<'quiz' | 'result'>('quiz');
+  const [score, setScore] = useState(student?.quizScores?.[quiz.id] ?? null);
+
+  useEffect(() => {
+    // If there's already a score for this quiz, show the result screen first.
+    if (score !== null) {
+      setView('result');
+    } else {
+      setView('quiz');
+    }
+  }, [quiz.id, score]);
 
   const onSubmit = (data: any) => {
     let correctAnswers = 0;
@@ -141,13 +152,13 @@ function QuizView({
     });
     const finalScore = Math.round((correctAnswers / quiz.questions.length) * 100);
     setScore(finalScore);
-    setSubmitted(true);
+    setView('result');
     onQuizComplete(quiz.id, finalScore);
   };
   
-  const earnedBadges = submitted ? allBadges.filter(b => b.id.includes(quiz.topic.toLowerCase())) : [];
+  const earnedBadges = view === 'result' ? allBadges.filter(b => b.id.includes(quiz.topic.toLowerCase())) : [];
 
-  if (submitted) {
+  if (view === 'result' && score !== null) {
     return (
         <div className="space-y-6">
              <Button variant="ghost" onClick={onBack}>
@@ -157,7 +168,7 @@ function QuizView({
             <Card className="text-center">
                 <CardHeader>
                     <CardTitle className="text-4xl font-bold">Quiz Complete!</CardTitle>
-                    <CardDescription>You scored:</CardDescription>
+                    <CardDescription>Your score:</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <p className="text-7xl font-bold text-primary">{score}%</p>
@@ -176,8 +187,12 @@ function QuizView({
                         </div>
                      )}
                 </CardContent>
-                <CardFooter>
-                    <Button onClick={onBack} className="mx-auto">Continue Learning</Button>
+                <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <Button onClick={onBack} className="w-full sm:w-auto">Continue Learning</Button>
+                    <Button variant="outline" onClick={() => setView('quiz')} className="w-full sm:w-auto">
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Retry Quiz
+                    </Button>
                 </CardFooter>
             </Card>
         </div>
@@ -613,6 +628,7 @@ function ResourcesPageContent() {
         <div className="p-4 sm:p-6">
             <QuizView
                 quiz={selectedQuiz}
+                student={student}
                 onBack={handleBack}
                 onQuizComplete={handleQuizComplete}
             />
