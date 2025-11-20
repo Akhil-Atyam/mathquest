@@ -1,14 +1,14 @@
 'use client';
 
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
-import type { Student, Lesson } from '@/lib/types';
+import { collection } from 'firebase/firestore';
+import type { Student, Lesson, Quiz } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Award, CheckCircle2, ListChecks } from 'lucide-react';
-import { badges as allBadges, quizzes } from '@/lib/data';
+import { badges as allBadges } from '@/lib/data';
 import { StudentAssignmentManager } from './StudentAssignmentManager';
 
 /**
@@ -20,11 +20,14 @@ export function StudentProgressDetail({ student }: { student: Student }) {
     const firestore = useFirestore();
     
     // We can assume student data is already loaded and passed as a prop.
-    // So we only need to fetch lessons.
+    // So we need to fetch all lessons and quizzes to display details.
     const lessonsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'lessons') : null, [firestore]);
-    const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsCollectionRef);
+    const quizzesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'quizzes') : null, [firestore]);
     
-    const isLoading = areLessonsLoading;
+    const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsCollectionRef);
+    const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesCollectionRef);
+    
+    const isLoading = areLessonsLoading || areQuizzesLoading;
 
     if (isLoading) {
         return (

@@ -1,5 +1,4 @@
 'use client';
-import { resources, quizzes as allQuizzesData, badges as allBadges } from '@/lib/data';
 import type { Student, Lesson, Quiz } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { badges as allBadges } from '@/lib/data';
 
 /**
  * The main page for the student dashboard.
@@ -286,7 +286,7 @@ export default function StudentDashboardPage() {
                                     )
                                 })}
                                  {assignedQuizzesData.map(quiz => {
-                                    const isCompleted = student.quizScores?.[quiz.id] !== undefined;
+                                    const isCompleted = completedQuizzesData.some(completedQuiz => completedQuiz.id === quiz.id);
                                     return (
                                         <Card key={quiz.id}>
                                             <CardHeader>
@@ -318,7 +318,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    
-
-    
