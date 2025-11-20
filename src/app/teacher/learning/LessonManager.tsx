@@ -19,13 +19,15 @@ import type { Lesson } from '@/lib/types';
 import { topics } from '@/lib/data';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import ReactMarkdown from 'react-markdown';
+import Image from 'next/image';
 
 // Zod schema for lesson form validation
 const lessonSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   grade: z.string().refine(val => !isNaN(parseInt(val)), { message: "Please select a grade." }),
   topic: z.string().min(1, 'Please select a topic.'),
-  type: z.enum(['Text', 'Video', 'Quiz']),
+  type: z.enum(['Text', 'Video']),
   content: z.string().min(10, 'Content must be at least 10 characters.'),
   order: z.coerce.number().optional(),
 });
@@ -46,7 +48,7 @@ function LessonForm({
       title: lesson?.title || '',
       grade: String(lesson?.grade || ''),
       topic: lesson?.topic || '',
-      type: lesson?.type || 'Text',
+      type: lesson?.type === 'Quiz' ? 'Text' : (lesson?.type || 'Text'),
       content: lesson?.content || '',
       order: lesson?.order || 0,
     },
@@ -124,7 +126,6 @@ function LessonForm({
                     <SelectContent>
                         <SelectItem value="Text">Text</SelectItem>
                         <SelectItem value="Video">Video</SelectItem>
-                        <SelectItem value="Quiz">Quiz</SelectItem>
                     </SelectContent>
                     </Select>
                     <FormMessage />
