@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { Student, Lesson, Quiz } from '@/lib/types';
@@ -23,6 +23,16 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     
+    // Local state to manage assignments for immediate UI feedback
+    const [assignedLessonIds, setAssignedLessonIds] = useState(new Set(student.assignedLessons || []));
+    const [assignedQuizIds, setAssignedQuizIds] = useState(new Set(student.assignedQuizzes || []));
+
+    // Effect to sync local state when the student prop changes
+    useEffect(() => {
+        setAssignedLessonIds(new Set(student.assignedLessons || []));
+        setAssignedQuizIds(new Set(student.assignedQuizzes || []));
+    }, [student]);
+
     // State for the filter dropdowns
     const [selectedGrade, setSelectedGrade] = useState<string>(String(student.grade));
     const [selectedTopic, setSelectedTopic] = useState<string>('all');
@@ -64,6 +74,17 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
     // Handler for changing a lesson's assignment status
     const handleLessonAssignmentChange = async (lessonId: string, isAssigned: boolean) => {
         if (!firestore) return;
+
+        // --- Immediate UI update ---
+        const newAssignedLessonIds = new Set(assignedLessonIds);
+        if (isAssigned) {
+            newAssignedLessonIds.add(lessonId);
+        } else {
+            newAssignedLessonIds.delete(lessonId);
+        }
+        setAssignedLessonIds(newAssignedLessonIds);
+        // --- End UI update ---
+
         const studentRef = doc(firestore, 'users', student.id);
         try {
             await updateDoc(studentRef, {
@@ -75,6 +96,8 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
             });
         } catch (error) {
             console.error("Error updating lesson assignments: ", error);
+            // Revert UI on error
+            setAssignedLessonIds(new Set(student.assignedLessons || []));
             toast({
                 variant: "destructive",
                 title: "Update failed",
@@ -85,6 +108,17 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
     
     const handleQuizAssignmentChange = async (quizId: string, isAssigned: boolean) => {
         if (!firestore) return;
+
+        // --- Immediate UI update ---
+        const newAssignedQuizIds = new Set(assignedQuizIds);
+        if (isAssigned) {
+            newAssignedQuizIds.add(quizId);
+        } else {
+            newAssignedQuizIds.delete(quizId);
+        }
+        setAssignedQuizIds(newAssignedQuizIds);
+        // --- End UI update ---
+
         const studentRef = doc(firestore, 'users', student.id);
         try {
             await updateDoc(studentRef, {
@@ -96,6 +130,8 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
             });
         } catch (error) {
             console.error("Error updating quiz assignments: ", error);
+             // Revert UI on error
+             setAssignedQuizIds(new Set(student.assignedQuizzes || []));
             toast({
                 variant: "destructive",
                 title: "Update failed",
@@ -112,9 +148,6 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
             </Card>
         );
     }
-    
-    const assignedLessonIds = new Set(student.assignedLessons || []);
-    const assignedQuizIds = new Set(student.assignedQuizzes || []);
 
     return (
         <Card>
@@ -203,5 +236,3 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
         </Card>
     );
 }
-
-    
