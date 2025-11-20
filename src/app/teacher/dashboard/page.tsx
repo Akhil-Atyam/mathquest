@@ -16,7 +16,6 @@ import { Calendar, Clock, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { LessonManager } from './LessonManager';
-import { AssignmentManager } from './AssignmentManager';
 
 /**
  * Component to display a list of bookings.
@@ -185,11 +184,10 @@ export default function TeacherDashboardPage() {
             <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
 
             <Tabs defaultValue="availability" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="availability">Availability</TabsTrigger>
                     <TabsTrigger value="bookings">Bookings</TabsTrigger>
                     <TabsTrigger value="lessons">Manage Lessons</TabsTrigger>
-                    <TabsTrigger value="assignments">Assignments</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="availability">
@@ -211,10 +209,6 @@ export default function TeacherDashboardPage() {
 
                 <TabsContent value="lessons">
                    <LessonManager />
-                </TabsContent>
-
-                <TabsContent value="assignments">
-                   <AssignmentManager />
                 </TabsContent>
             </Tabs>
         </div>
