@@ -183,18 +183,14 @@ export default function TeacherDashboardPage() {
         <div className="p-4 sm:p-6 space-y-6">
             <h1 className="text-3xl font-bold font-headline">Teacher Dashboard</h1>
 
-            <Tabs defaultValue="availability" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="availability">Availability</TabsTrigger>
-                    <TabsTrigger value="bookings">Bookings</TabsTrigger>
-                    <TabsTrigger value="lessons">Manage Lessons</TabsTrigger>
+            <Tabs defaultValue="tutoring" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="tutoring">Tutoring</TabsTrigger>
+                    <TabsTrigger value="lessons">Lessons</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="availability">
+                <TabsContent value="tutoring" className="space-y-8">
                     <AvailabilityManager teacher={teacher} />
-                </TabsContent>
-
-                <TabsContent value="bookings">
                     <Card>
                         <CardHeader>
                             <CardTitle>My Booked Sessions</CardTitle>
