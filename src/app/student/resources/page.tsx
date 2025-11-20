@@ -283,7 +283,7 @@ const QuestNode = ({
             className={cn(
               "relative flex h-24 w-24 items-center justify-center rounded-full border-4 shadow-lg transition-all duration-300 transform hover:scale-110",
               isUnlocked ? "cursor-pointer" : "cursor-not-allowed",
-              isCompleted ? "border-green-500 bg-green-100" : "border-primary bg-primary/10",
+              isCompleted ? "border-green-500 bg-green-100" : "border-primary bg-card",
               !isUnlocked && "border-muted bg-muted/50"
             )}
           >
