@@ -123,12 +123,14 @@ function QuizView({
   quiz,
   student,
   onBack,
+  onContinue,
   onQuizComplete,
   onQuizRedo,
 }: {
   quiz: Quiz;
   student: Student | null;
   onBack: () => void;
+  onContinue: () => void;
   onQuizComplete: (quiz: Quiz, score: number) => void;
   onQuizRedo: (quizId: string) => void;
 }) {
@@ -199,7 +201,7 @@ function QuizView({
                      )}
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                    <Button onClick={onBack} className="w-full sm:w-auto">Continue Learning</Button>
+                    <Button onClick={onContinue} className="w-full sm:w-auto">Continue Learning</Button>
                     <Button variant="outline" onClick={handleRedo} className="w-full sm:w-auto">
                         <RotateCcw className="mr-2 h-4 w-4" />
                         Retry Quiz
@@ -590,6 +592,8 @@ function ResourcesPageContent() {
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
   const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
   
+  const isQuiz = (item: any): item is Quiz => 'questions' in item;
+
   // Effect to automatically select a lesson if an ID is in the URL params.
   useEffect(() => {
     if (lessons && lessons.length > 0) {
@@ -667,6 +671,33 @@ function ResourcesPageContent() {
     setSelectedQuiz(null);
   }
 
+  const handleContinue = () => {
+    if (!selectedQuiz || !lessons || !quizzes) {
+        handleBack();
+        return;
+    }
+
+    const allItems: (Lesson | Quiz)[] = [...lessons, ...quizzes];
+    const gradeItems = allItems.filter(item => item.grade === selectedQuiz.grade)
+                                .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const currentIndex = gradeItems.findIndex(item => item.id === selectedQuiz.id);
+
+    if (currentIndex > -1 && currentIndex < gradeItems.length - 1) {
+        const nextItem = gradeItems[currentIndex + 1];
+        if (isQuiz(nextItem)) {
+            setSelectedLesson(null);
+            setSelectedQuiz(nextItem);
+        } else {
+            setSelectedQuiz(null);
+            setSelectedLesson(nextItem);
+        }
+    } else {
+        // Last item, just go back to the list
+        handleBack();
+    }
+};
+
   if (isLoading) {
     return (
         <div className="p-4 sm:p-6 space-y-6">
@@ -699,6 +730,7 @@ function ResourcesPageContent() {
                 quiz={selectedQuiz}
                 student={student}
                 onBack={handleBack}
+                onContinue={handleContinue}
                 onQuizComplete={handleQuizComplete}
                 onQuizRedo={handleQuizRedo}
             />
