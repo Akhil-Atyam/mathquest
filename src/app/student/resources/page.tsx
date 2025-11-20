@@ -197,16 +197,40 @@ const Grade2QuestPath = ({
       // Topic: Place Value
       'Place value blocks',
       'Exercise: Place value',
-      // ... more topics will follow this structure
     ];
 
     const sortedLessons = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
-        return allItems
-            .filter(l => l.grade === 2)
+        const grade2Items = allItems.filter(l => l.grade === 2);
+        
+        // Find the corresponding quiz object for title matching
+        const quiz1 = grade2Items.find(item => isQuiz(item) && item.title === 'Quiz 1: Addition');
+        const quiz2 = grade2Items.find(item => isQuiz(item) && item.title === 'Quiz 2: Subtraction');
+        
+        const itemsWithIdInTitle = grade2Items.map(item => {
+            if (isQuiz(item) && item.title === 'Quiz 1: Addition' && quiz1) {
+                return { ...item, title: `Quiz 1: Addition::${quiz1.id}` };
+            }
+            if (isQuiz(item) && item.title === 'Quiz 2: Subtraction' && quiz2) {
+                return { ...item, title: `Quiz 2: Subtraction::${quiz2.id}` };
+            }
+            return item;
+        })
+
+        const lessonOrderWithIds = lessonOrder.map(title => {
+            if (title === 'Quiz 1: Addition' && quiz1) return `Quiz 1: Addition::${quiz1.id}`;
+            if (title === 'Quiz 2: Subtraction' && quiz2) return `Quiz 2: Subtraction::${quiz2.id}`;
+            return title;
+        })
+
+        return itemsWithIdInTitle
             .sort((a, b) => {
-                const indexA = lessonOrder.indexOf(a.title);
-                const indexB = lessonOrder.indexOf(b.title);
+                const aTitle = isQuiz(a) ? a.title : a.title;
+                const bTitle = isQuiz(b) ? b.title : b.title;
+
+                const indexA = lessonOrderWithIds.indexOf(aTitle);
+                const indexB = lessonOrderWithIds.indexOf(bTitle);
+
                 if (indexA === -1) return 1;
                 if (indexB === -1) return -1;
                 return indexA - indexB;
@@ -257,6 +281,8 @@ const Grade2QuestPath = ({
                     const y = 80 + index * 160;
                     const xOffset = (window.innerWidth / 5) * Math.sin(index * Math.PI / 3);
 
+                    const title = isQuiz(lesson) ? lesson.title.split('::')[0] : lesson.title;
+
                     return (
                         <div
                             key={lesson.id}
@@ -269,7 +295,7 @@ const Grade2QuestPath = ({
                             }}
                         >
                             <QuestNode 
-                                title={lesson.title}
+                                title={title}
                                 subtitle={`Topic: ${lesson.topic}`}
                                 icon={isQuiz(lesson) ? FileQuestion : BookOpen}
                                 isCompleted={isCompleted}
