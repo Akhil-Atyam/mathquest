@@ -188,7 +188,7 @@ export default function StudentDashboardPage() {
         <TabsContent value="overview">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
                 {/* Card to display overall progress on assigned lessons */}
-                <Card id="tutorial-progress-card">
+                <Card id="tutorial-progress-card" className="h-full">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                     <ListChecks /> My Progress
@@ -205,7 +205,7 @@ export default function StudentDashboardPage() {
                 </Card>
 
                 {/* Card to display earned badges */}
-                <Card id="tutorial-badges-card">
+                <Card id="tutorial-badges-card" className="h-full">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                     <Award /> My Badges
@@ -220,11 +220,9 @@ export default function StudentDashboardPage() {
                     )) : <p className="text-sm text-muted-foreground">Complete lessons and quizzes to earn badges!</p>}
                 </CardContent>
                 </Card>
-            </div>
-
-            {/* Card to display a list of completed activities */}
-            <div className="mt-6">
-                <Card>
+                
+                 {/* Card to display a list of completed activities */}
+                <Card className="lg:col-span-1 md:col-span-2 h-full">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                     <CheckCircle2 /> Completed Activities
