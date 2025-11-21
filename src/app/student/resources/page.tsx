@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import React, { useEffect, useState, useRef } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField, writeBatch } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion, Gamepad2 } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion, Gamepad2, Play } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -103,6 +103,7 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
   const getLessonIcon = () => {
     switch (lesson.type) {
         case 'Video':
+            return <Play className="w-8 h-8 text-primary" />;
         case 'Text':
             return <BookOpen className="w-8 h-8 text-primary" />;
         case 'Game':
