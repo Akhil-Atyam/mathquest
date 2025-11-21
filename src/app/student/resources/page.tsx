@@ -412,7 +412,7 @@ const Grade2QuestPath = ({
     
      useEffect(() => {
         const calculatePath = (containerWidth: number) => {
-            if (sortedItems.length < 1 || containerWidth === 0) return;
+            if (sortedItems.length < 1 || !containerWidth) return;
 
             const centerX = containerWidth / 2;
             const amplitude = Math.min(containerWidth * 0.2, 150); // Cap amplitude
@@ -452,7 +452,9 @@ const Grade2QuestPath = ({
 
         const observer = new ResizeObserver(entries => {
             for (let entry of entries) {
-                calculatePath(entry.contentRect.width);
+                if (entry.contentRect.width > 0) {
+                  calculatePath(entry.contentRect.width);
+                }
             }
         });
 
@@ -465,7 +467,7 @@ const Grade2QuestPath = ({
                 observer.unobserve(containerRef.current);
             }
         };
-    }, [sortedItems, student]);
+    }, [sortedItems, completedLessonIds, completedQuizIds]);
 
 
     if (sortedItems.length === 0) {
@@ -587,7 +589,7 @@ const Grade3QuestPath = ({
 
     useEffect(() => {
         const calculatePath = (containerWidth: number) => {
-            if (sortedItems.length < 1 || containerWidth === 0) return;
+            if (sortedItems.length < 1 || !containerWidth) return;
 
             const centerX = containerWidth / 2;
             const amplitude = Math.min(containerWidth * 0.2, 150);
@@ -626,7 +628,9 @@ const Grade3QuestPath = ({
         
         const observer = new ResizeObserver(entries => {
             for (let entry of entries) {
-                calculatePath(entry.contentRect.width);
+                 if (entry.contentRect.width > 0) {
+                    calculatePath(entry.contentRect.width);
+                 }
             }
         });
 
@@ -640,7 +644,7 @@ const Grade3QuestPath = ({
             }
         };
 
-    }, [sortedItems, student]);
+    }, [sortedItems, completedLessonIds, completedQuizIds]);
 
 
     if (sortedItems.length === 0) {
