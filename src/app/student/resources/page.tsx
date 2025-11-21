@@ -390,8 +390,8 @@ const Grade2QuestPath = ({
     onSelectQuiz: (quiz: Quiz) => void;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [pathData, setPathData] = useState('');
     const [progressPathData, setProgressPathData] = useState('');
+    const [remainingPathData, setRemainingPathData] = useState('');
     const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
@@ -436,14 +436,19 @@ const Grade2QuestPath = ({
                 }
             }
             
-            const fullPath = getCurvePath(points);
-            setPathData(fullPath);
-
             if(lastCompletedIndex > -1) {
                 const progressPoints = points.slice(0, lastCompletedIndex + 1);
                 setProgressPathData(getCurvePath(progressPoints));
+
+                if (lastCompletedIndex < points.length - 1) {
+                    const remainingPoints = points.slice(lastCompletedIndex);
+                    setRemainingPathData(getCurvePath(remainingPoints));
+                } else {
+                    setRemainingPathData('');
+                }
             } else {
                 setProgressPathData('');
+                setRemainingPathData(getCurvePath(points));
             }
         }
     }, [sortedItems, containerRef.current?.offsetWidth, student]);
@@ -456,37 +461,37 @@ const Grade2QuestPath = ({
     return (
         <div className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
-                {pathData && (
-                     <svg className="absolute top-0 left-0 w-full h-full z-0">
+                <svg className="absolute top-0 left-0 w-full h-full z-0">
+                    {remainingPathData && (
                         <path
-                            d={pathData}
+                            d={remainingPathData}
                             stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
                         />
-                        {progressPathData && (
-                            <path
-                                d={progressPathData}
-                                stroke="hsl(142 71% 45%)" // Green color
-                                strokeWidth="11"
-                                fill="none"
-                                strokeLinecap="round"
-                            />
-                        )}
-                         {placementTestNode && (
-                            <line 
-                                x1={placementTestNode.x} 
-                                y1={placementTestNode.y} 
-                                x2="100%" 
-                                y2={placementTestNode.y} 
-                                stroke="hsl(var(--border))" 
-                                strokeWidth="2" 
-                                strokeDasharray="5,5" 
-                            />
-                        )}
-                    </svg>
-                )}
+                    )}
+                    {progressPathData && (
+                        <path
+                            d={progressPathData}
+                            stroke="hsl(142 71% 45%)" // Green color
+                            strokeWidth="10"
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    )}
+                    {placementTestNode && (
+                        <line 
+                            x1={placementTestNode.x} 
+                            y1={placementTestNode.y} 
+                            x2="100%" 
+                            y2={placementTestNode.y} 
+                            stroke="hsl(var(--border))" 
+                            strokeWidth="2" 
+                            strokeDasharray="5,5" 
+                        />
+                    )}
+                </svg>
 
 
                 {sortedItems.map((item, index) => {
@@ -556,8 +561,8 @@ const Grade3QuestPath = ({
     onSelectQuiz: (quiz: Quiz) => void;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [pathData, setPathData] = useState('');
     const [progressPathData, setProgressPathData] = useState('');
+    const [remainingPathData, setRemainingPathData] = useState('');
     const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
@@ -602,14 +607,19 @@ const Grade3QuestPath = ({
                 }
             }
 
-            const fullPath = getCurvePath(points);
-            setPathData(fullPath);
-
             if(lastCompletedIndex > -1) {
                 const progressPoints = points.slice(0, lastCompletedIndex + 1);
                 setProgressPathData(getCurvePath(progressPoints));
+
+                if (lastCompletedIndex < points.length - 1) {
+                    const remainingPoints = points.slice(lastCompletedIndex);
+                    setRemainingPathData(getCurvePath(remainingPoints));
+                } else {
+                    setRemainingPathData('');
+                }
             } else {
                 setProgressPathData('');
+                setRemainingPathData(getCurvePath(points));
             }
         }
     }, [sortedItems, containerRef.current?.offsetWidth, student]);
@@ -622,37 +632,37 @@ const Grade3QuestPath = ({
     return (
         <div className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
-                {pathData && (
-                     <svg className="absolute top-0 left-0 w-full h-full z-0">
+                <svg className="absolute top-0 left-0 w-full h-full z-0">
+                    {remainingPathData && (
                         <path
-                           d={pathData}
+                            d={remainingPathData}
                             stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
                         />
-                         {progressPathData && (
-                            <path
-                                d={progressPathData}
-                                stroke="hsl(142 71% 45%)" // Green color
-                                strokeWidth="11"
-                                fill="none"
-                                strokeLinecap="round"
-                            />
-                        )}
-                         {placementTestNode && (
-                            <line 
-                                x1={placementTestNode.x} 
-                                y1={placementTestNode.y} 
-                                x2="100%" 
-                                y2={placementTestNode.y} 
-                                stroke="hsl(var(--border))" 
-                                strokeWidth="2" 
-                                strokeDasharray="5,5" 
-                            />
-                        )}
-                    </svg>
-                )}
+                    )}
+                    {progressPathData && (
+                        <path
+                            d={progressPathData}
+                            stroke="hsl(142 71% 45%)" // Green color
+                            strokeWidth="10"
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    )}
+                    {placementTestNode && (
+                        <line 
+                            x1={placementTestNode.x} 
+                            y1={placementTestNode.y} 
+                            x2="100%" 
+                            y2={placementTestNode.y} 
+                            stroke="hsl(var(--border))" 
+                            strokeWidth="2" 
+                            strokeDasharray="5,5" 
+                        />
+                    )}
+                </svg>
 
                 {sortedItems.map((item, index) => {
                     const isItemQuiz = isQuiz(item);
