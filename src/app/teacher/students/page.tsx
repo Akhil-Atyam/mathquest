@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, writeBatch } from 'firebase/firestore';
 import type { Student } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,19 +29,17 @@ export default function StudentsListPage() {
     const handleDeleteStudent = async (studentToDelete: Student) => {
         if (!firestore) return;
 
+        const userDocRef = doc(firestore, 'users', studentToDelete.id);
+        const usernameDocRef = doc(firestore, 'usernames', studentToDelete.username);
+
         try {
-            // Delete student document from 'users' collection
-            await deleteDoc(doc(firestore, 'users', studentToDelete.id));
+            // Use a batch to ensure both documents are deleted atomically.
+            const batch = writeBatch(firestore);
 
-            // Delete username document from 'usernames' collection
-            // We need to look up the username first if it's not on the student object,
-            // but for this implementation, we assume it is.
-            const usernameDocRef = doc(firestore, 'usernames', studentToDelete.username);
-            const usernameDoc = await getDoc(usernameDocRef);
+            batch.delete(userDocRef);
+            batch.delete(usernameDocRef);
 
-            if(usernameDoc.exists()){
-                await deleteDoc(usernameDocRef);
-            }
+            await batch.commit();
             
             toast({
                 title: "Student Deleted",
