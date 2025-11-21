@@ -20,6 +20,7 @@ import type { Lesson, Quiz } from '@/lib/types';
 import { topics } from '@/lib/data';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FormDescription } from '@/components/ui/form';
 
 // Zod schema for lesson form validation
 const lessonSchema = z.object({
@@ -160,6 +161,11 @@ function LessonForm({
                     <Input placeholder="https://www.example.com/..." {...field} />
                 )}
               </FormControl>
+               {lessonType === 'Game' && (
+                <FormDescription>
+                  Note: Only websites that allow embedding will work. Look for "embed" links. e.g., `https://pbskids.org/peg/games/hungry-pirates`
+                </FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}
