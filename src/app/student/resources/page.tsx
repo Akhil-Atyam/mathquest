@@ -819,12 +819,14 @@ function ResourcesPageContent() {
         // Placement test logic: if passed, unlock all previous lessons/quizzes in the same grade path
         if (quiz.isPlacementTest && quiz.order !== undefined) {
             const allItemsForGrade: (Lesson | Quiz)[] = [...lessons, ...quizzes].filter(item => item.grade === quiz.grade);
-            const itemsToUnlock = allItemsForGrade
-                .filter(item => (item.order || 0) < (quiz.order || 0))
-                .map(item => item.id);
+            const itemsToUnlock = allItemsForGrade.filter(item => (item.order || 0) < (quiz.order || 0));
             
             if (itemsToUnlock.length > 0) {
-              updates.assignedLessons = arrayUnion(...itemsToUnlock);
+              const lessonIdsToUnlock = itemsToUnlock.filter(item => !isQuiz(item)).map(item => item.id);
+              const quizIdsToUnlock = itemsToUnlock.filter(item => isQuiz(item)).map(item => item.id);
+              
+              if(lessonIdsToUnlock.length > 0) updates.assignedLessons = arrayUnion(...lessonIdsToUnlock);
+              if(quizIdsToUnlock.length > 0) updates.assignedQuizzes = arrayUnion(...quizIdsToUnlock);
             }
 
             toast({
@@ -863,13 +865,16 @@ function ResourcesPageContent() {
     
     // If it was a placement test, re-lock the lessons it unlocked.
     if (quiz.isPlacementTest && quiz.order !== undefined) {
+        const isQuiz = (item: any): item is Quiz => 'questions' in item;
         const allItemsForGrade: (Lesson | Quiz)[] = [...lessons, ...quizzes].filter(item => item.grade === quiz.grade);
-        const itemsToRelock = allItemsForGrade
-            .filter(item => (item.order || 0) < (quiz.order || 0))
-            .map(item => item.id);
+        const itemsToRelock = allItemsForGrade.filter(item => (item.order || 0) < (quiz.order || 0));
             
         if (itemsToRelock.length > 0) {
-            updates.assignedLessons = arrayRemove(...itemsToRelock);
+            const lessonIdsToRelock = itemsToRelock.filter(item => !isQuiz(item)).map(item => item.id);
+            const quizIdsToRelock = itemsToRelock.filter(item => isQuiz(item)).map(item => item.id);
+            
+            if(lessonIdsToRelock.length > 0) updates.assignedLessons = arrayRemove(...lessonIdsToRelock);
+            if(quizIdsToRelock.length > 0) updates.assignedQuizzes = arrayRemove(...quizIdsToRelock);
         }
     }
 
