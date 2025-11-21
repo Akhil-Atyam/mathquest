@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -28,6 +29,7 @@ const lessonSchema = z.object({
   type: z.enum(['Text', 'Video']),
   content: z.string().min(10, 'Content must be at least 10 characters.'),
   order: z.coerce.number().optional(),
+  citation: z.string().optional(),
 });
 
 // Component for the lesson form, used for both creating and editing
@@ -49,6 +51,7 @@ function LessonForm({
       type: lesson?.type || 'Text',
       content: lesson?.content || '',
       order: lesson?.order || 0,
+      citation: lesson?.citation || '',
     },
   });
 
@@ -156,6 +159,17 @@ function LessonForm({
                     <Input placeholder="https://www.youtube.com/watch?v=..." {...field} />
                 )}
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="citation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Citation (Optional)</FormLabel>
+              <FormControl><Textarea placeholder="e.g., Source: Khan Academy, 'Intro to Fractions'" {...field} rows={2} /></FormControl>
               <FormMessage />
             </FormItem>
           )}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -20,6 +21,7 @@ import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 
 // Zod schema for a single question
 const questionSchema = z.object({
@@ -37,6 +39,7 @@ const quizSchema = z.object({
   questions: z.array(questionSchema).min(1, 'A quiz must have at least one question.'),
   order: z.coerce.number().optional(),
   isPlacementTest: z.boolean().optional(),
+  citation: z.string().optional(),
 }).refine(data => {
     return data.lessonId !== 'none' || (data.grade && data.topic);
 }, {
@@ -57,6 +60,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
       questions: quiz?.questions || [{ questionText: '', options: ['', ''], correctAnswer: '' }],
       order: quiz?.order || 0,
       isPlacementTest: quiz?.isPlacementTest || false,
+      citation: quiz?.citation || '',
     },
   });
 
@@ -174,6 +178,17 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
                   If the student scores above an 80% on this, all previous lessons will be unlocked and so will the next lesson.
                 </p>
               </div>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="citation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Citation (Optional)</FormLabel>
+              <FormControl><Textarea placeholder="e.g., Source: Adapted from Illustrative Mathematics" {...field} rows={2} /></FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -315,6 +330,7 @@ export function QuizManager({ selectedGrade }: { selectedGrade: string }) {
             lessonId: data.lessonId,
             questions: data.questions,
             isPlacementTest: data.isPlacementTest,
+            citation: data.citation,
             grade: linkedLesson.grade,
             topic: linkedLesson.topic,
             teacherId: user.uid,
@@ -329,6 +345,7 @@ export function QuizManager({ selectedGrade }: { selectedGrade: string }) {
             title: data.title,
             questions: data.questions,
             isPlacementTest: data.isPlacementTest,
+            citation: data.citation,
             grade: parseInt(data.grade),
             topic: data.topic,
             teacherId: user.uid,

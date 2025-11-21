@@ -138,6 +138,10 @@
         "order": {
           "type": "number",
           "description": "A number used to define the order of the lesson in a learning path."
+        },
+        "citation": {
+          "type": "string",
+          "description": "An optional citation for the lesson content."
         }
       },
       "required": [
@@ -200,6 +204,10 @@
         "isPlacementTest": {
           "type": "boolean",
           "description": "If true, this quiz acts as a placement test, potentially unlocking the associated lesson."
+        },
+        "citation": {
+          "type": "string",
+          "description": "An optional citation for the quiz content."
         }
       },
       "required": [

@@ -27,6 +27,7 @@ import { badges as allBadges } from '@/lib/data';
 import { Progress } from '@/components/ui/progress';
 import ReactMarkdown from 'react-markdown';
 import { QuestPathDecorations } from './QuestPathDecorations';
+import { Separator } from '@/components/ui/separator';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
@@ -127,6 +128,15 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
             </div>
           )}
         </CardContent>
+        {lesson.citation && (
+            <>
+                <Separator className="my-4" />
+                <CardFooter className="flex-col items-start text-xs">
+                    <p className="font-semibold text-muted-foreground">Citation</p>
+                    <p className="text-muted-foreground/80">{lesson.citation}</p>
+                </CardFooter>
+            </>
+        )}
         <CardFooter className="flex justify-end gap-2">
              {isCompleted ? (
                 <Button variant="outline" onClick={() => onUncomplete(lesson.id)}>
@@ -293,6 +303,15 @@ function QuizView({
             <Button type="submit" className='mt-6'>Submit Quiz</Button>
           </form>
         </CardContent>
+        {quiz.citation && (
+            <>
+                <Separator className="my-4" />
+                <CardFooter className="flex-col items-start text-xs">
+                    <p className="font-semibold text-muted-foreground">Citation</p>
+                    <p className="text-muted-foreground/80">{quiz.citation}</p>
+                </CardFooter>
+            </>
+        )}
       </Card>
     </div>
   );

@@ -35,6 +35,7 @@ export type Lesson = {
   type: 'Text' | 'Video';
   imageUrl?: string;
   order?: number; // Optional field to define sequence
+  citation?: string; // Optional citation
 };
 
 
@@ -68,6 +69,7 @@ export type Quiz = {
   teacherId: string;
   order?: number; // Optional field to define sequence
   isPlacementTest?: boolean; // If true, this quiz acts as a placement test.
+  citation?: string; // Optional citation
 };
 
 
