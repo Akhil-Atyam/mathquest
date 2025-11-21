@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -51,11 +52,11 @@ function BookingsList({
               <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                  <span className='flex items-center gap-1'><Calendar className='w-4 h-4' /> {format(booking.startTime.toDate(), 'PPP')}</span>
                  <span className='flex items-center gap-1'><Clock className='w-4 h-4' /> {format(booking.startTime.toDate(), 'p')}</span>
-                 <span className='flex items-center gap-1'><Users className='w-4 h-4' /> {booking.studentIds.length} / {booking.studentLimit} students</span>
+                 <span className='flex items-center gap-1'><Users className='w-4 h-4' /> {(booking.studentIds || []).length} / {booking.studentLimit} students</span>
               </div>
               <div className="text-xs">
                 <span className="font-medium">Students: </span>
-                <span className="text-muted-foreground">{booking.studentNames.join(', ')}</span>
+                <span className="text-muted-foreground">{(booking.studentNames || []).join(', ')}</span>
               </div>
               {booking.meetingLink && (
                   <p className="text-xs text-blue-600 truncate">
