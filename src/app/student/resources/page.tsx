@@ -72,6 +72,19 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
   );
 }
 
+const getLessonViewIcon = (lessonType: Lesson['type']) => {
+    switch (lessonType) {
+        case 'Video':
+            return <Play className="w-8 h-8 text-primary" />;
+        case 'Text':
+            return <BookOpen className="w-8 h-8 text-primary" />;
+        case 'Game':
+            return <Gamepad2 className="w-8 h-8 text-primary" />;
+        default:
+            return <BookOpen className="w-8 h-8 text-primary" />;
+    }
+}
+
 /**
  * A component to display the detailed content of a single lesson.
  *
@@ -100,19 +113,6 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
     }
   }
   
-  const getLessonIcon = () => {
-    switch (lesson.type) {
-        case 'Video':
-            return <Play className="w-8 h-8 text-primary" />;
-        case 'Text':
-            return <BookOpen className="w-8 h-8 text-primary" />;
-        case 'Game':
-            return <Gamepad2 className="w-8 h-8 text-primary" />;
-        default:
-            return <BookOpen className="w-8 h-8 text-primary" />;
-    }
-  }
-
   return (
     <div className="space-y-6">
        <Button variant="ghost" onClick={onBack}>
@@ -122,7 +122,7 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-             {getLessonIcon()}
+             {getLessonViewIcon(lesson.type)}
             {lesson.title}
           </CardTitle>
           <p className="text-muted-foreground">
@@ -431,6 +431,23 @@ function getCurvePath(points: { x: number; y: number }[], tension = 0.4) {
     return d;
 }
 
+const getQuestNodeIcon = (item: Lesson | Quiz) => {
+    if ('questions' in item) { // It's a Quiz
+        return CheckSquare;
+    }
+    // It's a Lesson
+    switch (item.type) {
+        case 'Video':
+            return Play;
+        case 'Game':
+            return Gamepad2;
+        case 'Text':
+        default:
+            return BookOpen;
+    }
+};
+
+
 const Grade2QuestPath = ({ 
     lessons, 
     quizzes,
@@ -596,7 +613,7 @@ const Grade2QuestPath = ({
                             <QuestNode 
                                 title={item.title}
                                 subtitle={`Topic: ${item.topic}`}
-                                icon={isItemQuiz ? CheckSquare : BookOpen}
+                                icon={getQuestNodeIcon(item)}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
                                 isAssigned={isExplicitlyAssigned && !isCompleted}
@@ -775,7 +792,7 @@ const Grade3QuestPath = ({
                             <QuestNode 
                                 title={item.title}
                                 subtitle={`Topic: ${item.topic}`}
-                                icon={isItemQuiz ? CheckSquare : BookOpen}
+                                icon={getQuestNodeIcon(item)}
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
                                 isAssigned={isExplicitlyAssigned && !isCompleted}
