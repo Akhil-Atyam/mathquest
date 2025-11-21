@@ -11,7 +11,6 @@ type TutorialStep = {
   title: string;
   text: string;
   position?: 'left' | 'right' | 'top' | 'bottom' | 'center';
-  requireClick?: boolean;
   navigateTo?: string;
   page?: string; // Which page this step belongs to
 };
@@ -22,9 +21,8 @@ const allSteps: TutorialStep[] = [
     page: 'any',
     elementId: 'tutorial-dashboard',
     title: 'Welcome to your Dashboard!',
-    text: 'This is your home base. Click here to see your progress, assignments, and earned badges.',
+    text: 'This is your home base. Click Next to see your progress, assignments, and earned badges.',
     position: 'right',
-    requireClick: true,
     navigateTo: '/student/dashboard',
   },
   // --- Dashboard Page ---
@@ -46,16 +44,15 @@ const allSteps: TutorialStep[] = [
     page: '/student/dashboard',
     elementId: 'tutorial-assignments-tab',
     title: 'Your Assignments',
-    text: "Click here to see all the lessons and quizzes your teacher has assigned just for you.",
+    text: "Here you can see all the lessons and quizzes your teacher has assigned just for you.",
     position: 'bottom',
   },
   {
     page: '/student/dashboard',
     elementId: 'tutorial-resources',
     title: 'Explore Learning Resources',
-    text: 'Ready for more? Click here to explore all lessons and quizzes!',
+    text: 'Ready for more? Click Next to explore all lessons and quizzes!',
     position: 'right',
-    requireClick: true,
     navigateTo: '/student/resources',
   },
   // --- Resources Page ---
@@ -77,9 +74,8 @@ const allSteps: TutorialStep[] = [
     page: '/student/resources',
     elementId: 'tutorial-book-session',
     title: 'Book a Tutoring Session',
-    text: "Need extra help? Schedule a one-on-one or group session with one of our friendly teachers.",
+    text: "Need extra help? Let's go schedule a one-on-one or group session with one of our friendly teachers.",
     position: 'right',
-    requireClick: true,
     navigateTo: '/student/tutoring',
   },
     // --- Tutoring Page ---
@@ -87,9 +83,8 @@ const allSteps: TutorialStep[] = [
     page: '/student/tutoring',
     elementId: 'tutorial-my-sessions',
     title: 'View Your Sessions',
-    text: 'Finally, click here to check your upcoming and past tutoring sessions.',
+    text: 'Finally, click Next to check your upcoming and past tutoring sessions.',
     position: 'right',
-    requireClick: true,
     navigateTo: '/student/my-sessions',
   },
    // --- Final Step ---
@@ -120,18 +115,6 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   // Memoize the current step object.
   const step = useMemo(() => allSteps[currentStepIndex], [currentStepIndex]);
 
-  // Use a ref to hold the step for the event listener to avoid stale closures.
-  const stepRef = useRef(step);
-  useEffect(() => {
-    stepRef.current = step;
-  }, [step]);
-  
-  // Use a ref for router as well to ensure the latest instance is used in the callback.
-  const routerRef = useRef(router);
-  useEffect(() => {
-    routerRef.current = router;
-  }, [router]);
-
   // Update localStorage whenever the step index changes.
   useEffect(() => {
     localStorage.setItem('tutorialStep', String(currentStepIndex));
@@ -139,6 +122,12 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
 
 
   const handleNext = useCallback(() => {
+    // If the current step has a navigation action, perform it.
+    // The useEffect that watches `pathname` will handle advancing the step.
+    if (step?.navigateTo) {
+        router.push(step.navigateTo);
+    }
+    
     const isLastStep = currentStepIndex >= allSteps.length - 1;
     if (isLastStep) {
       onComplete();
@@ -149,10 +138,10 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     } else {
       setCurrentStepIndex(prev => prev + 1);
     }
-  }, [currentStepIndex, onComplete]);
+  }, [currentStepIndex, onComplete, router, step]);
 
 
-  // Effect to manage the main tutorial logic, including page validation and event listeners.
+  // Effect to manage the main tutorial logic, including page validation.
   useEffect(() => {
     if (!step) {
       onComplete();
@@ -161,41 +150,17 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     
     // Check if the current step is appropriate for the current page.
     const currentPathMatches = step.page === pathname;
-    const isInitialStep = step.page === 'any';
-    if (!currentPathMatches && !isInitialStep) {
-      // If we are on the wrong page, try to find the correct step for this page.
-      const correctStepIndex = allSteps.findIndex(s => s.page === pathname);
-      if (correctStepIndex !== -1 && correctStepIndex !== currentStepIndex) {
-        setCurrentStepIndex(correctStepIndex);
-      }
-      return;
-    }
-    
-    // Function to handle clicks on the document body, used for interactive steps.
-    const handleElementClick = (e: MouseEvent) => {
-        const currentStep = stepRef.current;
-        if (currentStep?.requireClick && currentStep.elementId) {
-            const targetElement = document.getElementById(currentStep.elementId);
-            // Check if the click happened on the highlighted element.
-            if (targetElement && targetElement.contains(e.target as Node)) {
-                e.preventDefault();
-                e.stopPropagation();
+    const isAnyPageStep = step.page === 'any';
 
-                // If the step requires navigation, do it now.
-                if (currentStep.navigateTo) {
-                    routerRef.current.push(currentStep.navigateTo);
-                }
-                // Use a function form of setCurrentStepIndex to ensure we are advancing from the actual current state.
-                setCurrentStepIndex(prev => prev + 1);
-            }
+    if (!currentPathMatches && !isAnyPageStep) {
+        // If we are on the wrong page (e.g., due to navigation), find the correct step.
+        const correctStepIndexForPage = allSteps.findIndex(s => s.page === pathname);
+        const currentIndexOnWrongPage = allSteps[currentStepIndex]?.page !== pathname;
+
+        if (correctStepIndexForPage !== -1 && currentIndexOnWrongPage) {
+            setCurrentStepIndex(correctStepIndexForPage);
         }
-    };
-
-
-    // Add the click listener for interactive steps.
-    if (step.requireClick) {
-        // Use capture phase to ensure this listener runs before others.
-        document.body.addEventListener('click', handleElementClick, true);
+        return;
     }
     
     // A timer to delay the spotlight calculation, allowing the UI to settle.
@@ -208,10 +173,6 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
       if (highlightedElementRef.current) {
           highlightedElementRef.current.classList.remove('tutorial-highlight');
           highlightedElementRef.current = null;
-      }
-      // Remove the click listener to prevent it from firing on subsequent steps.
-      if (step.requireClick) {
-          document.body.removeEventListener('click', handleElementClick, true);
       }
     }
   }, [currentStepIndex, pathname, step, onComplete]);
@@ -236,7 +197,17 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
             highlightedElementRef.current = element;
         }
     } else {
-        setTargetRect(null);
+        // If element not found, retry after a short delay
+        setTimeout(() => {
+            const el = document.getElementById(step.elementId);
+            if (el) {
+                setTargetRect(el.getBoundingClientRect());
+                el.classList.add('tutorial-highlight');
+                highlightedElementRef.current = el;
+            } else {
+                setTargetRect(null);
+            }
+        }, 300);
     }
   }, [step]);
   
@@ -262,9 +233,9 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         bottom: 0,
         zIndex: 51,
         transition: 'all 0.3s ease-in-out',
-        pointerEvents: step?.requireClick ? 'auto' : 'none',
+        pointerEvents: 'none',
      }
-  }, [step]);
+  }, []);
   
   const spotlightStyle: React.CSSProperties = useMemo(() => {
       const baseStyle: React.CSSProperties = {
@@ -296,11 +267,10 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         zIndex: 52,
         transition: 'all 0.3s ease-in-out',
         willChange: 'transform, top, left',
-        // Make sure the content itself doesn't block clicks on the overlay
         pointerEvents: 'auto',
     };
 
-    if (!targetRect || step?.elementId === 'tutorial-end') {
+    if (!targetRect || step?.elementId === 'tutorial-end' || step?.position === 'center') {
         return {
             ...baseStyle,
             top: '50%',
@@ -310,26 +280,17 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         }
     }
     
-    let top = 0, left = 0;
     const offset = 20;
 
     switch(position) {
         case 'right':
-            top = targetRect.top;
-            left = targetRect.right + offset;
-            return {...baseStyle, top: `${top}px`, left: `${left}px`};
+            return {...baseStyle, top: `${targetRect.top}px`, left: `${targetRect.right + offset}px`};
         case 'left':
-            top = targetRect.top;
-            left = targetRect.left - offset;
-            return {...baseStyle, top: `${top}px`, left: `${left}px`, transform: 'translateX(-100%)'};
+            return {...baseStyle, top: `${targetRect.top}px`, left: `${targetRect.left - offset}px`, transform: 'translateX(-100%)'};
         case 'bottom':
-            top = targetRect.bottom + offset;
-            left = targetRect.left;
-            return {...baseStyle, top: `${top}px`, left: `${left}px`};
+            return {...baseStyle, top: `${targetRect.bottom + offset}px`, left: `${targetRect.left}px`};
         case 'top':
-            top = targetRect.top - offset;
-            left = targetRect.left;
-            return {...baseStyle, top: `${top}px`, left: `${left}px`, transform: 'translateY(-100%)'};
+            return {...baseStyle, top: `${targetRect.top - offset}px`, left: `${targetRect.left}px`, transform: 'translateY(-100%)'};
         default:
              return {...baseStyle, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     }
@@ -349,17 +310,14 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
           <div className="bg-card p-6 rounded-lg shadow-2xl max-w-sm">
             <h3 className="text-xl font-bold font-headline mb-2">{step.title}</h3>
             <p className="text-muted-foreground mb-4">{step.text}</p>
-            {!step.requireClick && (
-              <Button onClick={handleNext}>
-                {currentStepIndex < allSteps.length - 1 ? "Next" : "Got it!"}
-              </Button>
-            )}
-            {step.requireClick && (
-                 <p className="text-sm font-semibold text-primary animate-pulse">Click the highlighted item to continue!</p>
-            )}
+            <Button onClick={handleNext}>
+              {currentStepIndex < allSteps.length - 1 ? "Next" : "Got it!"}
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+    
