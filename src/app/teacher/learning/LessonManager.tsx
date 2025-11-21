@@ -137,8 +137,7 @@ function LessonForm({
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Order (Advanced)</FormLabel>
-                    <FormControl><Input type="number" placeholder="e.g., 1" {...field} disabled={!selectedGrade} /></FormControl>
-                    {!selectedGrade && <p className="text-xs text-muted-foreground">Select a grade to auto-fill order.</p>}
+                    <FormControl><Input type="number" placeholder="e.g., 1" {...field} /></FormControl>
                     <FormMessage />
                     </FormItem>
                 )}
@@ -208,7 +207,12 @@ export function LessonManager({ selectedGrade }: { selectedGrade: string }) {
     if (lesson) {
       setEditingLesson(lesson);
     } else {
-      setEditingLesson({});
+      // If creating a new lesson and a grade is filtered, pre-fill it.
+      const newLesson: Partial<Lesson> = {};
+      if (selectedGrade !== 'all') {
+        newLesson.grade = parseInt(selectedGrade, 10);
+      }
+      setEditingLesson(newLesson);
     }
     setIsFormOpen(true);
   };
@@ -219,14 +223,16 @@ export function LessonManager({ selectedGrade }: { selectedGrade: string }) {
   };
 
   const handleSaveLesson = async (data: z.infer<typeof lessonSchema>) => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !lessons || !quizzes) return;
     
+    const gradeForOrder = data.grade;
+
     // Auto-increment order logic, now grade-specific
     let finalOrder = data.order;
     if (!editingLesson?.id) { // Only auto-increment for new lessons
         const allContentForGrade = [
-            ...(lessons?.filter(l => String(l.grade) === data.grade) || []),
-            ...(quizzes?.filter(q => String(q.grade) === data.grade) || [])
+            ...(lessons?.filter(l => String(l.grade) === gradeForOrder) || []),
+            ...(quizzes?.filter(q => String(q.grade) === gradeForOrder) || [])
         ];
         finalOrder = (allContentForGrade.length > 0)
             ? Math.max(...allContentForGrade.map(c => c.order || 0)) + 1
@@ -235,7 +241,7 @@ export function LessonManager({ selectedGrade }: { selectedGrade: string }) {
 
     const lessonData = {
       ...data,
-      grade: parseInt(data.grade, 10), // Ensure grade is a number
+      grade: parseInt(data.grade, 10),
       teacherId: user.uid,
       order: finalOrder,
     };

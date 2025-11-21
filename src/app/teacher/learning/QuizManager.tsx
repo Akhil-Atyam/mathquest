@@ -82,7 +82,6 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
   };
   
   const lessonId = form.watch('lessonId');
-  const selectedGrade = form.watch('grade');
 
   return (
     <Form {...form}>
@@ -108,8 +107,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Order (Advanced)</FormLabel>
-                <FormControl><Input type="number" placeholder="e.g., 2" {...field} disabled={lessonId === 'none' && !selectedGrade} /></FormControl>
-                {lessonId === 'none' && !selectedGrade && <p className="text-xs text-muted-foreground">Select a grade to auto-fill order.</p>}
+                <FormControl><Input type="number" placeholder="e.g., 2" {...field} /></FormControl>
                 <FormMessage />
                 </FormItem>
             )}
@@ -284,7 +282,12 @@ export function QuizManager({ selectedGrade }: { selectedGrade: string }) {
     if (quiz) {
       setEditingQuiz(quiz);
     } else {
-      setEditingQuiz({});
+       // If creating a new quiz and a grade is filtered, pre-fill it.
+       const newQuiz: Partial<Quiz> = {};
+       if (selectedGrade !== 'all') {
+         newQuiz.grade = parseInt(selectedGrade, 10);
+       }
+      setEditingQuiz(newQuiz);
     }
     setIsFormOpen(true);
   };
