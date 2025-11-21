@@ -285,11 +285,6 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     const mascotHeight = 300; 
     const offset = 20;
 
-    // Default positions
-    let top = targetRect.top;
-    let left = targetRect.right + offset;
-    let transform = '';
-
     // Automatically adjust position based on viewport
     if (position === 'right' && targetRect.right + mascotWidth + offset > window.innerWidth) {
       position = 'left';
