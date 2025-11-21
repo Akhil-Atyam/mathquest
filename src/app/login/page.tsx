@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -119,6 +120,7 @@ function AuthForm({
                     username: values.username,
                     email: user.email!,
                     grade: parseInt(values.grade, 10),
+                    hasCompletedTutorial: false,
                 };
             } else { // teacher
                  profileData = {

@@ -48,7 +48,7 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
     const { data: student } = useDoc<Student>(studentDocRef);
 
     useEffect(() => {
-        if (student && !student.hasCompletedTutorial) {
+        if (student && student.hasCompletedTutorial === false) {
             setShowTutorial(true);
         }
     }, [student]);
@@ -107,9 +107,7 @@ export default function StudentLayout({
     children: React.ReactNode;
 }) {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <StudentLayoutContent>{children}</StudentLayoutContent>
-        </Suspense>
+        <StudentLayoutContent>{children}</StudentLayoutContent>
     );
 }
 
