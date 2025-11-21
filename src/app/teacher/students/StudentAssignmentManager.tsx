@@ -31,7 +31,7 @@ export function StudentAssignmentManager({ student }: { student: Student }) {
     useEffect(() => {
         setAssignedLessonIds(new Set(student.assignedLessons || []));
         setAssignedQuizIds(new Set(student.assignedQuizzes || []));
-    }, [student]);
+    }, [student.assignedLessons, student.assignedQuizzes]);
 
     // State for the filter dropdowns
     const [selectedGrade, setSelectedGrade] = useState<string>(String(student.grade));
