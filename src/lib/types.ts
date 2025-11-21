@@ -93,6 +93,9 @@ export type Student = {
   assignedLessons?: string[]; // An array of lesson IDs assigned by a teacher.
   assignedQuizzes?: string[]; // An array of quiz IDs assigned by a teacher.
   completedLessons?: string[]; // An array of resource IDs that the student has completed.
+  completedQuizzes?: string[]; // An array of quiz IDs that the student has passed.
+  unlockedLessons?: string[]; // An array of lesson IDs unlocked by placement tests.
+  unlockedQuizzes?: string[]; // An array of quiz IDs unlocked by placement tests.
   quizScores?: Record<string, number>; // A map of quiz IDs to the scores the student received.
   badges?: string[]; // An array of badge IDs the student has earned.
   hasCompletedTutorial?: boolean; // Whether the user has completed the onboarding tutorial

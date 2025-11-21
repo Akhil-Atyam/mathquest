@@ -405,6 +405,8 @@ const Grade2QuestPath = ({
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
+    const unlockedLessonIds = new Set(student?.unlockedLessons || []);
+    const unlockedQuizIds = new Set(student?.unlockedQuizzes || []);
 
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
@@ -527,7 +529,8 @@ const Grade2QuestPath = ({
                     }
                     
                     const isExplicitlyAssigned = assignedIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted;
+                    const isExplicitlyUnlocked = isItemQuiz ? unlockedQuizIds.has(item.id) : unlockedLessonIds.has(item.id);
+                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted || isExplicitlyUnlocked;
                     
                     const position = nodePositions[index];
                     if (!position) return null;
@@ -581,6 +584,8 @@ const Grade3QuestPath = ({
     const completedLessonIds = new Set(student?.completedLessons || []);
     const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
+    const unlockedLessonIds = new Set(student?.unlockedLessons || []);
+    const unlockedQuizIds = new Set(student?.unlockedQuizzes || []);
 
     
     const sortedItems = React.useMemo(() => {
@@ -703,7 +708,8 @@ const Grade3QuestPath = ({
                     }
 
                     const isExplicitlyAssigned = assignedIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted;
+                    const isExplicitlyUnlocked = isItemQuiz ? unlockedQuizIds.has(item.id) : unlockedLessonIds.has(item.id);
+                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted || isExplicitlyUnlocked;
 
                     const position = nodePositions[index];
                     if (!position) return null;
@@ -829,8 +835,8 @@ function ResourcesPageContent() {
               const lessonIdsToUnlock = itemsToUnlock.filter(item => !('questions' in item)).map(item => item.id);
               const quizIdsToUnlock = itemsToUnlock.filter(item => 'questions' in item).map(item => item.id);
               
-              if(lessonIdsToUnlock.length > 0) updates.assignedLessons = arrayUnion(...lessonIdsToUnlock);
-              if(quizIdsToUnlock.length > 0) updates.assignedQuizzes = arrayUnion(...quizIdsToUnlock);
+              if(lessonIdsToUnlock.length > 0) updates.unlockedLessons = arrayUnion(...lessonIdsToUnlock);
+              if(quizIdsToUnlock.length > 0) updates.unlockedQuizzes = arrayUnion(...quizIdsToUnlock);
             }
 
             toast({
@@ -877,8 +883,8 @@ function ResourcesPageContent() {
             const lessonIdsToRelock = itemsToRelock.filter(item => !isQuiz(item)).map(item => item.id);
             const quizIdsToRelock = itemsToRelock.filter(item => isQuiz(item)).map(item => item.id);
             
-            if(lessonIdsToRelock.length > 0) updates.assignedLessons = arrayRemove(...lessonIdsToRelock);
-            if(quizIdsToRelock.length > 0) updates.assignedQuizzes = arrayRemove(...quizIdsToRelock);
+            if(lessonIdsToRelock.length > 0) updates.unlockedLessons = arrayRemove(...lessonIdsToRelock);
+            if(quizIdsToRelock.length > 0) updates.unlockedQuizzes = arrayRemove(...quizIdsToRelock);
         }
     }
 
