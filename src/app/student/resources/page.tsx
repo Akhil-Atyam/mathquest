@@ -441,7 +441,8 @@ const Grade2QuestPath = ({
             }
             
             const progressPoints = points.slice(0, lastCompletedIndex + 1);
-            const remainingPoints = points.slice(lastCompletedIndex);
+            const remainingPoints = lastCompletedIndex === -1 ? points : points.slice(lastCompletedIndex);
+
 
             setPathData({
                 progress: progressPoints.length > 1 ? getCurvePath(progressPoints) : '',
@@ -615,7 +616,7 @@ const Grade3QuestPath = ({
             }
             
             const progressPoints = points.slice(0, lastCompletedIndex + 1);
-            const remainingPoints = points.slice(lastCompletedIndex);
+            const remainingPoints = lastCompletedIndex === -1 ? points : points.slice(lastCompletedIndex);
             
             setPathData({
                 progress: progressPoints.length > 1 ? getCurvePath(progressPoints) : '',
