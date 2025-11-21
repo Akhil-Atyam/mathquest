@@ -2,15 +2,16 @@
 
 import React, { useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import type { Student } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
 import { StudentProgressDetail } from './StudentProgressDetail';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 
 /**
@@ -20,9 +21,41 @@ import { StudentProgressDetail } from './StudentProgressDetail';
 export default function StudentsListPage() {
     const firestore = useFirestore();
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+    const { toast } = useToast();
 
     const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
     const { data: students, isLoading } = useCollection<Student>(studentsQuery);
+
+    const handleDeleteStudent = async (studentToDelete: Student) => {
+        if (!firestore) return;
+
+        try {
+            // Delete student document from 'users' collection
+            await deleteDoc(doc(firestore, 'users', studentToDelete.id));
+
+            // Delete username document from 'usernames' collection
+            // We need to look up the username first if it's not on the student object,
+            // but for this implementation, we assume it is.
+            const usernameDocRef = doc(firestore, 'usernames', studentToDelete.username);
+            const usernameDoc = await getDoc(usernameDocRef);
+
+            if(usernameDoc.exists()){
+                await deleteDoc(usernameDocRef);
+            }
+            
+            toast({
+                title: "Student Deleted",
+                description: `${studentToDelete.name}'s account has been successfully deleted.`
+            })
+        } catch (error) {
+             console.error("Error deleting student:", error);
+             toast({
+                variant: 'destructive',
+                title: "Error Deleting Student",
+                description: `Could not delete ${studentToDelete.name}. Please try again.`
+             })
+        }
+    }
 
     if (isLoading) {
         return (
@@ -76,10 +109,33 @@ export default function StudentsListPage() {
                                     <TableRow key={student.id}>
                                         <TableCell className="font-medium">{student.name}</TableCell>
                                         <TableCell>{student.grade}</TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-2">
                                             <Button variant="outline" size="sm" onClick={() => setSelectedStudent(student)}>
                                                 View Progress <ArrowRight className="ml-2 h-4 w-4" />
                                             </Button>
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="sm">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete the account
+                                                        for <strong>{student.name}</strong> and remove all their data.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteStudent(student)}>
+                                                        Yes, delete account
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </TableCell>
                                     </TableRow>
                                 ))
