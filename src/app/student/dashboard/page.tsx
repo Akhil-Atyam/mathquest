@@ -1,3 +1,4 @@
+
 'use client';
 import type { Student, Lesson, Quiz } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -182,12 +183,12 @@ export default function StudentDashboardPage() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="assignments">My Assignments</TabsTrigger>
+            <TabsTrigger value="assignments" id="tutorial-assignments-tab">My Assignments</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-4">
                 {/* Card to display overall progress on assigned lessons */}
-                <Card>
+                <Card id="tutorial-progress-card">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                     <ListChecks /> My Progress
@@ -204,7 +205,7 @@ export default function StudentDashboardPage() {
                 </Card>
 
                 {/* Card to display earned badges */}
-                <Card>
+                <Card id="tutorial-badges-card">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                     <Award /> My Badges

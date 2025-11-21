@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
@@ -475,7 +476,7 @@ const Grade2QuestPath = ({
     }
 
     return (
-        <div className="relative w-full overflow-x-auto p-4">
+        <div className="relative w-full overflow-x-auto p-4" id="tutorial-quest-path">
             <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                 <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
                      {/* Draw the remaining path first (bottom layer) */}
@@ -822,8 +823,8 @@ function ResourcesPageContent() {
             const itemsToUnlock = allItemsForGrade.filter(item => (item.order || 0) < (quiz.order || 0));
             
             if (itemsToUnlock.length > 0) {
-              const lessonIdsToUnlock = itemsToUnlock.filter(item => !isQuiz(item)).map(item => item.id);
-              const quizIdsToUnlock = itemsToUnlock.filter(item => isQuiz(item)).map(item => item.id);
+              const lessonIdsToUnlock = itemsToUnlock.filter(item => !('questions' in item)).map(item => item.id);
+              const quizIdsToUnlock = itemsToUnlock.filter(item => 'questions' in item).map(item => item.id);
               
               if(lessonIdsToUnlock.length > 0) updates.assignedLessons = arrayUnion(...lessonIdsToUnlock);
               if(quizIdsToUnlock.length > 0) updates.assignedQuizzes = arrayUnion(...quizIdsToUnlock);
@@ -948,7 +949,7 @@ function ResourcesPageContent() {
       <h1 className="text-3xl font-bold font-headline">Resources</h1>
       <p className="text-muted-foreground">Explore lessons created by our teachers! Assigned lessons are marked with a <Star className="inline w-4 h-4 text-yellow-400 fill-yellow-400" />.</p>
 
-      <Tabs defaultValue={defaultGradeTab} className="w-full">
+      <Tabs defaultValue={defaultGradeTab} className="w-full" id="tutorial-grade-tabs">
         <TabsList className="grid w-full grid-cols-5">
           {grades.map(grade => (
             <TabsTrigger key={grade} value={`grade-${grade}`}>Grade {grade}</TabsTrigger>
