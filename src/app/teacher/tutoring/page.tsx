@@ -8,28 +8,33 @@ import { Label } from '@/components/ui/label';
 import type { Teacher, Booking } from '@/lib/types';
 import React, { useState, useMemo } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AvailabilityManager } from '../dashboard/AvailabilityManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Clock, Edit, Users } from 'lucide-react';
+import { Calendar, Clock, Edit, Users, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 /**
  * Component to display a list of bookings.
  * @param bookings - Array of booking objects to display.
  * @param title - The title for this section of bookings (e.g., "Upcoming Sessions").
  * @param onUpdateLink - Function to call when updating a meeting link.
+ * @param onDeleteSession - Function to call when deleting a session.
  */
 function BookingsList({
   bookings,
   title,
   onUpdateLink,
+  onDeleteSession,
 }: {
   bookings: Booking[];
   title: string;
   onUpdateLink: (bookingId: string, newLink: string) => void;
+  onDeleteSession: (bookingId: string) => void;
 }) {
 
   if (bookings.length === 0) {
@@ -47,7 +52,7 @@ function BookingsList({
       <div className="space-y-4">
         {bookings.map((booking) => (
           <Card key={booking.id} className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div className="grid gap-2">
+            <div className="grid gap-2 flex-1">
                <p className="font-medium">{booking.topic}</p>
               <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                  <span className='flex items-center gap-1'><Calendar className='w-4 h-4' /> {format(booking.startTime.toDate(), 'PPP')}</span>
@@ -64,7 +69,32 @@ function BookingsList({
                   </p>
               )}
             </div>
-             <AddLinkDialog booking={booking} onSave={onUpdateLink} />
+            <div className="flex items-center gap-2">
+              <AddLinkDialog booking={booking} onSave={onUpdateLink} />
+              {title === 'Upcoming Sessions' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the session for all enrolled students. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDeleteSession(booking.id)}>
+                        Yes, delete session
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </Card>
         ))}
       </div>
@@ -161,6 +191,25 @@ export default function TutoringPage() {
         }
     };
     
+     const handleDeleteSession = async (bookingId: string) => {
+        if (!firestore) return;
+        const bookingRef = doc(firestore, 'tutoring_sessions', bookingId);
+        try {
+            await deleteDoc(bookingRef);
+            toast({
+                title: 'Session Removed',
+                description: 'The tutoring session has been successfully deleted.',
+            });
+        } catch (error) {
+            console.error('Error deleting session:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not delete the session. Please try again.',
+            });
+        }
+    };
+
     const { upcomingBookings, pastBookings } = useMemo(() => {
         if (!bookings) return { upcomingBookings: [], pastBookings: [] };
         const now = new Date();
@@ -191,8 +240,18 @@ export default function TutoringPage() {
                     <CardDescription>Here are your upcoming and past tutoring sessions.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <BookingsList bookings={upcomingBookings} title="Upcoming Sessions" onUpdateLink={handleUpdateLink} />
-                    <BookingsList bookings={pastBookings} title="Past Sessions" onUpdateLink={handleUpdateLink} />
+                    <BookingsList 
+                        bookings={upcomingBookings} 
+                        title="Upcoming Sessions" 
+                        onUpdateLink={handleUpdateLink}
+                        onDeleteSession={handleDeleteSession}
+                    />
+                    <BookingsList 
+                        bookings={pastBookings} 
+                        title="Past Sessions" 
+                        onUpdateLink={handleUpdateLink}
+                        onDeleteSession={handleDeleteSession}
+                     />
                 </CardContent>
             </Card>
         </div>
