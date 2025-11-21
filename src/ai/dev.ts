@@ -5,7 +5,11 @@
  */
 
 import { config } from 'dotenv';
-config(); // Loads environment variables from a .env file into process.env.
+
+// Loads environment variables from a .env file into process.env.
+// This is especially important for Vercel deployments to load server-side variables.
+config({ path: '.env.local' });
+config(); 
 
 // Import the flows to make them available to the Genkit development UI.
 import '@/ai/flows/personalized-learning-path.ts';

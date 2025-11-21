@@ -25,28 +25,13 @@ import { getFirestore } from 'firebase/firestore';
  * Initializes the Firebase app and returns the SDK instances for Auth and Firestore.
  * This function implements a singleton pattern to prevent multiple Firebase initializations.
  *
- * IMPORTANT: DO NOT MODIFY THIS FUNCTION. It's designed to work with Firebase App Hosting's
- * automatic configuration by first attempting to initialize without arguments.
- *
  * @returns An object containing the initialized `firebaseApp`, `auth`, and `firestore` instances.
  */
 export function initializeFirebase() {
   // Check if a Firebase app has already been initialized.
   if (!getApps().length) {
-    // If not, initialize a new app.
-    let firebaseApp;
-    try {
-      // Firebase App Hosting provides server-side environment variables that `initializeApp`
-      // can automatically detect and use. This is the preferred way for production.
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // If auto-initialization fails (e.g., in local development), fall back to using the
-      // client-side config object.
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
+    // If not, initialize a new app using the configuration object.
+    const firebaseApp = initializeApp(firebaseConfig);
     // Return the SDKs for the newly created app.
     return getSdks(firebaseApp);
   }
