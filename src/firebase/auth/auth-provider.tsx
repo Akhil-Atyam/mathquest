@@ -6,7 +6,7 @@ import {
   signInWithEmailAndPassword,
   UserCredential,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Student, Teacher } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -40,17 +40,12 @@ export async function initiateEmailSignUp(
   email: string,
   password: string
 ): Promise<UserCredential> {
-  try {
     const userCredential = await createUserWithEmailAndPassword(
       authInstance,
       email,
       password
     );
     return userCredential;
-  } catch (error: any) {
-    console.error('Email Sign-Up Error:', error);
-    throw error;
-  }
 }
 
 /**
@@ -67,31 +62,26 @@ export async function createUserProfile(
   const { firestore } = initializeFirebase();
   const collectionPath = role === 'teacher' ? 'teachers' : 'users';
   const userDocRef = doc(firestore, collectionPath, userId);
-  
-  // Create user profile
-  await setDoc(userDocRef, profileData)
-    .catch((error) => {
-        const contextualError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'create',
-            requestResourceData: profileData,
-        });
-        errorEmitter.emit('permission-error', contextualError);
-        throw error;
-    });
-
-  // Create username to email mapping
   const usernameRef = doc(firestore, "usernames", profileData.username);
   const usernameData = { email: profileData.email, uid: userId };
-  await setDoc(usernameRef, usernameData)
+
+  const batch = writeBatch(firestore);
+
+  batch.set(userDocRef, profileData);
+  batch.set(usernameRef, usernameData);
+  
+  await batch.commit()
     .catch((error) => {
+        // Since this is a batch, we can't know which write failed.
+        // We'll emit a general error, but a more sophisticated implementation
+        // might try to determine the failed operation.
         const contextualError = new FirestorePermissionError({
-            path: usernameRef.path,
+            path: `batch write to ${collectionPath} and usernames`,
             operation: 'create',
-            requestResourceData: usernameData,
+            requestResourceData: { profile: profileData, username: usernameData },
         });
         errorEmitter.emit('permission-error', contextualError);
-        throw error;
+        throw error; // Re-throw original error
     });
 }
 
@@ -108,17 +98,12 @@ export async function initiateEmailSignIn(
   email: string,
   password: string
 ): Promise<UserCredential> {
-  try {
     const userCredential = await signInWithEmailAndPassword(
       authInstance,
       email,
       password
     );
     return userCredential;
-  } catch (error: any) {
-    console.error('Email Sign-In Error:', error);
-    throw error;
-  }
 }
 
 /**
@@ -130,7 +115,7 @@ export async function setTeacherRole(userId: string): Promise<void> {
     const teacherRoleRef = doc(firestore, 'roles_teacher', userId);
     const roleData = { role: 'teacher' };
     
-    await setDoc(teacherRoleRef, roleData)
+    setDoc(teacherRoleRef, roleData)
         .catch((error) => {
             const contextualError = new FirestorePermissionError({
                 path: teacherRoleRef.path,
@@ -138,7 +123,8 @@ export async function setTeacherRole(userId: string): Promise<void> {
                 requestResourceData: roleData
             });
             errorEmitter.emit('permission-error', contextualError);
-            throw error;
+            // We don't re-throw here because the login flow might need to continue,
+            // but the error will be surfaced in the dev overlay.
         });
 }
 
@@ -154,8 +140,10 @@ export async function isTeacher(userId: string): Promise<boolean> {
         const docSnap = await getDoc(teacherDocRef);
         return docSnap.exists();
     } catch (error) {
+        // This read operation is not expected to fail under normal circumstances,
+        // but if it does (e.g., offline), we don't want to show a permission error.
+        // We'll log it and assume not a teacher.
         console.error("Error checking teacher status:", error);
-        // In case of error (e.g. permissions), assume not a teacher.
         return false;
     }
 }
@@ -175,14 +163,12 @@ export async function getUserEmailForUsername(username: string): Promise<string 
         if (docSnap.exists()) {
             return docSnap.data().email;
         } else {
-            console.log("No such username!");
             return null;
         }
     } catch (error) {
-        console.error("Error getting username doc:", error);
-        // We don't throw a contextual error here because a failed read is expected
-        // if a user mistypes their username. We just return null.
-        return null;
+       // A failed read for a non-existent username is an expected scenario, not a permission error.
+       // We don't emit a contextual error here.
+       return null;
     }
 }
 

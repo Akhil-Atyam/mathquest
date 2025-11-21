@@ -106,53 +106,35 @@ function AuthForm({
     setIsLoading(true);
     try {
       if (formType === 'student' || formType === 'teacher') {
-        if ('email' in values && 'password' in values) {
-            
-            // Create the user account with email and password.
-            const userCredential = await initiateEmailSignUp(
-                auth,
-                values.email,
-                values.password
-            );
-    
+        // Sign-up logic
+        if ('email' in values && 'password' in values && 'name' in values && 'username' in values) {
+            const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
             const user = userCredential.user;
-            // If sign-up is successful, create a user profile document in Firestore.
-            if ('name' in values && 'username' in values) {
-    
+
+            let profileData: any;
             if (formType === 'student' && 'grade' in values) {
-                const profileData = {
+                profileData = {
                     id: user.uid,
                     name: values.name,
                     username: values.username,
                     email: user.email!,
                     grade: parseInt(values.grade, 10),
                 };
-                await createUserProfile(
-                    user.uid,
-                    profileData as Omit<
-                        Student,
-                        'completedLessons' | 'quizScores' | 'badges'
-                    >,
-                    'student'
-                );
-            } else if (formType === 'teacher') {
-                const profileData = {
+            } else { // teacher
+                 profileData = {
                     id: user.uid,
                     name: values.name,
                     username: values.username,
                     email: user.email!,
                 };
-                await createUserProfile(
-                    user.uid,
-                    profileData as Omit<Teacher, 'availability'>,
-                    'teacher'
-                );
             }
-            }
-    
-            // If the role is teacher, assign the teacher role in Firestore for DBAC.
+            
+            await createUserProfile(user.uid, profileData, formType);
+            
             if (formType === 'teacher') {
-              await setTeacherRole(user.uid);
+              // This is a non-blocking call. The app proceeds without waiting for it.
+              // Any permission errors will be caught and emitted globally.
+              setTeacherRole(user.uid);
             }
 
             toast({
@@ -161,15 +143,14 @@ function AuthForm({
             });
             router.push(`/${formType}/dashboard`);
         }
-      } else { // Sign In
+      } else { // Sign In logic
         if ('username' in values) {
             const email = await getUserEmailForUsername(values.username);
             if (!email) {
-                throw new Error("Username not found.");
+                throw new Error("Username not found or incorrect.");
             }
             const userCredential = await initiateEmailSignIn(auth, email, values.password);
             
-            // After sign-in, check if the user is a teacher to redirect correctly
             const isTeacher = await isTeacherRole(userCredential.user.uid);
             const redirectPath = isTeacher ? '/teacher/dashboard' : '/student/dashboard';
 
@@ -181,16 +162,24 @@ function AuthForm({
         }
       }
     } catch (error: any) {
-      console.error(`${formType !== 'signin' ? 'Sign-up' : 'Sign-in'} error:`, error);
-      
       let description = `Could not ${ formType !== 'signin' ? 'create your account' : 'sign you in' }. Please try again.`;
-      if (error instanceof FirebaseError && error.code === 'auth/email-already-in-use') {
-        description = "This email is already registered. Please try signing in or use a different email.";
+      
+      if (error instanceof FirebaseError) {
+          switch(error.code) {
+              case 'auth/email-already-in-use':
+                  description = "This email is already registered. Please sign in or use a different email.";
+                  break;
+              case 'auth/user-not-found':
+              case 'auth/wrong-password':
+              case 'auth/invalid-credential':
+                   description = "Incorrect username or password. Please try again.";
+                   break;
+          }
       } else if (error.message) {
+        // Catch specific custom errors like "Username not found"
         description = error.message;
       }
       
-      // Display an error toast on failure.
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
