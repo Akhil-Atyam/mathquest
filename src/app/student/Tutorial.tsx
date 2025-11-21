@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Mascot } from './Mascot';
+import { MascotBrainy } from './MascotBrainy';
 import { Button } from '@/components/ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -17,15 +17,15 @@ type TutorialStep = {
 };
 
 const allSteps: TutorialStep[] = [
-  // --- Initial Page Load ---
+  // --- Initial Page Load / Any page ---
   {
+    page: 'any',
     elementId: 'tutorial-dashboard',
     title: 'Welcome to your Dashboard!',
     text: 'This is your home base. Click here to see your progress, assignments, and earned badges.',
     position: 'right',
     requireClick: true,
     navigateTo: '/student/dashboard',
-    page: 'initial',
   },
   // --- Dashboard Page ---
   {
@@ -102,30 +102,42 @@ const allSteps: TutorialStep[] = [
   }
 ];
 
+// Helper to get the current step index from localStorage
+const getInitialStepIndex = (): number => {
+    if (typeof window === 'undefined') return 0;
+    const savedIndex = localStorage.getItem('tutorialStep');
+    return savedIndex ? parseInt(savedIndex, 10) : 0;
+};
+
+
 export function Tutorial({ onComplete }: { onComplete: () => void }) {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(getInitialStepIndex);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [isWaitingForClick, setIsWaitingForClick] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const highlightedElementRef = useRef<HTMLElement | null>(null);
 
-  const step = useMemo(() => {
-     // Find the current step in the global `allSteps` array
-     return allSteps[currentStepIndex];
+  const step = useMemo(() => allSteps[currentStepIndex], [currentStepIndex]);
+
+  // Update localStorage whenever the step index changes
+  useEffect(() => {
+    localStorage.setItem('tutorialStep', String(currentStepIndex));
   }, [currentStepIndex]);
 
-
-  // This useCallback will be our single source of truth for updating the spotlight position
   const updateTargetRect = useCallback(() => {
     if (!step?.elementId || step.elementId === 'tutorial-end') {
       setTargetRect(null);
+      if (highlightedElementRef.current) {
+        highlightedElementRef.current.classList.remove('tutorial-highlight');
+        highlightedElementRef.current = null;
+      }
       return;
     }
     
     const element = document.getElementById(step.elementId);
     if (element) {
         setTargetRect(element.getBoundingClientRect());
+        // Manage highlight class
         if (highlightedElementRef.current !== element) {
             highlightedElementRef.current?.classList.remove('tutorial-highlight');
             element.classList.add('tutorial-highlight');
@@ -135,32 +147,70 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         setTargetRect(null);
     }
   }, [step]);
-
-  // Effect to update the spotlight when the step or page changes, or on window resize
+  
+  // Recalculate spotlight on scroll and resize
   useEffect(() => {
     updateTargetRect();
     window.addEventListener('resize', updateTargetRect);
-    return () => window.removeEventListener('resize', updateTargetRect);
+    window.addEventListener('scroll', updateTargetRect, true);
+    return () => {
+      window.removeEventListener('resize', updateTargetRect);
+      window.removeEventListener('scroll', updateTargetRect, true);
+    }
   }, [currentStepIndex, pathname, updateTargetRect]);
 
-  // Effect to listen for scroll events and update the spotlight position
-  useEffect(() => {
-    window.addEventListener('scroll', updateTargetRect, true); // Use capture phase
-    return () => window.removeEventListener('scroll', updateTargetRect, true);
-  }, [updateTargetRect]);
-
-  // Effect to manage step logic and highlighting
-  useEffect(() => {
-    if (!step) return;
-
-    if (step.requireClick && step.navigateTo) {
-        setIsWaitingForClick(true);
+  const handleNext = () => {
+    if (currentStepIndex >= allSteps.length - 1) {
+      onComplete();
+      localStorage.removeItem('tutorialStep');
+      if (highlightedElementRef.current) {
+          highlightedElementRef.current.classList.remove('tutorial-highlight');
+      }
     } else {
-        setIsWaitingForClick(false);
+      setCurrentStepIndex(prev => prev + 1);
     }
+  };
+
+  const handleElementClick = useCallback((e: MouseEvent) => {
+    if (step?.requireClick && step.elementId) {
+        const targetElement = document.getElementById(step.elementId);
+        if (targetElement && targetElement.contains(e.target as Node)) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (step.navigateTo) {
+                router.push(step.navigateTo);
+            }
+            handleNext();
+        }
+    }
+  }, [step, router]);
+
+
+  // Effect to manage step logic and event listeners
+  useEffect(() => {
+    if (!step) {
+        onComplete();
+        return;
+    };
     
-    // Using a timeout to ensure the element is painted before getting its rect
-    const timer = setTimeout(updateTargetRect, 200);
+    // Page validation
+    const currentPathMatches = step.page === pathname;
+    const isInitialStep = step.page === 'any';
+    if (!currentPathMatches && !isInitialStep) {
+        // If we are on the wrong page, maybe do nothing or try to find the correct step
+        const correctStepIndex = allSteps.findIndex(s => s.page === pathname);
+        if (correctStepIndex !== -1) {
+            setCurrentStepIndex(correctStepIndex);
+        }
+        return;
+    }
+
+    const timer = setTimeout(updateTargetRect, 100);
+
+    if (step.requireClick) {
+        document.body.addEventListener('click', handleElementClick, true);
+    }
 
     return () => {
         clearTimeout(timer);
@@ -168,46 +218,62 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
             highlightedElementRef.current.classList.remove('tutorial-highlight');
             highlightedElementRef.current = null;
         }
+        if (step.requireClick) {
+            document.body.removeEventListener('click', handleElementClick, true);
+        }
     }
-  }, [currentStepIndex, pathname, step, updateTargetRect]);
+  }, [currentStepIndex, pathname, step, updateTargetRect, handleElementClick, onComplete]);
 
 
   const overlayStyle: React.CSSProperties = useMemo(() => {
-     const baseStyle: React.CSSProperties = {
+     return {
         position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 51,
         transition: 'all 0.3s ease-in-out',
-     };
-     
-     if (!targetRect) {
-        // Full overlay for the final centered message or while waiting
-        return {
-            ...baseStyle,
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
-        }
+        pointerEvents: step?.requireClick ? 'auto' : 'none',
      }
-     // Create a "cutout" effect using box-shadow
-     const padding = 20; // Increased padding to ensure mascot+dialog are included
-     return {
-        ...baseStyle,
-        top: `${targetRect.top - padding}px`,
-        left: `${targetRect.left - padding}px`,
-        width: `${targetRect.width + padding * 2}px`,
-        height: `${targetRect.height + padding * 2}px`,
-        boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
-        borderRadius: '1rem', // Softer radius
-     }
-  }, [targetRect]);
+  }, [step]);
   
+  const spotlightStyle: React.CSSProperties = useMemo(() => {
+      const baseStyle: React.CSSProperties = {
+          position: 'fixed',
+          transition: 'all 0.3s ease-in-out',
+          boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
+          borderRadius: '1rem',
+          pointerEvents: 'none',
+      };
+      
+      if (!targetRect || !step?.elementId || step.elementId === 'tutorial-end') {
+         // This makes the spotlight invisible when centered or not needed.
+          return { ...baseStyle, opacity: 0, pointerEvents: 'none' };
+      }
+      
+      const padding = 10;
+      return {
+          ...baseStyle,
+          top: `${targetRect.top - padding}px`,
+          left: `${targetRect.left - padding}px`,
+          width: `${targetRect.width + padding * 2}px`,
+          height: `${targetRect.height + padding * 2}px`,
+      }
+  }, [targetRect, step]);
+
   const contentStyle: React.CSSProperties = useMemo(() => {
     const position = step?.position || 'right';
+    const baseStyle: React.CSSProperties = {
+        position: 'fixed',
+        zIndex: 52,
+        transition: 'all 0.3s ease-in-out',
+        willChange: 'transform, top, left',
+    };
 
-    if (!targetRect) {
+    if (!targetRect || step?.elementId === 'tutorial-end') {
         return {
+            ...baseStyle,
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
@@ -222,62 +288,46 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         case 'right':
             top = targetRect.top;
             left = targetRect.right + offset;
-            break;
+            return {...baseStyle, top: `${top}px`, left: `${left}px`};
         case 'left':
             top = targetRect.top;
             left = targetRect.left - offset;
-            break;
+            return {...baseStyle, top: `${top}px`, left: `${left}px`, transform: 'translateX(-100%)'};
         case 'bottom':
             top = targetRect.bottom + offset;
             left = targetRect.left;
-            break;
+            return {...baseStyle, top: `${top}px`, left: `${left}px`};
         case 'top':
             top = targetRect.top - offset;
             left = targetRect.left;
-            break;
+            return {...baseStyle, top: `${top}px`, left: `${left}px`, transform: 'translateY(-100%)'};
+        default:
+             return {...baseStyle, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     }
-
-
-    return {
-      top: `${top}px`,
-      left: `${left}px`,
-      transform: position === 'left' ? 'translateX(-100%)' : position === 'top' ? 'translateY(-100%)' : 'none',
-      transition: 'all 0.3s ease-in-out',
-    };
   }, [targetRect, step]);
 
-  const handleNext = () => {
-    if (step.requireClick && step.navigateTo) {
-        setIsWaitingForClick(true);
-        router.push(step.navigateTo);
-    }
-    
-    if (currentStepIndex < allSteps.length - 1) {
-      setCurrentStepIndex(currentStepIndex + 1);
-    } else {
-      onComplete();
-    }
-  };
 
-  if (!step) {
-    return null; // No more steps
-  }
-
+  if (!step) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
-       <div style={overlayStyle}></div>
+    <div style={overlayStyle}>
+       <div style={spotlightStyle}></div>
 
       {/* The mascot and dialog content */}
-      <div className="fixed z-[52]" style={contentStyle}>
+      <div style={contentStyle}>
         <div className={`flex items-center gap-4 ${step?.position === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
-          <Mascot />
+          <MascotBrainy />
           <div className="bg-card p-6 rounded-lg shadow-2xl max-w-sm">
             <h3 className="text-xl font-bold font-headline mb-2">{step.title}</h3>
             <p className="text-muted-foreground mb-4">{step.text}</p>
-            <Button onClick={handleNext}>
-              {currentStepIndex < allSteps.length - 1 ? (step.requireClick ? 'Click the highlighted item!' : 'Next') : "Got it!"}
-            </Button>
+            {!step.requireClick && (
+              <Button onClick={handleNext}>
+                {currentStepIndex < allSteps.length - 1 ? "Next" : "Got it!"}
+              </Button>
+            )}
+            {step.requireClick && (
+                 <p className="text-sm font-semibold text-primary animate-pulse">Click the highlighted item to continue!</p>
+            )}
           </div>
         </div>
       </div>

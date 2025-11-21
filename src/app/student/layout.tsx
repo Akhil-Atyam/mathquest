@@ -48,8 +48,12 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
     const { data: student } = useDoc<Student>(studentDocRef);
 
     useEffect(() => {
-        if (student && student.hasCompletedTutorial === false) {
+        // Check local storage first to avoid flicker for returning users
+        const tutorialCompleted = localStorage.getItem('tutorialCompleted') === 'true';
+        if (student && !tutorialCompleted && student.hasCompletedTutorial === false) {
             setShowTutorial(true);
+        } else {
+            setShowTutorial(false);
         }
     }, [student]);
 
@@ -57,6 +61,7 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
         if (studentDocRef) {
             updateDoc(studentDocRef, { hasCompletedTutorial: true });
         }
+        localStorage.setItem('tutorialCompleted', 'true');
         setShowTutorial(false);
     };
     
@@ -82,9 +87,7 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
             {/* `SidebarInset` is the main content area of the page, which is pushed to the right of the sidebar. */}
             <SidebarInset>
                 {/* A simple header for the main content area. Using Suspense to handle client-side path logic. */}
-                <Suspense fallback={<header className="h-[53px] border-b" />}>
-                   <PageHeader />
-                </Suspense>
+                <PageHeader />
                 {/* Renders the actual page content. */}
                 {children}
             </SidebarInset>
@@ -110,4 +113,3 @@ export default function StudentLayout({
         <StudentLayoutContent>{children}</StudentLayoutContent>
     );
 }
-
