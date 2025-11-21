@@ -26,7 +26,7 @@ const lessonSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   grade: z.string().refine(val => !isNaN(parseInt(val)), { message: "Please select a grade." }),
   topic: z.string().min(1, 'Please select a topic.'),
-  type: z.enum(['Text', 'Video']),
+  type: z.enum(['Text', 'Video', 'Game']),
   content: z.string().min(10, 'Content must be at least 10 characters.'),
   order: z.coerce.number().optional(),
   citation: z.string().optional(),
@@ -128,6 +128,7 @@ function LessonForm({
                     <SelectContent>
                         <SelectItem value="Text">Text</SelectItem>
                         <SelectItem value="Video">Video</SelectItem>
+                        <SelectItem value="Game">Game</SelectItem>
                     </SelectContent>
                     </Select>
                     <FormMessage />
@@ -151,12 +152,12 @@ function LessonForm({
           name="content"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{lessonType === 'Video' ? 'Video URL' : 'Content (Markdown Enabled)'}</FormLabel>
+              <FormLabel>{lessonType === 'Text' ? 'Content (Markdown Enabled)' : (lessonType === 'Video' ? 'Video URL' : 'Game URL')}</FormLabel>
               <FormControl>
                 {lessonType === 'Text' ? (
                     <Textarea placeholder="Write your lesson. You can use Markdown for formatting, like `![alt text](image_url)` to add an image." {...field} rows={8} />
                 ) : (
-                    <Input placeholder="https://www.youtube.com/watch?v=..." {...field} />
+                    <Input placeholder="https://www.example.com/..." {...field} />
                 )}
               </FormControl>
               <FormMessage />

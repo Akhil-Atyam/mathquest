@@ -32,7 +32,7 @@ export type Lesson = {
   topic: string;
   content: string; // For text-based lessons or a URL for video lessons
   teacherId: string;
-  type: 'Text' | 'Video';
+  type: 'Text' | 'Video' | 'Game';
   imageUrl?: string;
   order?: number; // Optional field to define sequence
   citation?: string; // Optional citation

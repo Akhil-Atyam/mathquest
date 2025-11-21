@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import React, { useEffect, useState, useRef } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField, writeBatch } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion, Gamepad2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -84,16 +84,34 @@ function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, i
  */
 function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: { lesson: Lesson; onBack: () => void; onComplete: (lessonId: string) => void; onUncomplete: (lessonId: string) => void; isCompleted: boolean}) {
   const isVideoLesson = lesson.type === 'Video' && lesson.content.includes('youtube.com');
+  const isGameLesson = lesson.type === 'Game';
+
   let videoId = '';
   if (isVideoLesson) {
-    const url = new URL(lesson.content);
-    if (url.hostname === 'youtu.be') {
-      videoId = url.pathname.slice(1);
-    } else {
-      videoId = url.searchParams.get('v') || '';
+    try {
+        const url = new URL(lesson.content);
+        if (url.hostname === 'youtu.be') {
+          videoId = url.pathname.slice(1);
+        } else {
+          videoId = url.searchParams.get('v') || '';
+        }
+    } catch (e) {
+        console.error("Invalid video URL", e);
     }
   }
   
+  const getLessonIcon = () => {
+    switch (lesson.type) {
+        case 'Video':
+        case 'Text':
+            return <BookOpen className="w-8 h-8 text-primary" />;
+        case 'Game':
+            return <Gamepad2 className="w-8 h-8 text-primary" />;
+        default:
+            return <BookOpen className="w-8 h-8 text-primary" />;
+    }
+  }
+
   return (
     <div className="space-y-6">
        <Button variant="ghost" onClick={onBack}>
@@ -103,7 +121,7 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-             <BookOpen className="w-8 h-8 text-primary" />
+             {getLessonIcon()}
             {lesson.title}
           </CardTitle>
           <p className="text-muted-foreground">
@@ -121,6 +139,16 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               ></iframe>
+            </div>
+          ) : isGameLesson ? (
+            <div className="aspect-video">
+                <iframe
+                    className="w-full h-full rounded-md border"
+                    src={lesson.content}
+                    title={lesson.title}
+                    frameBorder="0"
+                    allowFullScreen
+                ></iframe>
             </div>
           ) : (
             <div className="prose dark:prose-invert max-w-none">
@@ -571,7 +599,7 @@ const Grade2QuestPath = ({
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
                                 isAssigned={isExplicitlyAssigned && !isCompleted}
-                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
+                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item as Lesson)}
                             />
                         </div>
                     )
@@ -750,7 +778,7 @@ const Grade3QuestPath = ({
                                 isCompleted={isCompleted}
                                 isUnlocked={isUnlocked}
                                 isAssigned={isExplicitlyAssigned && !isCompleted}
-                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item)}
+                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item as Lesson)}
                             />
                         </div>
                     )
