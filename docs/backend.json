@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Student": {
@@ -40,6 +41,10 @@
             "items": {
                 "type": "string"
             }
+        },
+        "hasCompletedTutorial": {
+          "type": "boolean",
+          "description": "Whether the user has completed the onboarding tutorial."
         }
       },
       "required": [

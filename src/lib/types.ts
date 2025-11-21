@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from "lucide-react";
 import type { Timestamp } from "firebase/firestore";
 
@@ -94,6 +95,7 @@ export type Student = {
   completedLessons?: string[]; // An array of resource IDs that the student has completed.
   quizScores?: Record<string, number>; // A map of quiz IDs to the scores the student received.
   badges?: string[]; // An array of badge IDs the student has earned.
+  hasCompletedTutorial?: boolean; // Whether the user has completed the onboarding tutorial
 };
 
 /**

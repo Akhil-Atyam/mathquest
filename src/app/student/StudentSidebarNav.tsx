@@ -1,3 +1,4 @@
+
 "use client";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -13,10 +14,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 // An array defining the navigation items for the student sidebar.
 // Each object contains the link, label, and icon for a menu item.
 const menuItems = [
-  { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/student/resources', label: 'Resources', icon: BookOpen },
-  { href: '/student/tutoring', label: 'Book a Session', icon: Calendar },
-  { href: '/student/my-sessions', label: 'My Sessions', icon: CalendarCheck },
+  { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard, id: 'tutorial-dashboard' },
+  { href: '/student/resources', label: 'Resources', icon: BookOpen, id: 'tutorial-resources' },
+  { href: '/student/tutoring', label: 'Book a Session', icon: Calendar, id: 'tutorial-book-session' },
+  { href: '/student/my-sessions', label: 'My Sessions', icon: CalendarCheck, id: 'tutorial-my-sessions' },
 ];
 
 /**
@@ -36,6 +37,7 @@ export function StudentSidebarNav() {
                             // The button is marked as active if the current path starts with the item's href.
                             isActive={pathname.startsWith(item.href)} 
                             tooltip={item.label}
+                            id={item.id}
                         >
                             <item.icon />
                             <span>{item.label}</span>
