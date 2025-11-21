@@ -414,6 +414,9 @@ const Grade2QuestPath = ({
      useEffect(() => {
         if (containerRef.current && sortedItems.length > 1) {
             const containerWidth = containerRef.current.offsetWidth;
+            // Ensure containerWidth is not 0 before calculating
+            if (containerWidth === 0) return;
+
             const centerX = containerWidth / 2;
             const amplitude = containerWidth * 0.2; // 20% of width
             const yStep = 160;
@@ -442,10 +445,10 @@ const Grade2QuestPath = ({
             
             const progressPoints = points.slice(0, lastCompletedIndex + 1);
             const remainingPoints = points.slice(lastCompletedIndex);
-            
+
             setPathData({
-                progress: progressPoints.length > 0 ? getCurvePath(progressPoints) : '',
-                remaining: remainingPoints.length > 0 ? getCurvePath(remainingPoints) : '',
+                progress: progressPoints.length > 1 ? getCurvePath(progressPoints) : '',
+                remaining: remainingPoints.length > 1 ? getCurvePath(remainingPoints) : '',
             });
         }
     }, [sortedItems, containerRef.current?.offsetWidth, student]);
@@ -515,7 +518,10 @@ const Grade2QuestPath = ({
                     // --- End Unlocking Logic ---
                     
                     const y = 80 + index * 160;
-                    const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
+                    const containerWidth = containerRef.current?.offsetWidth || 0;
+                    const centerX = containerWidth / 2;
+                    const amplitude = containerWidth * 0.2;
+                    const xOffset = amplitude * Math.sin(index * Math.PI / 3);
 
                     return (
                         <div
@@ -523,7 +529,7 @@ const Grade2QuestPath = ({
                             className="absolute z-10"
                             style={{
                                 top: `${y - 48}px`,
-                                left: `calc(50% + ${xOffsetPercent}%)`,
+                                left: `${centerX + xOffset}px`,
                                 transform: 'translateX(-50%)',
                             }}
                         >
@@ -577,6 +583,8 @@ const Grade3QuestPath = ({
     useEffect(() => {
         if (containerRef.current && sortedItems.length > 1) {
             const containerWidth = containerRef.current.offsetWidth;
+            if (containerWidth === 0) return;
+
             const centerX = containerWidth / 2;
             const amplitude = containerWidth * 0.2;
             const yStep = 160;
@@ -607,8 +615,8 @@ const Grade3QuestPath = ({
             const remainingPoints = points.slice(lastCompletedIndex);
             
             setPathData({
-                progress: progressPoints.length > 0 ? getCurvePath(progressPoints) : '',
-                remaining: remainingPoints.length > 0 ? getCurvePath(remainingPoints) : '',
+                progress: progressPoints.length > 1 ? getCurvePath(progressPoints) : '',
+                remaining: remainingPoints.length > 1 ? getCurvePath(remainingPoints) : '',
             });
         }
     }, [sortedItems, containerRef.current?.offsetWidth, student]);
@@ -677,7 +685,10 @@ const Grade3QuestPath = ({
                     // --- End Unlocking Logic ---
 
                     const y = 80 + index * 160;
-                    const xOffsetPercent = 20 * Math.sin(index * Math.PI / 3);
+                    const containerWidth = containerRef.current?.offsetWidth || 0;
+                    const centerX = containerWidth / 2;
+                    const amplitude = containerWidth * 0.2;
+                    const xOffset = amplitude * Math.sin(index * Math.PI / 3);
 
                     return (
                         <div
@@ -685,7 +696,7 @@ const Grade3QuestPath = ({
                             className="absolute z-10"
                             style={{
                                 top: `${y - 48}px`,
-                                left: `calc(50% + ${xOffsetPercent}%)`,
+                                left: `${centerX + xOffset}px`,
                                 transform: 'translateX(-50%)',
                             }}
                         >
