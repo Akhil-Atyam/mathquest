@@ -19,8 +19,6 @@ import type { Lesson, Quiz } from '@/lib/types';
 import { topics } from '@/lib/data';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import ReactMarkdown from 'react-markdown';
-import Image from 'next/image';
 
 // Zod schema for lesson form validation
 const lessonSchema = z.object({
@@ -29,7 +27,6 @@ const lessonSchema = z.object({
   topic: z.string().min(1, 'Please select a topic.'),
   type: z.enum(['Text', 'Video']),
   content: z.string().min(10, 'Content must be at least 10 characters.'),
-  imageUrl: z.string().url().optional().or(z.literal('')),
   order: z.coerce.number().optional(),
 });
 
@@ -51,7 +48,6 @@ function LessonForm({
       topic: lesson?.topic || '',
       type: lesson?.type || 'Text',
       content: lesson?.content || '',
-      imageUrl: lesson?.imageUrl || '',
       order: lesson?.order || 0,
     },
   });
@@ -61,6 +57,7 @@ function LessonForm({
   };
   
   const lessonType = form.watch('type');
+  const selectedGrade = form.watch('grade');
 
   return (
     <Form {...form}>
@@ -140,25 +137,13 @@ function LessonForm({
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Order (Advanced)</FormLabel>
-                    <FormControl><Input type="number" placeholder="e.g., 1" {...field} /></FormControl>
+                    <FormControl><Input type="number" placeholder="e.g., 1" {...field} disabled={!selectedGrade} /></FormControl>
+                    {!selectedGrade && <p className="text-xs text-muted-foreground">Select a grade to auto-fill order.</p>}
                     <FormMessage />
                     </FormItem>
                 )}
                 />
         </div>
-        {lessonType === 'Text' && (
-            <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Image URL (Optional)</FormLabel>
-                        <FormControl><Input placeholder="https://example.com/image.png" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-        )}
         <FormField
           control={form.control}
           name="content"
@@ -186,7 +171,7 @@ function LessonForm({
 }
 
 // Main component to manage lessons
-export function LessonManager() {
+export function LessonManager({ selectedGrade }: { selectedGrade: string }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -208,21 +193,22 @@ export function LessonManager() {
 
   const isLoading = areLessonsLoading || areQuizzesLoading;
 
-  const sortedLessons = React.useMemo(() => {
+  const filteredLessons = React.useMemo(() => {
     if (!lessons) return [];
-    return [...lessons].sort((a, b) => (a.order || 0) - (b.order || 0));
-  }, [lessons]);
+    if (selectedGrade === 'all') return lessons;
+    return lessons.filter(l => String(l.grade) === selectedGrade);
+  }, [lessons, selectedGrade]);
+
+  const sortedLessons = React.useMemo(() => {
+    if (!filteredLessons) return [];
+    return [...filteredLessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [filteredLessons]);
   
   const handleOpenForm = (lesson?: Lesson) => {
-    const allContent = [...(lessons || []), ...(quizzes || [])];
-    const nextOrder = (allContent && allContent.length > 0)
-      ? Math.max(...allContent.map(l => l.order || 0)) + 1
-      : 1;
-
     if (lesson) {
       setEditingLesson(lesson);
     } else {
-      setEditingLesson({ order: nextOrder });
+      setEditingLesson({});
     }
     setIsFormOpen(true);
   };
@@ -235,10 +221,23 @@ export function LessonManager() {
   const handleSaveLesson = async (data: z.infer<typeof lessonSchema>) => {
     if (!user || !firestore) return;
     
+    // Auto-increment order logic, now grade-specific
+    let finalOrder = data.order;
+    if (!editingLesson?.id) { // Only auto-increment for new lessons
+        const allContentForGrade = [
+            ...(lessons?.filter(l => String(l.grade) === data.grade) || []),
+            ...(quizzes?.filter(q => String(q.grade) === data.grade) || [])
+        ];
+        finalOrder = (allContentForGrade.length > 0)
+            ? Math.max(...allContentForGrade.map(c => c.order || 0)) + 1
+            : 1;
+    }
+
     const lessonData = {
       ...data,
       grade: parseInt(data.grade, 10), // Ensure grade is a number
       teacherId: user.uid,
+      order: finalOrder,
     };
 
     try {
@@ -338,7 +337,7 @@ export function LessonManager() {
               </Card>
             ))
           ) : (
-            <p className="text-center text-muted-foreground py-8">You haven't created any lessons yet.</p>
+            <p className="text-center text-muted-foreground py-8">{selectedGrade === 'all' ? "You haven't created any lessons yet." : `No lessons found for Grade ${selectedGrade}.`}</p>
           )}
         </div>
       </CardContent>

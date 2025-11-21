@@ -82,6 +82,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
   };
   
   const lessonId = form.watch('lessonId');
+  const selectedGrade = form.watch('grade');
 
   return (
     <Form {...form}>
@@ -107,7 +108,8 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Order (Advanced)</FormLabel>
-                <FormControl><Input type="number" placeholder="e.g., 2" {...field} /></FormControl>
+                <FormControl><Input type="number" placeholder="e.g., 2" {...field} disabled={lessonId === 'none' && !selectedGrade} /></FormControl>
+                {lessonId === 'none' && !selectedGrade && <p className="text-xs text-muted-foreground">Select a grade to auto-fill order.</p>}
                 <FormMessage />
                 </FormItem>
             )}
@@ -252,7 +254,7 @@ function QuizForm({ quiz, lessons, onSave, onClose }: { quiz?: Partial<Quiz>; le
 
 
 // Main component to manage quizzes
-export function QuizManager() {
+export function QuizManager({ selectedGrade }: { selectedGrade: string }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -265,22 +267,24 @@ export function QuizManager() {
   const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
 
-  const sortedQuizzes = React.useMemo(() => {
+  const filteredQuizzes = React.useMemo(() => {
     if (!quizzes) return [];
-    return [...quizzes].sort((a, b) => (a.order || 0) - (b.order || 0));
-  }, [quizzes]);
+    if (selectedGrade === 'all') return quizzes;
+    return quizzes.filter(q => String(q.grade) === selectedGrade);
+  }, [quizzes, selectedGrade]);
+
+  const sortedQuizzes = React.useMemo(() => {
+    if (!filteredQuizzes) return [];
+    return [...filteredQuizzes].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [filteredQuizzes]);
 
   const isLoading = areQuizzesLoading || areLessonsLoading;
   
   const handleOpenForm = (quiz?: Quiz) => {
-    const allContent = [...(lessons || []), ...(quizzes || [])];
-    const nextOrder = (allContent && allContent.length > 0)
-        ? Math.max(...allContent.map(l => l.order || 0)) + 1
-        : 1;
     if (quiz) {
       setEditingQuiz(quiz);
     } else {
-      setEditingQuiz({ order: nextOrder });
+      setEditingQuiz({});
     }
     setIsFormOpen(true);
   };
@@ -291,9 +295,10 @@ export function QuizManager() {
   };
   
   const handleSaveQuiz = async (data: z.infer<typeof quizSchema>) => {
-     if (!user || !firestore || !lessons) return;
+     if (!user || !firestore || !lessons || !quizzes) return;
      
      let finalQuizData: Omit<Quiz, 'id'>;
+     let gradeForOrder: string | undefined;
 
      if (data.lessonId && data.lessonId !== 'none') {
         const linkedLesson = lessons.find(l => l.id === data.lessonId);
@@ -301,11 +306,11 @@ export function QuizManager() {
             toast({ variant: "destructive", title: "Error", description: "Selected lesson not found." });
             return;
         }
+        gradeForOrder = String(linkedLesson.grade);
         finalQuizData = {
             title: data.title,
             lessonId: data.lessonId,
             questions: data.questions,
-            order: data.order,
             isPlacementTest: data.isPlacementTest,
             grade: linkedLesson.grade,
             topic: linkedLesson.topic,
@@ -316,24 +321,35 @@ export function QuizManager() {
              toast({ variant: "destructive", title: "Error", description: "Grade and topic are required for standalone quizzes." });
              return;
         }
+        gradeForOrder = data.grade;
         finalQuizData = {
             title: data.title,
             questions: data.questions,
-            order: data.order,
             isPlacementTest: data.isPlacementTest,
             grade: parseInt(data.grade),
             topic: data.topic,
             teacherId: user.uid,
         };
      }
+
+    let finalOrder = data.order;
+    if (!editingQuiz?.id && gradeForOrder) { // Only auto-increment for new quizzes and if grade is known
+        const allContentForGrade = [
+            ...(lessons?.filter(l => String(l.grade) === gradeForOrder) || []),
+            ...(quizzes?.filter(q => String(q.grade) === gradeForOrder) || [])
+        ];
+        finalOrder = (allContentForGrade.length > 0)
+            ? Math.max(...allContentForGrade.map(c => c.order || 0)) + 1
+            : 1;
+    }
     
     try {
         if (editingQuiz && 'id' in editingQuiz) {
             const quizRef = doc(firestore, 'quizzes', editingQuiz.id!);
-            await updateDoc(quizRef, finalQuizData);
+            await updateDoc(quizRef, { ...finalQuizData, order: data.order });
             toast({ title: 'Success', description: 'Quiz updated successfully.' });
         } else {
-            await addDoc(collection(firestore, 'quizzes'), finalQuizData);
+            await addDoc(collection(firestore, 'quizzes'), { ...finalQuizData, order: finalOrder });
             toast({ title: 'Success', description: 'Quiz created successfully.' });
         }
         handleCloseForm();
@@ -416,7 +432,7 @@ export function QuizManager() {
               </Card>
             ))
           ) : (
-            <p className="text-center text-muted-foreground py-8">You haven't created any quizzes yet.</p>
+            <p className="text-center text-muted-foreground py-8">{selectedGrade === 'all' ? "You haven't created any quizzes yet." : `No quizzes found for Grade ${selectedGrade}.`}</p>
           )}
         </div>
       </CardContent>
