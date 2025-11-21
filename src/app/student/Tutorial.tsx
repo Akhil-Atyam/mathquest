@@ -48,29 +48,47 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
       setTargetRect(null); // Center the final message
       return;
     }
-    const element = document.getElementById(step.elementId);
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      setTargetRect(rect);
+    // Using a timeout to ensure the element is painted before getting its rect
+    const timer = setTimeout(() => {
+        const element = document.getElementById(step.elementId);
+        if (element) {
+        const rect = element.getBoundingClientRect();
+        setTargetRect(rect);
+        // Highlight the element by adding a class
+        element.classList.add('tutorial-highlight');
+        }
+    }, 100); // A small delay
+
+    return () => {
+        clearTimeout(timer);
+        // Clean up the highlight class from the previous element
+        if (currentStep > 0) {
+            const prevStep = steps[currentStep-1];
+            const prevElement = document.getElementById(prevStep.elementId);
+            prevElement?.classList.remove('tutorial-highlight');
+        }
     }
   }, [currentStep]);
 
-  const spotlightStyle: React.CSSProperties = useMemo(() => {
-    if (!targetRect) {
-      return {
-        clipPath: 'inset(0 0 0 0)',
-      };
-    }
-    const padding = 10;
-    return {
-      clipPath: `inset(0 0 0 0 round 10px)`, // The outer part is visible
-      WebkitMask: `
-        radial-gradient(circle at ${targetRect.left + targetRect.width / 2}px ${targetRect.top + targetRect.height / 2}px, transparent, transparent ${Math.max(targetRect.width, targetRect.height) / 2 + padding}px, black ${Math.max(targetRect.width, targetRect.height) / 2 + padding + 1}px)
-      `,
-      mask: `
-        radial-gradient(circle at ${targetRect.left + targetRect.width / 2}px ${targetRect.top + targetRect.height / 2}px, transparent, transparent ${Math.max(targetRect.width, targetRect.height) / 2 + padding}px, black ${Math.max(targetRect.width, targetRect.height) / 2 + padding + 1}px)
-      `,
-    };
+  const overlayStyle: React.CSSProperties = useMemo(() => {
+     if (!targetRect) {
+        // Full overlay for the final centered message
+        return {
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
+        }
+     }
+     // Create a "cutout" effect using box-shadow
+     const padding = 10;
+     return {
+        position: 'absolute',
+        top: `${targetRect.top - padding}px`,
+        left: `${targetRect.left - padding}px`,
+        width: `${targetRect.width + padding * 2}px`,
+        height: `${targetRect.height + padding * 2}px`,
+        boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
+        borderRadius: '0.75rem', // Match shadcn's radius
+        zIndex: 51, // Above the overlay, below the content
+     }
   }, [targetRect]);
   
   const contentStyle: React.CSSProperties = useMemo(() => {
@@ -89,6 +107,10 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   }, [targetRect]);
 
   const handleNext = () => {
+    // Before moving to next step, remove highlight from current element
+    const currentElement = document.getElementById(steps[currentStep].elementId);
+    currentElement?.classList.remove('tutorial-highlight');
+
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -100,21 +122,13 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 z-50"
-      style={{
-        backdropFilter: 'blur(2px)',
-      }}
+      className="fixed inset-0 z-50"
     >
-      {/* This div creates the spotlight effect by being "cut out" */}
-       <div
-            className="fixed inset-0"
-            style={{
-                background: `radial-gradient(circle at ${targetRect ? targetRect.left + targetRect.width/2 : window.innerWidth/2}px ${targetRect ? targetRect.top + targetRect.height/2 : window.innerHeight/2}px, transparent 100px, rgba(0,0,0,0.7) 101px)`,
-                clipPath: targetRect ? `path('M0,0 H${window.innerWidth} V${window.innerHeight} H0Z M${targetRect.left - 10},${targetRect.top - 10} V${targetRect.bottom + 10} H${targetRect.right + 10} V${targetRect.top - 10}Z')` : 'none',
-            }}
-        ></div>
+       {/* The spotlight cutout div */}
+       <div style={overlayStyle}></div>
 
-      <div className="fixed" style={contentStyle}>
+      {/* The mascot and dialog content */}
+      <div className="fixed z-50" style={contentStyle}>
         <div className="flex items-center gap-4">
           <Mascot />
           <div className="bg-card p-6 rounded-lg shadow-2xl max-w-sm">
