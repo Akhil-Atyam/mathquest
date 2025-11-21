@@ -34,12 +34,42 @@ Add the following variables one by one:
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Your Firebase Messaging Sender ID |
 | `GEMINI_API_KEY`            | Your Google AI (Gemini) API Key                  |
 
-**Where to find these values:**
-- **Firebase Values**: You can find all the `NEXT_PUBLIC_FIREBASE_*` values in your `src/firebase/config.ts` file.
-- **Gemini API Key**: You can get your `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/app/apikey).
+### Step 4: Where to Find These Values
 
-### Step 4: Deploy
+#### **Firebase Variables**
+All of the `NEXT_PUBLIC_FIREBASE_*` variables can be found in the file `src/firebase/config.ts` in your project. The contents of that file will look something like this:
+
+```typescript
+export const firebaseConfig = {
+  "projectId": "your-project-id",
+  "appId": "your-app-id",
+  "apiKey": "your-api-key",
+  "authDomain": "your-auth-domain.firebaseapp.com",
+  // ... and so on
+};
+```
+Simply copy the corresponding values from this file and paste them into the "Value" field on Vercel for each variable name.
+
+#### **Gemini API Key**
+- You can get your `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/app/apikey).
+- Create a new API key if you don't already have one, and copy it into the "Value" field on Vercel.
+
+### Step 5: Deploy
 - After adding the environment variables, click the **"Deploy"** button.
 - Vercel will start building and deploying your application. You'll get a unique URL for your live site once it's complete.
 
-That's it! Your MathQuest application will be live on Vercel. Any future pushes to your connected Git branch (e.g., `main`) will automatically trigger a new deployment.
+---
+
+## Development and Deployment Workflow
+
+It's important to understand how changes you make here are deployed to your live site on Vercel.
+
+**This is a Local Development Environment:** Think of this editor as your local workshop. When we make changes to the code, those changes are being written directly to the files on this machine.
+
+**Syncing with GitHub:** The changes we make here are **not** automatically synced to your GitHub repository. You need to manually save your progress using Git. The typical workflow is:
+1.  **Make Changes:** We work together to edit the app.
+2.  **Commit Changes:** Once you are happy with the changes, you need to "commit" them using Git. This is like saving a snapshot of your project. You can do this from the command line (`git add .`, `git commit -m "Your message"`) or using a Git client.
+3.  **Push to GitHub:** After committing, you "push" your changes to your GitHub repository (`git push`).
+4.  **Automatic Deployment:** Because your Vercel project is connected to your GitHub repository, Vercel will see this push and automatically start a new deployment with your latest changes.
+
+That's it! Your MathQuest application will be live on Vercel, and any future pushes to your connected Git branch (e.g., `main`) will automatically trigger a new deployment.
