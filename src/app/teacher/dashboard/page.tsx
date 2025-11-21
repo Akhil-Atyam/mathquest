@@ -90,6 +90,10 @@ function NextSession({ bookings, onUpdateLink }: { bookings: Booking[] | null, o
         )
     }
 
+    // Safely access studentIds and studentNames with fallbacks
+    const studentIds = nextSession.studentIds || [];
+    const studentNames = nextSession.studentNames || [];
+
     return (
         <Card>
             <CardHeader>
@@ -103,11 +107,11 @@ function NextSession({ bookings, onUpdateLink }: { bookings: Booking[] | null, o
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className='flex items-center gap-1'><Calendar className='w-4 h-4' /> {format(nextSession.startTime.toDate(), 'PPP')}</span>
                         <span className='flex items-center gap-1'><Clock className='w-4 h-4' /> {format(nextSession.startTime.toDate(), 'p')}</span>
-                        <span className='flex items-center gap-1'><Users className='w-4 h-4' /> {nextSession.studentIds.length} / {nextSession.studentLimit} students</span>
+                        <span className='flex items-center gap-1'><Users className='w-4 h-4' /> {studentIds.length} / {nextSession.studentLimit} students</span>
                     </div>
                      <div className="text-sm">
                         <p className="font-medium">Students:</p>
-                        <p className="text-muted-foreground">{nextSession.studentNames.join(', ')}</p>
+                        <p className="text-muted-foreground">{studentNames.join(', ')}</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
