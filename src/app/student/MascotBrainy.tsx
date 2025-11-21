@@ -63,26 +63,26 @@ export function MascotBrainy() {
         {/* Face */}
         <g transform="translate(0, 20)">
             {/* Eyes */}
-            <g transform="translate(100, 140)">
+            <g transform="translate(100, 135)">
                 <ellipse cx="0" cy="0" rx="18" ry="22" fill="#fff" stroke="#000" strokeWidth="4" transform="rotate(-15)"/>
-                <path d="M -5 -8 L 5 8" stroke="#000" strokeWidth="4" />
-                <circle cx="-5" cy="-8" r="5" fill="#000" />
+                 {/* Pie-cut */}
+                <path d="M 5, -10 A 18 22 0 0 0 -5 10" stroke="#000" strokeWidth="4" fill="#000" />
             </g>
-             <g transform="translate(155, 140)">
+             <g transform="translate(155, 135)">
                 <ellipse cx="0" cy="0" rx="18" ry="22" fill="#fff" stroke="#000" strokeWidth="4" transform="rotate(15)"/>
-                <path d="M -5 8 L 5 -8" stroke="#000" strokeWidth="4" />
-                <circle cx="5" cy="-8" r="5" fill="#000" />
+                 {/* Pie-cut */}
+                <path d="M -5, -10 A 18 22 0 0 1 5 10" stroke="#000" strokeWidth="4" fill="#000" />
             </g>
              {/* Smile */}
-            <path d="M 100 180 Q 130 205 160 180" stroke="#000" strokeWidth="5" fill="none" strokeLinecap="round"/>
+            <path d="M 115 175 Q 130 190 145 175" stroke="#000" strokeWidth="4" fill="none" strokeLinecap="round"/>
         </g>
 
         {/* Arms */}
         <g filter="url(#dropShadow)">
-           {/* Right Arm (viewer's left) */}
+           {/* Right Arm (viewer's left) - Waving */}
           <path d="M 190 170 C 220 150 240 170 240 190" stroke="#000" strokeWidth="14" fill="none" strokeLinecap="round"/>
-          <g transform="translate(210, 185) rotate(-20)">
-              <path d="M 20 15 C 5 20 5 35 15 40 C 25 45 35 40 35 30 C 40 20 30 10 20 15 Z" fill="#fff" stroke="#000" strokeWidth="4" transform="scale(-1, 1) translate(-55, 0)" />
+          <g transform="translate(230, 180) rotate(-20)">
+              <path d="M15,5 C5,0 0,10 5,20 S15,40 25,35 S35,20 25,15 C20,10 25,10 15,5z" fill="#fff" stroke="#000" strokeWidth="4"/>
           </g>
 
           {/* Left Arm (viewer's right) - Pointing */}
