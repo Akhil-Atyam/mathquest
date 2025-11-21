@@ -34,6 +34,7 @@ export default function StudentsListPage() {
 
         try {
             // Use a batch to ensure both documents are deleted atomically.
+            // This is the correct way to free up the username and delete the profile.
             const batch = writeBatch(firestore);
 
             batch.delete(userDocRef);
@@ -42,9 +43,13 @@ export default function StudentsListPage() {
             await batch.commit();
             
             toast({
-                title: "Student Deleted",
-                description: `${studentToDelete.name}'s account has been successfully deleted.`
+                title: "Student Data Deleted",
+                description: `${studentToDelete.name}'s application data has been successfully deleted.`
             })
+            // If the deleted student was the one being viewed, go back to the list
+            if(selectedStudent?.id === studentToDelete.id) {
+                setSelectedStudent(null);
+            }
         } catch (error) {
              console.error("Error deleting student:", error);
              toast({
@@ -122,14 +127,15 @@ export default function StudentsListPage() {
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete the account
-                                                        for <strong>{student.name}</strong> and remove all their data.
+                                                        This action cannot be undone. This will permanently delete the application data
+                                                        for <strong>{student.name}</strong>, including their progress and assignments.
+                                                        It will NOT delete their core login credential from Firebase Authentication.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                     <AlertDialogAction onClick={() => handleDeleteStudent(student)}>
-                                                        Yes, delete account
+                                                        Yes, delete student data
                                                     </AlertDialogAction>
                                                 </AlertDialogFooter>
                                                 </AlertDialogContent>
