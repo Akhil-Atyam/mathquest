@@ -396,42 +396,39 @@ const Grade2QuestPath = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
-    const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
+    const [nodePositions, setNodePositions] = useState<{x: number, y: number}[]>([]);
+    const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.completedQuizzes || []);
+    const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
 
-    
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
         const grade2Items = allItems.filter(l => l.grade === 2);
-        
         return grade2Items.sort((a, b) => (a.order || 0) - (b.order || 0));
     }, [lessons, quizzes]);
     
      useEffect(() => {
-        if (containerRef.current && sortedItems.length > 1) {
-            const containerWidth = containerRef.current.offsetWidth;
-            // Ensure containerWidth is not 0 before calculating
-            if (containerWidth === 0) return;
+        const calculatePath = (containerWidth: number) => {
+            if (sortedItems.length < 1 || containerWidth === 0) return;
 
             const centerX = containerWidth / 2;
-            const amplitude = containerWidth * 0.2; // 20% of width
+            const amplitude = Math.min(containerWidth * 0.2, 150); // Cap amplitude
             const yStep = 160;
             const initialY = 80;
 
             const points = sortedItems.map((item, index) => {
                 const y = initialY + index * yStep;
                 const x = centerX + amplitude * Math.sin(index * Math.PI / 3);
-                if(isQuiz(item) && item.isPlacementTest) {
-                    setPlacementTestNode({x: 0, y});
+                if (isQuiz(item) && item.isPlacementTest) {
+                    setPlacementTestNodeY(y);
                 }
                 return { x, y };
             });
+            setNodePositions(points);
 
-            // Find last sequentially completed item
             let lastCompletedIndex = -1;
             for (let i = 0; i < sortedItems.length; i++) {
                 const item = sortedItems[i];
@@ -439,7 +436,7 @@ const Grade2QuestPath = ({
                 if (isItemCompleted) {
                     lastCompletedIndex = i;
                 } else {
-                    break; // Stop at the first incomplete item
+                    break;
                 }
             }
             
@@ -450,8 +447,24 @@ const Grade2QuestPath = ({
                 progress: progressPoints.length > 1 ? getCurvePath(progressPoints) : '',
                 remaining: remainingPoints.length > 1 ? getCurvePath(remainingPoints) : '',
             });
+        };
+
+        const observer = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                calculatePath(entry.contentRect.width);
+            }
+        });
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
         }
-    }, [sortedItems, containerRef.current?.offsetWidth, student]);
+
+        return () => {
+            if (containerRef.current) {
+                observer.unobserve(containerRef.current);
+            }
+        };
+    }, [sortedItems, student]);
 
 
     if (sortedItems.length === 0) {
@@ -460,8 +473,9 @@ const Grade2QuestPath = ({
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
-            <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
-                <svg className="absolute top-0 left-0 w-full h-full z-0">
+            <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
+                <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
+                     {/* Draw the remaining path first (bottom layer) */}
                     {pathData.remaining && (
                         <path
                             d={pathData.remaining}
@@ -471,21 +485,22 @@ const Grade2QuestPath = ({
                             strokeLinecap="round"
                         />
                     )}
+                    {/* Draw the progress path on top */}
                     {pathData.progress && (
                          <path
                             d={pathData.progress}
                             stroke="hsl(142 71% 45%)" // Green color
-                            strokeWidth="10"
+                            strokeWidth="10" // Make it slightly thicker to cover the underlying path
                             fill="none"
                             strokeLinecap="round"
                         />
                     )}
-                    {placementTestNode && (
+                    {placementTestNodeY && (
                         <line 
-                            x1={placementTestNode.x} 
-                            y1={placementTestNode.y} 
+                            x1="0" 
+                            y1={placementTestNodeY} 
                             x2="100%" 
-                            y2={placementTestNode.y} 
+                            y2={placementTestNodeY} 
                             stroke="hsl(var(--border))" 
                             strokeWidth="2" 
                             strokeDasharray="5,5" 
@@ -493,43 +508,31 @@ const Grade2QuestPath = ({
                     )}
                 </svg>
 
-
                 {sortedItems.map((item, index) => {
                     const isItemQuiz = isQuiz(item);
                     const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
-                    // --- Unlocking Logic ---
                     let isSequentiallyUnlocked = false;
                     if (index === 0 || (isItemQuiz && item.isPlacementTest)) {
-                        // The first item or any placement test is always unlocked by default.
                         isSequentiallyUnlocked = true;
                     } else {
-                        // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
-                        if (isQuiz(prevItem)) {
-                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
-                        } else {
-                            isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
-                        }
+                        isSequentiallyUnlocked = isQuiz(prevItem) ? completedQuizIds.has(prevItem.id) : completedLessonIds.has(prevItem.id);
                     }
                     
                     const isExplicitlyAssigned = assignedIds.has(item.id);
                     const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted;
-                    // --- End Unlocking Logic ---
                     
-                    const y = 80 + index * 160;
-                    const containerWidth = containerRef.current?.offsetWidth || 0;
-                    const centerX = containerWidth / 2;
-                    const amplitude = containerWidth * 0.2;
-                    const xOffset = amplitude * Math.sin(index * Math.PI / 3);
+                    const position = nodePositions[index];
+                    if (!position) return null;
 
                     return (
                         <div
                             key={item.id}
                             className="absolute z-10"
                             style={{
-                                top: `${y - 48}px`,
-                                left: `${centerX + xOffset}px`,
+                                top: `${position.y - 48}px`,
+                                left: `${position.x}px`,
                                 transform: 'translateX(-50%)',
                             }}
                         >
@@ -565,11 +568,12 @@ const Grade3QuestPath = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
-    const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
+    const [nodePositions, setNodePositions] = useState<{x: number, y: number}[]>([]);
+    const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(student?.completedQuizzes || []);
+    const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
     const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
 
     
@@ -581,12 +585,11 @@ const Grade3QuestPath = ({
     }, [lessons, quizzes]);
 
     useEffect(() => {
-        if (containerRef.current && sortedItems.length > 1) {
-            const containerWidth = containerRef.current.offsetWidth;
-            if (containerWidth === 0) return;
+        const calculatePath = (containerWidth: number) => {
+            if (sortedItems.length < 1 || containerWidth === 0) return;
 
             const centerX = containerWidth / 2;
-            const amplitude = containerWidth * 0.2;
+            const amplitude = Math.min(containerWidth * 0.2, 150);
             const yStep = 160;
             const initialY = 80;
 
@@ -594,12 +597,12 @@ const Grade3QuestPath = ({
                 const y = initialY + index * yStep;
                 const x = centerX + amplitude * Math.sin(index * Math.PI / 3);
                 if(isQuiz(item) && item.isPlacementTest) {
-                    setPlacementTestNode({x: 0, y});
+                    setPlacementTestNodeY(y);
                 }
                 return { x, y };
             });
+            setNodePositions(points);
 
-            // Find last sequentially completed item
             let lastCompletedIndex = -1;
             for (let i = 0; i < sortedItems.length; i++) {
                 const item = sortedItems[i];
@@ -607,7 +610,7 @@ const Grade3QuestPath = ({
                 if (isItemCompleted) {
                     lastCompletedIndex = i;
                 } else {
-                    break; // Stop at the first incomplete item
+                    break;
                 }
             }
             
@@ -618,8 +621,25 @@ const Grade3QuestPath = ({
                 progress: progressPoints.length > 1 ? getCurvePath(progressPoints) : '',
                 remaining: remainingPoints.length > 1 ? getCurvePath(remainingPoints) : '',
             });
+        };
+        
+        const observer = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                calculatePath(entry.contentRect.width);
+            }
+        });
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
         }
-    }, [sortedItems, containerRef.current?.offsetWidth, student]);
+
+        return () => {
+            if (containerRef.current) {
+                observer.unobserve(containerRef.current);
+            }
+        };
+
+    }, [sortedItems, student]);
 
 
     if (sortedItems.length === 0) {
@@ -628,8 +648,8 @@ const Grade3QuestPath = ({
 
     return (
         <div className="relative w-full overflow-x-auto p-4">
-            <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
-                <svg className="absolute top-0 left-0 w-full h-full z-0">
+            <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
+                <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
                     {pathData.remaining && (
                         <path
                             d={pathData.remaining}
@@ -648,12 +668,12 @@ const Grade3QuestPath = ({
                             strokeLinecap="round"
                         />
                     )}
-                    {placementTestNode && (
+                    {placementTestNodeY && (
                         <line 
-                            x1={placementTestNode.x} 
-                            y1={placementTestNode.y} 
+                            x1="0" 
+                            y1={placementTestNodeY} 
                             x2="100%" 
-                            y2={placementTestNode.y} 
+                            y2={placementTestNodeY} 
                             stroke="hsl(var(--border))" 
                             strokeWidth="2" 
                             strokeDasharray="5,5" 
@@ -665,38 +685,27 @@ const Grade3QuestPath = ({
                     const isItemQuiz = isQuiz(item);
                     const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
                     
-                    // --- Unlocking Logic ---
                     let isSequentiallyUnlocked = false;
                     if (index === 0 || (isItemQuiz && item.isPlacementTest)) {
-                        // The first item or any placement test is always unlocked by default.
                         isSequentiallyUnlocked = true;
                     } else {
-                        // An item is unlocked if the previous one is completed.
                         const prevItem = sortedItems[index-1];
-                        if (isQuiz(prevItem)) {
-                            isSequentiallyUnlocked = completedQuizIds.has(prevItem.id);
-                        } else {
-                            isSequentiallyUnlocked = completedLessonIds.has(prevItem.id);
-                        }
+                        isSequentiallyUnlocked = isQuiz(prevItem) ? completedQuizIds.has(prevItem.id) : completedLessonIds.has(prevItem.id);
                     }
 
                     const isExplicitlyAssigned = assignedIds.has(item.id);
                     const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted;
-                    // --- End Unlocking Logic ---
 
-                    const y = 80 + index * 160;
-                    const containerWidth = containerRef.current?.offsetWidth || 0;
-                    const centerX = containerWidth / 2;
-                    const amplitude = containerWidth * 0.2;
-                    const xOffset = amplitude * Math.sin(index * Math.PI / 3);
+                    const position = nodePositions[index];
+                    if (!position) return null;
 
                     return (
                         <div
                             key={item.id}
                             className="absolute z-10"
                             style={{
-                                top: `${y - 48}px`,
-                                left: `${centerX + xOffset}px`,
+                                top: `${position.y - 48}px`,
+                                left: `${position.x}px`,
                                 transform: 'translateX(-50%)',
                             }}
                         >
