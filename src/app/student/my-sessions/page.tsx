@@ -36,7 +36,7 @@ function SessionList({ title, bookings }: { title: string; bookings: Booking[] }
             <CardHeader>
               <CardTitle>{booking.topic}</CardTitle>
               <CardDescription>
-                Session with {booking.teacherName}
+                Session with {booking.teacherName} ({booking.studentIds.length}/{booking.studentLimit} students)
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -84,7 +84,7 @@ export default function MySessionsPage() {
   // The query will only be created when `firestore` and `user` are available.
   const bookingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'tutoring_sessions'), where('studentId', '==', user.uid));
+    return query(collection(firestore, 'tutoring_sessions'), where('studentIds', 'array-contains', user.uid));
   }, [firestore, user?.uid]);
 
   const { data: bookings, isLoading: areBookingsLoading } = useCollection<Booking>(bookingsQuery);

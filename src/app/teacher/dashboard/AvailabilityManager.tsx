@@ -25,6 +25,7 @@ const availabilitySchema = z.object({
     required_error: "A date is required.",
   }),
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
+  limit: z.coerce.number().min(1, "Limit must be at least 1."),
 });
 
 // Main component to manage teacher availability
@@ -32,7 +33,7 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [currentAvailability, setCurrentAvailability] = useState<Record<string, string[]>>(teacher?.availability || {});
+  const [currentAvailability, setCurrentAvailability] = useState<Teacher['availability']>(teacher?.availability || {});
 
   // Update local state if the teacher prop changes
   useEffect(() => {
@@ -43,6 +44,7 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
     resolver: zodResolver(availabilitySchema),
     defaultValues: {
       time: '',
+      limit: 1,
     },
   });
 
@@ -50,7 +52,7 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
   async function onAddTimeSlot(values: z.infer<typeof availabilitySchema>) {
     if (!user || !firestore) return;
 
-    const { day, time } = values;
+    const { day, time, limit } = values;
 
     const today = startOfDay(new Date());
     const selectedDay = startOfDay(day);
@@ -69,13 +71,13 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
     }
 
     // Avoid adding duplicate times
-    if (updatedAvailability[dayKey].includes(time)) {
+    if (updatedAvailability[dayKey]?.some(slot => slot.time === time)) {
       form.setError('time', { type: 'manual', message: 'This time slot already exists for this day.' });
       return;
     }
 
-    updatedAvailability[dayKey].push(time);
-    updatedAvailability[dayKey].sort(); // Keep times sorted
+    updatedAvailability[dayKey]?.push({ time, limit });
+    updatedAvailability[dayKey]?.sort((a,b) => a.time.localeCompare(b.time)); // Keep times sorted
 
     try {
       const teacherRef = doc(firestore, 'teachers', user.uid);
@@ -83,7 +85,7 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
       await setDoc(teacherRef, { availability: updatedAvailability }, { merge: true });
       setCurrentAvailability(updatedAvailability);
       toast({ title: 'Success', description: `Added ${time} to your availability for ${format(day, 'PPP')}.` });
-      form.reset({ day: undefined, time: '' });
+      form.reset({ day: undefined, time: '', limit: 1 });
     } catch (error) {
       console.error("Error updating availability:", error);
       toast({ variant: "destructive", title: 'Error', description: 'Could not update your availability.' });
@@ -91,14 +93,14 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
   }
 
   // Handler for removing a time slot
-  async function onRemoveTimeSlot(day: string, time: string) {
+  async function onRemoveTimeSlot(dayKey: string, time: string) {
     if (!user || !firestore) return;
 
     const updatedAvailability = { ...currentAvailability };
-    updatedAvailability[day] = updatedAvailability[day].filter(t => t !== time);
+    updatedAvailability[dayKey] = updatedAvailability[dayKey]?.filter(t => t.time !== time);
 
-    if (updatedAvailability[day].length === 0) {
-      delete updatedAvailability[day];
+    if (updatedAvailability[dayKey]?.length === 0) {
+      delete updatedAvailability[dayKey];
     }
     
     try {
@@ -177,19 +179,35 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Time (24-hour format)</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="HH:MM" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex gap-4">
+                <FormField
+                    control={form.control}
+                    name="time"
+                    render={({ field }) => (
+                    <FormItem className="flex-1">
+                        <FormLabel>Time (24-hour format)</FormLabel>
+                        <FormControl>
+                        <Input type="text" placeholder="HH:MM" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="limit"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Student Limit</FormLabel>
+                        <FormControl>
+                        <Input type="number" min="1" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </div>
+
               <Button type="submit">Add Time Slot</Button>
             </form>
           </Form>
@@ -205,19 +223,20 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
         <CardContent>
           <Accordion type="multiple" className="w-full">
             {sortedDays.length > 0 ? (
-                sortedDays.filter(d => currentAvailability[d]?.length > 0).map(dayKey => (
+                sortedDays.filter(d => currentAvailability[d] && currentAvailability[d]!.length > 0).map(dayKey => (
                 <AccordionItem key={dayKey} value={dayKey}>
                   <AccordionTrigger>{getDayLabel(dayKey)}</AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-wrap gap-2">
-                      {currentAvailability[dayKey].map(time => (
-                        <div key={time} className="flex items-center gap-2 bg-muted p-2 rounded-md">
-                          <span className="font-mono text-sm">{time}</span>
+                      {currentAvailability[dayKey]!.map(slot => (
+                        <div key={slot.time} className="flex items-center gap-2 bg-muted p-2 rounded-md">
+                          <span className="font-mono text-sm">{slot.time}</span>
+                          <span className="text-xs text-muted-foreground">({slot.limit} spots)</span>
                           <Button 
                             variant="ghost" 
                             size="icon" 
                             className="h-6 w-6"
-                            onClick={() => onRemoveTimeSlot(dayKey, time)}
+                            onClick={() => onRemoveTimeSlot(dayKey, slot.time)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

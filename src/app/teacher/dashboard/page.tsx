@@ -6,7 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, Clock, Video, Edit } from 'lucide-react';
+import { Calendar, Clock, Video, Edit, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -36,7 +36,7 @@ function AddLinkDialog({ booking, onSave, children }: { booking: Booking; onSave
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Meeting Link for {booking.studentName}</DialogTitle>
+                    <DialogTitle>Meeting Link for {booking.topic}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <p className="text-sm">
@@ -95,15 +95,19 @@ function NextSession({ bookings, onUpdateLink }: { bookings: Booking[] | null, o
             <CardHeader>
                 <CardTitle>Next Tutoring Session</CardTitle>
                 <CardDescription>
-                    Your next session is with {nextSession.studentName}
+                    Your next session is on {nextSession.topic}.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
-                    <p className='font-semibold'>{nextSession.topic}</p>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className='flex items-center gap-1'><Calendar className='w-4 h-4' /> {format(nextSession.startTime.toDate(), 'PPP')}</span>
                         <span className='flex items-center gap-1'><Clock className='w-4 h-4' /> {format(nextSession.startTime.toDate(), 'p')}</span>
+                        <span className='flex items-center gap-1'><Users className='w-4 h-4' /> {nextSession.studentIds.length} / {nextSession.studentLimit} students</span>
+                    </div>
+                     <div className="text-sm">
+                        <p className="font-medium">Students:</p>
+                        <p className="text-muted-foreground">{nextSession.studentNames.join(', ')}</p>
                     </div>
                 </div>
                 <div className="flex gap-2">

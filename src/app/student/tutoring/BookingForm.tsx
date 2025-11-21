@@ -42,10 +42,10 @@ const formSchema = z.object({
  *
  * @param {object} props - The component props.
  * @param {Date | undefined} props.selectedDay - The date selected by the user in the calendar.
- * @param {string[]} props.availableTimes - An array of available time slots for the selected day.
+ * @param {{ time: string; limit: number; spotsLeft: number }[]} props.availableTimes - An array of available time slots for the selected day.
  * @param {Teacher | undefined} props.teacher - The currently selected teacher.
  * @param {boolean} props.isLoadingTimes - Flag indicating if available times are being loaded.
- * @param {(bookingData: Omit<Booking, 'id' | 'studentId' | 'teacherId' | 'status' | 'meetingLink' | 'attended' | 'startTime'>, selectedTime: string) => Promise<boolean>} props.onBookingConfirmed - The callback function to execute when the booking is confirmed.
+ * @param {(bookingData: Omit<Booking, 'id' | 'studentIds' | 'teacherId' | 'status' | 'meetingLink' | 'attended' | 'startTime'>, selectedTime: string) => Promise<boolean>} props.onBookingConfirmed - The callback function to execute when the booking is confirmed.
  */
 export function BookingForm({
   selectedDay,
@@ -55,10 +55,10 @@ export function BookingForm({
   onBookingConfirmed,
 }: {
   selectedDay: Date | undefined;
-  availableTimes: string[];
+  availableTimes: { time: string; limit: number; spotsLeft: number }[];
   teacher: Teacher | undefined;
   isLoadingTimes: boolean;
-  onBookingConfirmed: (bookingData: Omit<Booking, 'id' | 'studentId' | 'teacherId' | 'status' | 'meetingLink' | 'attended' | 'startTime'>, selectedTime: string) => Promise<boolean>;
+  onBookingConfirmed: (bookingData: any, selectedTime: string) => Promise<boolean>;
 }) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -99,7 +99,7 @@ export function BookingForm({
   React.useEffect(() => {
     if (
       form.getValues('time') &&
-      !availableTimes.includes(form.getValues('time'))
+      !availableTimes.some(slot => slot.time === form.getValues('time'))
     ) {
       form.resetField('time');
     }
@@ -114,11 +114,15 @@ export function BookingForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!teacher || !teacher.name) return;
     
+    const selectedSlot = availableTimes.find(slot => slot.time === values.time);
+    if (!selectedSlot) return;
+
     const bookingData = {
         studentName: values.studentName,
         grade: Number(values.grade),
         teacherName: teacher.name,
         topic: values.topic,
+        studentLimit: selectedSlot.limit,
     };
 
     const success = await onBookingConfirmed(bookingData, values.time);
@@ -222,9 +226,9 @@ export function BookingForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {availableTimes.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
+                  {availableTimes.map((slot) => (
+                    <SelectItem key={slot.time} value={slot.time} disabled={slot.spotsLeft <= 0}>
+                      {slot.time} ({slot.spotsLeft} spot{slot.spotsLeft !== 1 ? 's' : ''} left)
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -74,11 +74,16 @@
         },
         "availability": {
           "type": "object",
-          "description": "A map of day offsets to available time slots.",
+          "description": "A map of day offsets to available time slots with limits.",
           "additionalProperties": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "object",
+              "properties": {
+                "time": { "type": "string" },
+                "limit": { "type": "number" }
+              },
+              "required": ["time", "limit"]
             }
           }
         }
@@ -205,15 +210,16 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TutoringSession",
       "type": "object",
-      "description": "Represents a tutoring session booked between a student and a teacher.",
+      "description": "Represents a tutoring session booked between students and a teacher.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the TutoringSession entity."
         },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to Student. (Relationship: Student 1:N TutoringSession)"
+        "studentIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Reference to Students. (Relationship: Student N:M TutoringSession)"
         },
         "teacherId": {
           "type": "string",
@@ -236,16 +242,21 @@
           "type": "string",
           "description": "Link to the virtual meeting for the tutoring session.",
           "format": "uri"
+        },
+        "studentLimit": {
+          "type": "number",
+          "description": "The maximum number of students that can join the session."
         }
       },
       "required": [
         "id",
-        "studentId",
+        "studentIds",
         "teacherId",
         "startTime",
         "durationMinutes",
         "topic",
-        "meetingLink"
+        "meetingLink",
+        "studentLimit"
       ]
     },
     "StudentProgress": {
@@ -382,7 +393,7 @@
           "schema": {
             "$ref": "#/backend/entities/TutoringSession"
           },
-          "description": "Collection for storing tutoring session data. Includes both `studentId` and `teacherId` for authorization independence.",
+          "description": "Collection for storing tutoring session data. Includes both `studentIds` and `teacherId` for authorization independence.",
           "params": [
             {
               "name": "sessionId",
@@ -443,5 +454,3 @@
     "reasoning": "The Firestore structure is designed to ensure Authorization Independence, DBAC, and support secure list operations (QAPs). It leverages structural segregation and denormalization strategies.  The top-level collections segregate data types with different security postures. User-owned data resides within `/users/{userId}` subcollections, providing clear ownership. Collaborative data, such as tutoring sessions, are managed in collections with explicit membership maps. The `roles_teacher` collection implements DBAC.\n\n**Authorization Independence**: Achieved by storing all authorization-relevant data directly within each document, avoiding `get()` calls in security rules.  For example, the `TutoringSessions` collection includes both `studentId` and `teacherId`, removing the need to fetch user roles during authorization checks. The `StudentProgress` collection is located under `/users/{userId}`, enabling QAPs.\n\n**QAPs (Rules are not Filters)**: Each collection has a clear security posture, allowing for efficient and secure list operations. Placing `StudentProgress` under the user's document `/users/{userId}/progress/{progressId}` ensures only the student or an admin can access their progress data."
   }
 }
-
-    

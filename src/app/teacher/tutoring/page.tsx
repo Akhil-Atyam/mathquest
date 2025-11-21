@@ -11,7 +11,7 @@ import { doc, collection, query, where, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AvailabilityManager } from '../dashboard/AvailabilityManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Clock, Edit } from 'lucide-react';
+import { Calendar, Clock, Edit, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,12 +46,16 @@ function BookingsList({
       <div className="space-y-4">
         {bookings.map((booking) => (
           <Card key={booking.id} className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div className="grid gap-1">
-              <p className="font-medium">{booking.studentName} (Grade {booking.grade})</p>
-              <p className="text-sm text-muted-foreground">{booking.topic}</p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="grid gap-2">
+               <p className="font-medium">{booking.topic}</p>
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                  <span className='flex items-center gap-1'><Calendar className='w-4 h-4' /> {format(booking.startTime.toDate(), 'PPP')}</span>
                  <span className='flex items-center gap-1'><Clock className='w-4 h-4' /> {format(booking.startTime.toDate(), 'p')}</span>
+                 <span className='flex items-center gap-1'><Users className='w-4 h-4' /> {booking.studentIds.length} / {booking.studentLimit} students</span>
+              </div>
+              <div className="text-xs">
+                <span className="font-medium">Students: </span>
+                <span className="text-muted-foreground">{booking.studentNames.join(', ')}</span>
               </div>
               {booking.meetingLink && (
                   <p className="text-xs text-blue-600 truncate">
@@ -91,7 +95,7 @@ function AddLinkDialog({ booking, onSave }: { booking: Booking; onSave: (booking
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Meeting Link for {booking.studentName}</DialogTitle>
+                    <DialogTitle>Meeting Link for {booking.topic}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <p className="text-sm">

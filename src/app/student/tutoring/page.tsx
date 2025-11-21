@@ -15,7 +15,7 @@ import {
 import { Label } from '@/components/ui/label';
 import type { Teacher, Booking } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, addDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, setDoc, query, where, Timestamp, writeBatch, arrayUnion, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,7 +36,10 @@ export default function TutoringPage() {
 
   // --- Data Fetching ---
   const teachersCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
+  const sessionsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'tutoring_sessions') : null, [firestore]);
+
   const { data: teachers, isLoading: areTeachersLoading } = useCollection<Teacher>(teachersCollectionRef);
+  const { data: sessions, isLoading: areSessionsLoading } = useCollection<Booking>(sessionsCollectionRef);
 
   // --- Effects ---
   React.useEffect(() => {
@@ -78,17 +81,34 @@ export default function TutoringPage() {
   }, [selectedTeacher]);
 
   const availableTimesForSelectedDay = React.useMemo(() => {
-    if (!date || !selectedTeacher?.availability) return [];
+    if (!date || !selectedTeacher?.availability || !sessions) return [];
     
     const today = startOfDay(new Date());
     const selectedDayStart = startOfDay(date);
     
     const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
-    return selectedTeacher.availability[String(dayOffset)]?.sort() || [];
-  }, [date, selectedTeacher]);
+    const daySlots = selectedTeacher.availability[String(dayOffset)] || [];
 
-  const handleBookingConfirmed = async (bookingData: Omit<Booking, 'id' | 'studentId' | 'teacherId' | 'status' | 'meetingLink' | 'attended'>, selectedTime: string) => {
+    return daySlots.map(slot => {
+        const slotTime = new Date(selectedDayStart);
+        const [hour, minute] = slot.time.split(':').map(Number);
+        slotTime.setHours(hour, minute);
+
+        const existingSession = sessions.find(s => 
+            s.teacherId === selectedTeacher.id &&
+            s.startTime.toDate().getTime() === slotTime.getTime()
+        );
+
+        const spotsTaken = existingSession ? existingSession.studentIds.length : 0;
+        const spotsLeft = slot.limit - spotsTaken;
+
+        return { ...slot, spotsLeft };
+    }).sort((a,b) => a.time.localeCompare(b.time));
+
+  }, [date, selectedTeacher, sessions]);
+
+  const handleBookingConfirmed = async (bookingData: any, selectedTime: string) => {
     if (!user || !selectedTeacher || !selectedTeacher.name || !date || !firestore) {
       toast({
         variant: 'destructive',
@@ -101,58 +121,65 @@ export default function TutoringPage() {
     const [hour, minute] = selectedTime.split(':').map(Number);
     const startTime = new Date(date);
     startTime.setHours(hour, minute);
-
-    const today = startOfDay(new Date());
-    const selectedDayStart = startOfDay(date);
-    const dayOffset = Math.round((selectedDayStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const dayKey = String(dayOffset);
+    const startTimeTimestamp = Timestamp.fromDate(startTime);
 
     try {
-      // 1. Create the new booking document
-      const bookingsCollection = collection(firestore, 'tutoring_sessions');
-      await addDoc(bookingsCollection, {
-        ...bookingData,
-        studentId: user.uid,
-        teacherId: selectedTeacher.id,
-        startTime: startTime,
-        status: 'Confirmed',
-        meetingLink: '',
-        attended: false,
-      });
-
-      // 2. Remove the booked time slot from the teacher's availability
-      const teacherRef = doc(firestore, 'teachers', selectedTeacher.id);
-      const teacherSnap = await getDoc(teacherRef);
-      if (teacherSnap.exists()) {
-        const teacherData = teacherSnap.data() as Teacher;
-        const currentAvailability = teacherData.availability || {};
-        
-        // Filter out the booked time
-        const newDayAvailability = (currentAvailability[dayKey] || []).filter(
-          (time) => time !== selectedTime
+        const sessionsQuery = query(
+            collection(firestore, 'tutoring_sessions'),
+            where('teacherId', '==', selectedTeacher.id),
+            where('startTime', '==', startTimeTimestamp)
         );
 
-        const updatedAvailability = { ...currentAvailability };
+        const querySnapshot = await getDocs(sessionsQuery);
+        const batch = writeBatch(firestore);
 
-        if (newDayAvailability.length > 0) {
-            updatedAvailability[dayKey] = newDayAvailability;
+        if (querySnapshot.empty) {
+             // Create a new session document
+             const newSessionRef = doc(collection(firestore, 'tutoring_sessions'));
+             batch.set(newSessionRef, {
+                studentIds: [user.uid],
+                studentNames: [bookingData.studentName],
+                grade: bookingData.grade,
+                topic: bookingData.topic,
+                startTime: startTimeTimestamp,
+                status: 'Confirmed',
+                teacherId: selectedTeacher.id,
+                teacherName: selectedTeacher.name,
+                meetingLink: '',
+                attended: [],
+                studentLimit: bookingData.studentLimit,
+             });
         } else {
-            // If no times left for this day, remove the day key
-            delete updatedAvailability[dayKey];
+            // Update the existing session document
+            const existingSessionDoc = querySnapshot.docs[0];
+            const existingSessionData = existingSessionDoc.data() as Booking;
+
+            if (existingSessionData.studentIds.length >= existingSessionData.studentLimit) {
+                 toast({ variant: 'destructive', title: 'Session Full', description: 'Sorry, this session is already full.' });
+                 return false;
+            }
+             if (existingSessionData.studentIds.includes(user.uid)) {
+                 toast({ variant: 'destructive', title: 'Already Booked', description: 'You are already booked for this session.' });
+                 return false;
+            }
+            
+            batch.update(existingSessionDoc.ref, {
+                studentIds: arrayUnion(user.uid),
+                studentNames: arrayUnion(bookingData.studentName)
+            });
         }
 
-        await setDoc(teacherRef, { availability: updatedAvailability }, { merge: true });
-      }
+        await batch.commit();
 
-      toast({
-        title: 'Booking Confirmed!',
-        description: `Your tutoring session for ${bookingData.topic} has been booked.`,
-      });
-      return true; // Indicate success
+        toast({
+            title: 'Booking Confirmed!',
+            description: `Your tutoring session for ${bookingData.topic} has been booked.`,
+        });
+        return true; // Indicate success
     } catch (error) {
        console.error("Error booking session:", error);
        toast({
-        variant: 'destructive',
+        variant: "destructive",
         title: 'Booking Error',
         description: 'Could not save your booking. Please try again.',
       });
@@ -160,7 +187,7 @@ export default function TutoringPage() {
     }
   };
   
-  const isLoading = areTeachersLoading;
+  const isLoading = areTeachersLoading || areSessionsLoading;
 
   if (isLoading) {
       return (
