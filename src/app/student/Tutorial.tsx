@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Mascot } from './Mascot';
 import { Button } from '@/components/ui/button';
 import { usePathname, useRouter } from 'next/navigation';
@@ -108,12 +108,7 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   const [isWaitingForClick, setIsWaitingForClick] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-
-  const pageSteps = useMemo(() => {
-    // On the very first load, the pathname might be the root. We handle this with 'initial'
-    const currentPageKey = allSteps.some(s => s.page === pathname) ? pathname : 'initial';
-    return allSteps.filter(s => s.page === currentPageKey || (!s.page && currentPageKey === 'initial'));
-  }, [pathname]);
+  const highlightedElementRef = useRef<HTMLElement | null>(null);
 
   const step = useMemo(() => {
      // Find the current step in the global `allSteps` array
@@ -121,66 +116,90 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   }, [currentStepIndex]);
 
 
-  useEffect(() => {
-    const activeStep = allSteps[currentStepIndex];
-    if (!activeStep) return;
+  // This useCallback will be our single source of truth for updating the spotlight position
+  const updateTargetRect = useCallback(() => {
+    if (!step?.elementId || step.elementId === 'tutorial-end') {
+      setTargetRect(null);
+      return;
+    }
+    
+    const element = document.getElementById(step.elementId);
+    if (element) {
+        setTargetRect(element.getBoundingClientRect());
+        if (highlightedElementRef.current !== element) {
+            highlightedElementRef.current?.classList.remove('tutorial-highlight');
+            element.classList.add('tutorial-highlight');
+            highlightedElementRef.current = element;
+        }
+    } else {
+        setTargetRect(null);
+    }
+  }, [step]);
 
-    // If the step requires navigation, don't try to find an element yet.
-    if (activeStep.requireClick && activeStep.navigateTo) {
+  // Effect to update the spotlight when the step or page changes, or on window resize
+  useEffect(() => {
+    updateTargetRect();
+    window.addEventListener('resize', updateTargetRect);
+    return () => window.removeEventListener('resize', updateTargetRect);
+  }, [currentStepIndex, pathname, updateTargetRect]);
+
+  // Effect to listen for scroll events and update the spotlight position
+  useEffect(() => {
+    window.addEventListener('scroll', updateTargetRect, true); // Use capture phase
+    return () => window.removeEventListener('scroll', updateTargetRect, true);
+  }, [updateTargetRect]);
+
+  // Effect to manage step logic and highlighting
+  useEffect(() => {
+    if (!step) return;
+
+    if (step.requireClick && step.navigateTo) {
         setIsWaitingForClick(true);
     } else {
         setIsWaitingForClick(false);
     }
-
-    if (activeStep.elementId === 'tutorial-end') {
-      setTargetRect(null); // Center the final message
-      return;
-    }
     
     // Using a timeout to ensure the element is painted before getting its rect
-    const timer = setTimeout(() => {
-        const element = document.getElementById(activeStep.elementId || '');
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          setTargetRect(rect);
-          // Highlight the element by adding a class
-          element.classList.add('tutorial-highlight');
-        } else {
-          // If element not found, maybe it's on another page. Wait for navigation.
-          setTargetRect(null);
-        }
-    }, 200); // Increased delay for page transitions
+    const timer = setTimeout(updateTargetRect, 200);
 
     return () => {
         clearTimeout(timer);
-        // Clean up the highlight class from the previous element
-        const prevStep = allSteps[currentStepIndex];
-        if (prevStep && prevStep.elementId) {
-            const prevElement = document.getElementById(prevStep.elementId);
-            prevElement?.classList.remove('tutorial-highlight');
+        if (highlightedElementRef.current) {
+            highlightedElementRef.current.classList.remove('tutorial-highlight');
+            highlightedElementRef.current = null;
         }
     }
-  }, [currentStepIndex, pathname]); // Rerun when step or page changes
+  }, [currentStepIndex, pathname, step, updateTargetRect]);
+
 
   const overlayStyle: React.CSSProperties = useMemo(() => {
+     const baseStyle: React.CSSProperties = {
+        position: 'fixed',
+        zIndex: 51,
+        transition: 'all 0.3s ease-in-out',
+     };
+     
      if (!targetRect) {
         // Full overlay for the final centered message or while waiting
         return {
+            ...baseStyle,
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
             boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
         }
      }
-     // Create a "cutout" effect using box-shadow to highlight the element AND the dialog
-     const padding = 10;
+     // Create a "cutout" effect using box-shadow
+     const padding = 20; // Increased padding to ensure mascot+dialog are included
      return {
-        position: 'absolute',
+        ...baseStyle,
         top: `${targetRect.top - padding}px`,
         left: `${targetRect.left - padding}px`,
         width: `${targetRect.width + padding * 2}px`,
         height: `${targetRect.height + padding * 2}px`,
         boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
-        borderRadius: '0.75rem',
-        zIndex: 51,
-        transition: 'all 0.3s ease-in-out',
+        borderRadius: '1rem', // Softer radius
      }
   }, [targetRect]);
   
@@ -228,14 +247,9 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   }, [targetRect, step]);
 
   const handleNext = () => {
-    // Before moving to next step, remove highlight from current element
-    const currentElement = document.getElementById(step.elementId || '');
-    currentElement?.classList.remove('tutorial-highlight');
-
     if (step.requireClick && step.navigateTo) {
         setIsWaitingForClick(true);
         router.push(step.navigateTo);
-        // The useEffect will handle incrementing the step once the pathname changes
     }
     
     if (currentStepIndex < allSteps.length - 1) {
