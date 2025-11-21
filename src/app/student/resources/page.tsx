@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { badges as allBadges } from '@/lib/data';
 import { Progress } from '@/components/ui/progress';
 import ReactMarkdown from 'react-markdown';
+import { QuestPathDecorations } from './QuestPathDecorations';
 
 /**
  * A reusable component that displays a single learning lesson in a card format.
@@ -478,6 +479,7 @@ const Grade2QuestPath = ({
     return (
         <div className="relative w-full overflow-x-auto p-4" id="tutorial-quest-path">
             <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
+                <QuestPathDecorations />
                 <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
                      {/* Draw the remaining path first (bottom layer) */}
                     {pathData.remaining && (
@@ -655,6 +657,7 @@ const Grade3QuestPath = ({
     return (
         <div className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
+                <QuestPathDecorations />
                 <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
                     {pathData.remaining && (
                         <path
