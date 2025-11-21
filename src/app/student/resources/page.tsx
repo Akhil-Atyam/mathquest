@@ -477,7 +477,7 @@ const Grade2QuestPath = ({
     }
 
     return (
-        <div className="relative w-full overflow-x-auto p-4" id="tutorial-quest-path">
+        <div id="tutorial-topic-list" className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                 <QuestPathDecorations />
                 <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
@@ -952,8 +952,8 @@ function ResourcesPageContent() {
       <h1 className="text-3xl font-bold font-headline">Resources</h1>
       <p className="text-muted-foreground">Explore lessons created by our teachers! Assigned lessons are marked with a <Star className="inline w-4 h-4 text-yellow-400 fill-yellow-400" />.</p>
 
-      <Tabs defaultValue={defaultGradeTab} className="w-full" id="tutorial-grade-tabs">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue={defaultGradeTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5" id="tutorial-grade-tabs">
           {grades.map(grade => (
             <TabsTrigger key={grade} value={`grade-${grade}`}>Grade {grade}</TabsTrigger>
           ))}
@@ -1008,11 +1008,11 @@ function ResourcesPageContent() {
 
             return (
                 <TabsContent key={grade} value={`grade-${grade}`}>
-                    <Accordion type="multiple" className="w-full" defaultValue={gradeTopics}>
-                        {gradeTopics.map(topic => {
+                    <Accordion type="multiple" className="w-full" defaultValue={gradeTopics} id="tutorial-topic-list">
+                        {gradeTopics.map((topic, index) => {
                             const topicLessons = gradeLessons.filter(l => l.topic === topic);
                             return (
-                                <AccordionItem key={topic} value={topic}>
+                                <AccordionItem key={topic} value={topic} id={index === 0 ? 'tutorial-first-topic' : undefined}>
                                     <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

@@ -65,7 +65,7 @@ const allSteps: TutorialStep[] = [
   },
   {
     page: '/student/resources',
-    elementId: 'tutorial-quest-path',
+    elementId: 'tutorial-topic-list', // Changed from a generic container
     title: 'Your Learning Path',
     text: "This is your adventure! Complete lessons and quizzes to move along the path and unlock new challenges.",
     position: 'bottom',
@@ -261,39 +261,74 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   }, [targetRect, step]);
 
   const contentStyle: React.CSSProperties = useMemo(() => {
-    const position = step?.position || 'right';
+    let position = step?.position || 'right';
     const baseStyle: React.CSSProperties = {
-        position: 'fixed',
-        zIndex: 52,
-        transition: 'all 0.3s ease-in-out',
-        willChange: 'transform, top, left',
-        pointerEvents: 'auto',
+      position: 'fixed',
+      zIndex: 52,
+      transition: 'all 0.3s ease-in-out',
+      willChange: 'transform, top, left',
+      pointerEvents: 'auto',
+      width: '480px', // Fixed width for mascot + dialog
     };
 
     if (!targetRect || step?.elementId === 'tutorial-end' || step?.position === 'center') {
-        return {
-            ...baseStyle,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center',
-        }
+      return {
+        ...baseStyle,
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center',
+      };
     }
-    
+
+    const mascotWidth = 480;
+    const mascotHeight = 300; 
     const offset = 20;
 
-    switch(position) {
-        case 'right':
-            return {...baseStyle, top: `${targetRect.top}px`, left: `${targetRect.right + offset}px`};
-        case 'left':
-            return {...baseStyle, top: `${targetRect.top}px`, left: `${targetRect.left - offset}px`, transform: 'translateX(-100%)'};
-        case 'bottom':
-            return {...baseStyle, top: `${targetRect.bottom + offset}px`, left: `${targetRect.left}px`};
-        case 'top':
-            return {...baseStyle, top: `${targetRect.top - offset}px`, left: `${targetRect.left}px`, transform: 'translateY(-100%)'};
-        default:
-             return {...baseStyle, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    // Default positions
+    let top = targetRect.top;
+    let left = targetRect.right + offset;
+    let transform = '';
+
+    // Automatically adjust position based on viewport
+    if (position === 'right' && targetRect.right + mascotWidth + offset > window.innerWidth) {
+      position = 'left';
     }
+    if (position === 'left' && targetRect.left - mascotWidth - offset < 0) {
+      position = 'right'; // Failsafe
+    }
+    if (position === 'bottom' && targetRect.bottom + mascotHeight + offset > window.innerHeight) {
+      position = 'top';
+    }
+    if (position === 'top' && targetRect.top - mascotHeight - offset < 0) {
+      position = 'bottom';
+    }
+
+    switch (position) {
+      case 'right':
+        left = targetRect.right + offset;
+        top = targetRect.top;
+        break;
+      case 'left':
+        left = targetRect.left - offset;
+        top = targetRect.top;
+        transform = 'translateX(-100%)';
+        break;
+      case 'bottom':
+        left = targetRect.left;
+        top = targetRect.bottom + offset;
+        break;
+      case 'top':
+        left = targetRect.left;
+        top = targetRect.top - offset;
+        transform = 'translateY(-100%)';
+        break;
+      default:
+        left = targetRect.right + offset;
+        top = targetRect.top;
+    }
+
+    return { ...baseStyle, top: `${top}px`, left: `${left}px`, transform };
   }, [targetRect, step]);
 
 
@@ -319,5 +354,3 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     </div>
   );
 }
-
-    
