@@ -117,12 +117,105 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   const pathname = usePathname();
   const highlightedElementRef = useRef<HTMLElement | null>(null);
 
+  // Memoize the current step object.
   const step = useMemo(() => allSteps[currentStepIndex], [currentStepIndex]);
 
-  // Update localStorage whenever the step index changes
+  // Use a ref to hold the step for the event listener to avoid stale closures.
+  const stepRef = useRef(step);
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+  
+  // Use a ref for router as well to ensure the latest instance is used in the callback.
+  const routerRef = useRef(router);
+  useEffect(() => {
+    routerRef.current = router;
+  }, [router]);
+
+  // Update localStorage whenever the step index changes.
   useEffect(() => {
     localStorage.setItem('tutorialStep', String(currentStepIndex));
   }, [currentStepIndex]);
+
+
+  const handleNext = useCallback(() => {
+    const isLastStep = currentStepIndex >= allSteps.length - 1;
+    if (isLastStep) {
+      onComplete();
+      localStorage.removeItem('tutorialStep');
+      if (highlightedElementRef.current) {
+        highlightedElementRef.current.classList.remove('tutorial-highlight');
+      }
+    } else {
+      setCurrentStepIndex(prev => prev + 1);
+    }
+  }, [currentStepIndex, onComplete]);
+
+
+  // Effect to manage the main tutorial logic, including page validation and event listeners.
+  useEffect(() => {
+    if (!step) {
+      onComplete();
+      return;
+    };
+    
+    // Check if the current step is appropriate for the current page.
+    const currentPathMatches = step.page === pathname;
+    const isInitialStep = step.page === 'any';
+    if (!currentPathMatches && !isInitialStep) {
+      // If we are on the wrong page, try to find the correct step for this page.
+      const correctStepIndex = allSteps.findIndex(s => s.page === pathname);
+      if (correctStepIndex !== -1 && correctStepIndex !== currentStepIndex) {
+        setCurrentStepIndex(correctStepIndex);
+      }
+      return;
+    }
+    
+    // Function to handle clicks on the document body, used for interactive steps.
+    const handleElementClick = (e: MouseEvent) => {
+        const currentStep = stepRef.current;
+        if (currentStep?.requireClick && currentStep.elementId) {
+            const targetElement = document.getElementById(currentStep.elementId);
+            // Check if the click happened on the highlighted element.
+            if (targetElement && targetElement.contains(e.target as Node)) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // If the step requires navigation, do it now.
+                if (currentStep.navigateTo) {
+                    routerRef.current.push(currentStep.navigateTo);
+                }
+                // Use a function form of setCurrentStepIndex to ensure we are advancing from the actual current state.
+                setCurrentStepIndex(prev => prev + 1);
+            }
+        }
+    };
+
+
+    // Add the click listener for interactive steps.
+    if (step.requireClick) {
+        // Use capture phase to ensure this listener runs before others.
+        document.body.addEventListener('click', handleElementClick, true);
+    }
+    
+    // A timer to delay the spotlight calculation, allowing the UI to settle.
+    const timer = setTimeout(() => updateTargetRect(), 100);
+
+    // Cleanup function for when the component unmounts or the step changes.
+    return () => {
+      clearTimeout(timer);
+      // Always remove the highlight class when the step changes.
+      if (highlightedElementRef.current) {
+          highlightedElementRef.current.classList.remove('tutorial-highlight');
+          highlightedElementRef.current = null;
+      }
+      // Remove the click listener to prevent it from firing on subsequent steps.
+      if (step.requireClick) {
+          document.body.removeEventListener('click', handleElementClick, true);
+      }
+    }
+  }, [currentStepIndex, pathname, step, onComplete]);
+  
 
   const updateTargetRect = useCallback(() => {
     if (!step?.elementId || step.elementId === 'tutorial-end') {
@@ -137,7 +230,6 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     const element = document.getElementById(step.elementId);
     if (element) {
         setTargetRect(element.getBoundingClientRect());
-        // Manage highlight class
         if (highlightedElementRef.current !== element) {
             highlightedElementRef.current?.classList.remove('tutorial-highlight');
             element.classList.add('tutorial-highlight');
@@ -148,82 +240,18 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     }
   }, [step]);
   
-  // Recalculate spotlight on scroll and resize
+  // Effect to recalculate the spotlight position on scroll and resize.
   useEffect(() => {
-    updateTargetRect();
+    updateTargetRect(); // Initial calculation
     window.addEventListener('resize', updateTargetRect);
-    window.addEventListener('scroll', updateTargetRect, true);
+    window.addEventListener('scroll', updateTargetRect, true); // Use capture to handle nested scroll containers
+    
+    // Cleanup listeners on unmount.
     return () => {
       window.removeEventListener('resize', updateTargetRect);
       window.removeEventListener('scroll', updateTargetRect, true);
     }
-  }, [currentStepIndex, pathname, updateTargetRect]);
-
-  const handleNext = () => {
-    if (currentStepIndex >= allSteps.length - 1) {
-      onComplete();
-      localStorage.removeItem('tutorialStep');
-      if (highlightedElementRef.current) {
-          highlightedElementRef.current.classList.remove('tutorial-highlight');
-      }
-    } else {
-      setCurrentStepIndex(prev => prev + 1);
-    }
-  };
-
-  const handleElementClick = useCallback((e: MouseEvent) => {
-    if (step?.requireClick && step.elementId) {
-        const targetElement = document.getElementById(step.elementId);
-        if (targetElement && targetElement.contains(e.target as Node)) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (step.navigateTo) {
-                router.push(step.navigateTo);
-            }
-            handleNext();
-        }
-    }
-  }, [step, router]);
-
-
-  // Effect to manage step logic and event listeners
-  useEffect(() => {
-    if (!step) {
-        onComplete();
-        return;
-    };
-    
-    // Page validation
-    const currentPathMatches = step.page === pathname;
-    const isInitialStep = step.page === 'any';
-    if (!currentPathMatches && !isInitialStep) {
-        // If we are on the wrong page, maybe do nothing or try to find the correct step
-        const correctStepIndex = allSteps.findIndex(s => s.page === pathname);
-        if (correctStepIndex !== -1) {
-            setCurrentStepIndex(correctStepIndex);
-        }
-        return;
-    }
-
-    const timer = setTimeout(updateTargetRect, 100);
-
-    if (step.requireClick) {
-        document.body.addEventListener('click', handleElementClick, true);
-    }
-
-    return () => {
-        clearTimeout(timer);
-        if (highlightedElementRef.current) {
-            highlightedElementRef.current.classList.remove('tutorial-highlight');
-            highlightedElementRef.current = null;
-        }
-        if (step.requireClick) {
-            document.body.removeEventListener('click', handleElementClick, true);
-        }
-    }
-  }, [currentStepIndex, pathname, step, updateTargetRect, handleElementClick, onComplete]);
-
+  }, [updateTargetRect]);
 
   const overlayStyle: React.CSSProperties = useMemo(() => {
      return {
@@ -248,7 +276,6 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
       };
       
       if (!targetRect || !step?.elementId || step.elementId === 'tutorial-end') {
-         // This makes the spotlight invisible when centered or not needed.
           return { ...baseStyle, opacity: 0, pointerEvents: 'none' };
       }
       
@@ -269,6 +296,8 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         zIndex: 52,
         transition: 'all 0.3s ease-in-out',
         willChange: 'transform, top, left',
+        // Make sure the content itself doesn't block clicks on the overlay
+        pointerEvents: 'auto',
     };
 
     if (!targetRect || step?.elementId === 'tutorial-end') {
