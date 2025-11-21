@@ -257,7 +257,12 @@ function QuizView({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {quiz.questions.map((question, index) => (
               <div key={index}>
-                <p className="font-medium mb-4">{index + 1}. {question.questionText}</p>
+                <div className="font-medium mb-4 flex items-start gap-2">
+                  <span>{index + 1}.</span>
+                  <div className="prose dark:prose-invert max-w-none -mt-1">
+                    <ReactMarkdown>{question.questionText}</ReactMarkdown>
+                  </div>
+                </div>
                 <RadioGroup name={`question-${index}`} onChange={(e) => form.setValue(`question-${index}`, (e.target as HTMLInputElement).value)}>
                   {question.options.map(option => (
                     <div key={option} className="flex items-center space-x-2">
@@ -390,8 +395,7 @@ const Grade2QuestPath = ({
     onSelectQuiz: (quiz: Quiz) => void;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [progressPathData, setProgressPathData] = useState('');
-    const [remainingPathData, setRemainingPathData] = useState('');
+    const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
     const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
@@ -436,20 +440,13 @@ const Grade2QuestPath = ({
                 }
             }
             
-            if(lastCompletedIndex > -1) {
-                const progressPoints = points.slice(0, lastCompletedIndex + 1);
-                setProgressPathData(getCurvePath(progressPoints));
-
-                if (lastCompletedIndex < points.length - 1) {
-                    const remainingPoints = points.slice(lastCompletedIndex);
-                    setRemainingPathData(getCurvePath(remainingPoints));
-                } else {
-                    setRemainingPathData('');
-                }
-            } else {
-                setProgressPathData('');
-                setRemainingPathData(getCurvePath(points));
-            }
+            const progressPoints = points.slice(0, lastCompletedIndex + 1);
+            const remainingPoints = points.slice(lastCompletedIndex);
+            
+            setPathData({
+                progress: progressPoints.length > 0 ? getCurvePath(progressPoints) : '',
+                remaining: remainingPoints.length > 0 ? getCurvePath(remainingPoints) : '',
+            });
         }
     }, [sortedItems, containerRef.current?.offsetWidth, student]);
 
@@ -462,18 +459,18 @@ const Grade2QuestPath = ({
         <div className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                 <svg className="absolute top-0 left-0 w-full h-full z-0">
-                    {remainingPathData && (
+                    {pathData.remaining && (
                         <path
-                            d={remainingPathData}
+                            d={pathData.remaining}
                             stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
                         />
                     )}
-                    {progressPathData && (
-                        <path
-                            d={progressPathData}
+                    {pathData.progress && (
+                         <path
+                            d={pathData.progress}
                             stroke="hsl(142 71% 45%)" // Green color
                             strokeWidth="10"
                             fill="none"
@@ -561,8 +558,7 @@ const Grade3QuestPath = ({
     onSelectQuiz: (quiz: Quiz) => void;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [progressPathData, setProgressPathData] = useState('');
-    const [remainingPathData, setRemainingPathData] = useState('');
+    const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
     const [placementTestNode, setPlacementTestNode] = useState<{x:number, y:number} | null>(null);
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
@@ -606,21 +602,14 @@ const Grade3QuestPath = ({
                     break; // Stop at the first incomplete item
                 }
             }
-
-            if(lastCompletedIndex > -1) {
-                const progressPoints = points.slice(0, lastCompletedIndex + 1);
-                setProgressPathData(getCurvePath(progressPoints));
-
-                if (lastCompletedIndex < points.length - 1) {
-                    const remainingPoints = points.slice(lastCompletedIndex);
-                    setRemainingPathData(getCurvePath(remainingPoints));
-                } else {
-                    setRemainingPathData('');
-                }
-            } else {
-                setProgressPathData('');
-                setRemainingPathData(getCurvePath(points));
-            }
+            
+            const progressPoints = points.slice(0, lastCompletedIndex + 1);
+            const remainingPoints = points.slice(lastCompletedIndex);
+            
+            setPathData({
+                progress: progressPoints.length > 0 ? getCurvePath(progressPoints) : '',
+                remaining: remainingPoints.length > 0 ? getCurvePath(remainingPoints) : '',
+            });
         }
     }, [sortedItems, containerRef.current?.offsetWidth, student]);
 
@@ -633,18 +622,18 @@ const Grade3QuestPath = ({
         <div className="relative w-full overflow-x-auto p-4">
             <div ref={containerRef} className="relative flex flex-col items-center" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                 <svg className="absolute top-0 left-0 w-full h-full z-0">
-                    {remainingPathData && (
+                    {pathData.remaining && (
                         <path
-                            d={remainingPathData}
+                            d={pathData.remaining}
                             stroke="hsl(var(--primary))"
                             strokeWidth="10"
                             fill="none"
                             strokeLinecap="round"
                         />
                     )}
-                    {progressPathData && (
+                    {pathData.progress && (
                         <path
-                            d={progressPathData}
+                            d={pathData.progress}
                             stroke="hsl(142 71% 45%)" // Green color
                             strokeWidth="10"
                             fill="none"
