@@ -132,7 +132,7 @@ function LessonView({ lesson, onBack, onComplete, onUncomplete, isCompleted }: {
             <>
                 <Separator className="my-4" />
                 <CardFooter className="flex-col items-start text-xs">
-                    <p className="font-semibold text-muted-foreground">Citation</p>
+                    <p className="font-semibold text-muted-foreground">Sources</p>
                     <p className="text-muted-foreground/80">{lesson.citation}</p>
                 </CardFooter>
             </>
@@ -307,7 +307,7 @@ function QuizView({
             <>
                 <Separator className="my-4" />
                 <CardFooter className="flex-col items-start text-xs">
-                    <p className="font-semibold text-muted-foreground">Citation</p>
+                    <p className="font-semibold text-muted-foreground">Sources</p>
                     <p className="text-muted-foreground/80">{quiz.citation}</p>
                 </CardFooter>
             </>
