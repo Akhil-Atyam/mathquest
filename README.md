@@ -21,7 +21,7 @@ Vercel is a cloud platform that offers a seamless experience for deploying Next.
 Vercel will automatically detect that this is a Next.js project and set the build commands correctly. The most important step here is to add your Environment Variables.
 
 - In the **"Configure Project"** screen, expand the **"Environment Variables"** section.
-- You will need to add the Firebase and Genkit configuration keys. These keys allow Vercel to securely connect to your backend services during the build process and in production.
+- You will need to add the Firebase configuration keys. These keys allow Vercel to securely connect to your backend services during the build process and in production.
 
 Add the following variables one by one:
 
@@ -32,7 +32,6 @@ Add the following variables one by one:
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Your Firebase Project ID                     |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Your Firebase App ID                         |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Your Firebase Messaging Sender ID |
-| `GEMINI_API_KEY`            | Your Google AI (Gemini) API Key                  |
 
 ### Step 4: Where to Find These Values
 
@@ -49,10 +48,6 @@ export const firebaseConfig = {
 };
 ```
 Simply copy the corresponding values from this file and paste them into the "Value" field on Vercel for each variable name.
-
-#### **Gemini API Key**
-- You can get your `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/app/apikey).
-- Create a new API key if you don't already have one, and copy it into the "Value" field on Vercel.
 
 ### Step 5: Deploy
 - After adding the environment variables, click the **"Deploy"** button.
