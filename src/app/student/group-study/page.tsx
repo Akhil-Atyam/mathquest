@@ -5,10 +5,10 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, where, Timestamp, addDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, query, where, Timestamp, addDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import type { GroupStudySession, Student } from '@/lib/types';
 import { format } from 'date-fns';
-import { Calendar, Clock, Video, PlusCircle, Users } from 'lucide-react';
+import { Calendar, Clock, Video, PlusCircle, Users, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useForm, Controller } from 'react-hook-form';
@@ -24,39 +24,53 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Zod schema for validating the new group study form
+// Zod schema for validating the new/edit group study form
 const studyFormSchema = z.object({
   topic: z.string().min(1, "Please select a topic."),
-  date: z.date({ required_error: "A date is required." }),
-  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use HH:MM format."),
+  date: z.date({ required_error: "A date is required." }).optional(),
+  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use HH:MM format.").optional(),
   durationMinutes: z.coerce.number().min(15, "Duration must be at least 15 minutes."),
   meetingLink: z.string().url("Please enter a valid URL."),
   invitedStudentUsernames: z.string().optional(),
 });
 
-function CreateStudySessionDialog({ student }: { student: Student | null }) {
+function StudySessionDialog({ student, session, children }: { student: Student | null, session?: GroupStudySession, children: React.ReactNode }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
+    const isEditMode = !!session;
 
+    const defaultValues = isEditMode ? {
+        topic: session.topic,
+        durationMinutes: session.durationMinutes,
+        meetingLink: session.meetingLink,
+        invitedStudentUsernames: session.invitedStudentUsernames.join(', '),
+    } : {
+        topic: '',
+        time: '16:00',
+        durationMinutes: 60,
+        meetingLink: '',
+        invitedStudentUsernames: ''
+    };
+    
     const form = useForm<z.infer<typeof studyFormSchema>>({
         resolver: zodResolver(studyFormSchema),
-        defaultValues: {
-            topic: '',
-            time: '16:00',
-            durationMinutes: 60,
-            meetingLink: '',
-            invitedStudentUsernames: ''
-        },
+        defaultValues,
     });
+
+    React.useEffect(() => {
+        if (isEditMode) {
+            form.reset(defaultValues);
+        }
+    }, [session, isEditMode, form]);
 
     const onSubmit = async (values: z.infer<typeof studyFormSchema>) => {
         if (!user || !student || !firestore) return;
 
         const invitedUsernames = values.invitedStudentUsernames ? values.invitedStudentUsernames.split(',').map(u => u.trim()).filter(Boolean) : [];
 
-        // Validate usernames exist
+        // Validate usernames exist (only if they are changed or new)
         if (invitedUsernames.length > 0) {
             const usernamesCollection = collection(firestore, 'usernames');
             const q = query(usernamesCollection, where('__name__', 'in', invitedUsernames));
@@ -66,47 +80,62 @@ function CreateStudySessionDialog({ student }: { student: Student | null }) {
                 return;
             }
         }
-
-        const [hour, minute] = values.time.split(':').map(Number);
-        const startTime = new Date(values.date);
-        startTime.setHours(hour, minute);
-
-        const newSession: Omit<GroupStudySession, 'id'> = {
-            hostId: user.uid,
-            hostName: student.name,
-            topic: values.topic,
-            startTime: Timestamp.fromDate(startTime),
-            durationMinutes: values.durationMinutes,
-            meetingLink: values.meetingLink,
-            invitedStudentUsernames: invitedUsernames,
-            attendingStudentIds: [user.uid],
-            attendingStudentNames: [student.name],
-        };
-
+        
         try {
-            await addDoc(collection(firestore, 'group_study_sessions'), newSession);
-            toast({ title: 'Success!', description: 'Your group study session has been created.' });
-            form.reset();
+            if (isEditMode) {
+                // Update existing session
+                const sessionRef = doc(firestore, 'group_study_sessions', session.id);
+                await updateDoc(sessionRef, {
+                    topic: values.topic,
+                    durationMinutes: values.durationMinutes,
+                    meetingLink: values.meetingLink,
+                    invitedStudentUsernames: invitedUsernames,
+                });
+                toast({ title: 'Success!', description: 'Your study session has been updated.' });
+
+            } else {
+                 // Create new session
+                if (!values.date || !values.time) {
+                    toast({ variant: 'destructive', title: 'Error', description: 'Date and time are required to create a session.' });
+                    return;
+                }
+                const [hour, minute] = values.time.split(':').map(Number);
+                const startTime = new Date(values.date);
+                startTime.setHours(hour, minute);
+
+                const newSession: Omit<GroupStudySession, 'id'> = {
+                    hostId: user.uid,
+                    hostName: student.name,
+                    topic: values.topic,
+                    startTime: Timestamp.fromDate(startTime),
+                    durationMinutes: values.durationMinutes,
+                    meetingLink: values.meetingLink,
+                    invitedStudentUsernames: invitedUsernames,
+                    attendingStudentIds: [user.uid],
+                    attendingStudentNames: [student.name],
+                };
+                await addDoc(collection(firestore, 'group_study_sessions'), newSession);
+                toast({ title: 'Success!', description: 'Your group study session has been created.' });
+                form.reset(defaultValues);
+            }
+            
             setIsOpen(false);
         } catch (error) {
-            console.error("Error creating session:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not create the session.' });
+            console.error("Error saving session:", error);
+            toast({ variant: 'destructive', title: 'Error', description: `Could not ${isEditMode ? 'update' : 'create'} the session.` });
         }
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Create New Session
-                </Button>
+                {children}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Create a Group Study Session</DialogTitle>
+                    <DialogTitle>{isEditMode ? 'Edit' : 'Create'} a Group Study Session</DialogTitle>
                     <DialogDescription>
-                        Set a topic and time to study with your friends.
+                        {isEditMode ? 'Update the details for your session.' : 'Set a topic and time to study with your friends.'}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -121,28 +150,37 @@ function CreateStudySessionDialog({ student }: { student: Student | null }) {
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="date" render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Date</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild><FormControl>
-                                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <CalendarPicker mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="time" render={({ field }) => (
-                                <FormItem><FormLabel>Time</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                        </div>
+
+                        {isEditMode ? (
+                            <div className="space-y-2">
+                                <FormLabel>Date & Time</FormLabel>
+                                <Input value={`${format(session.startTime.toDate(), 'PPP')} at ${format(session.startTime.toDate(), 'p')}`} disabled />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField control={form.control} name="date" render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Date</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild><FormControl>
+                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl></PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <CalendarPicker mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="time" render={({ field }) => (
+                                    <FormItem><FormLabel>Time</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            </div>
+                        )}
+
                          <FormField control={form.control} name="durationMinutes" render={({ field }) => (
                             <FormItem><FormLabel>Duration (Minutes)</FormLabel><FormControl><Input type="number" placeholder="60" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -152,7 +190,7 @@ function CreateStudySessionDialog({ student }: { student: Student | null }) {
                         <FormField control={form.control} name="invitedStudentUsernames" render={({ field }) => (
                             <FormItem><FormLabel>Invite Students (optional)</FormLabel><FormControl><Input placeholder="username1, username2, ..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <Button type="submit">Create Session</Button>
+                        <Button type="submit">{isEditMode ? 'Save Changes' : 'Create Session'}</Button>
                     </form>
                 </Form>
             </DialogContent>
@@ -209,7 +247,12 @@ export default function GroupStudyPage() {
         <div className="p-4 sm:p-6 space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold font-headline">Group Study</h1>
-                <CreateStudySessionDialog student={student} />
+                <StudySessionDialog student={student}>
+                     <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create New Session
+                    </Button>
+                </StudySessionDialog>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -225,8 +268,11 @@ export default function GroupStudyPage() {
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'p')}</span></div>
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="w-4 h-4" /><span>{session.attendingStudentNames.join(', ')}</span></div>
                                 </CardContent>
-                                <CardFooter>
+                                <CardFooter className="gap-2">
                                     <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Join Session</Link></Button>
+                                    <StudySessionDialog student={student} session={session}>
+                                        <Button variant="outline"><Edit className="mr-2 h-4 w-4" />Edit</Button>
+                                    </StudySessionDialog>
                                 </CardFooter>
                             </Card>
                         ))
@@ -262,4 +308,6 @@ export default function GroupStudyPage() {
         </div>
     );
 }
+    
+
     
