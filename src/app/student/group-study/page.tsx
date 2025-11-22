@@ -34,7 +34,7 @@ const studyFormSchema = z.object({
   invitedStudentUsernames: z.string().optional(),
 });
 
-function CreateStudySessionDialog() {
+function CreateStudySessionDialog({ student }: { student: Student | null }) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -52,7 +52,7 @@ function CreateStudySessionDialog() {
     });
 
     const onSubmit = async (values: z.infer<typeof studyFormSchema>) => {
-        if (!user || !user.displayName || !firestore) return;
+        if (!user || !student || !firestore) return;
 
         const invitedUsernames = values.invitedStudentUsernames ? values.invitedStudentUsernames.split(',').map(u => u.trim()).filter(Boolean) : [];
 
@@ -73,14 +73,14 @@ function CreateStudySessionDialog() {
 
         const newSession: Omit<GroupStudySession, 'id'> = {
             hostId: user.uid,
-            hostName: user.displayName,
+            hostName: student.name,
             topic: values.topic,
             startTime: Timestamp.fromDate(startTime),
             durationMinutes: values.durationMinutes,
             meetingLink: values.meetingLink,
             invitedStudentUsernames: invitedUsernames,
             attendingStudentIds: [user.uid],
-            attendingStudentNames: [user.displayName],
+            attendingStudentNames: [student.name],
         };
 
         try {
@@ -143,6 +143,9 @@ function CreateStudySessionDialog() {
                                 <FormItem><FormLabel>Time</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
+                         <FormField control={form.control} name="durationMinutes" render={({ field }) => (
+                            <FormItem><FormLabel>Duration (Minutes)</FormLabel><FormControl><Input type="number" placeholder="60" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
                         <FormField control={form.control} name="meetingLink" render={({ field }) => (
                             <FormItem><FormLabel>Meeting Link</FormLabel><FormControl><Input placeholder="https://meet.google.com/..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -206,7 +209,7 @@ export default function GroupStudyPage() {
         <div className="p-4 sm:p-6 space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold font-headline">Group Study</h1>
-                <CreateStudySessionDialog />
+                <CreateStudySessionDialog student={student} />
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -259,4 +262,4 @@ export default function GroupStudyPage() {
         </div>
     );
 }
-
+    
