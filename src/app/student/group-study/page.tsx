@@ -8,7 +8,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@
 import { collection, query, where, Timestamp, addDoc, doc, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
 import type { GroupStudySession, Student } from '@/lib/types';
 import { format } from 'date-fns';
-import { Calendar, Clock, Video, PlusCircle, Users, Edit, UserPlus } from 'lucide-react';
+import { Calendar, Clock, Video, PlusCircle, Users, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useForm, Controller } from 'react-hook-form';
@@ -151,7 +151,7 @@ function StudySessionDialog({ student, session, children }: { student: Student |
                             </FormItem>
                         )} />
 
-                        {isEditMode ? (
+                        {isEditMode && session ? (
                             <div className="space-y-2">
                                 <FormLabel>Date & Time</FormLabel>
                                 <Input value={`${format(session.startTime.toDate(), 'PPP')} at ${format(session.startTime.toDate(), 'p')}`} disabled />
@@ -221,27 +221,6 @@ export default function GroupStudyPage() {
     const { data: invitedSessions, isLoading: areInvitedLoading } = useCollection<GroupStudySession>(invitedQuery);
     
     const isLoading = isUserLoading || isStudentLoading || areHostedLoading || areInvitedLoading;
-    
-    const handleJoinSession = async (session: GroupStudySession) => {
-        if (!user || !student || !firestore) return;
-        if (session.attendingStudentIds.includes(user.uid)) {
-            toast({ description: "You are already in this session." });
-            return;
-        }
-        
-        try {
-            const sessionRef = doc(firestore, 'group_study_sessions', session.id);
-            await updateDoc(sessionRef, {
-                attendingStudentIds: arrayUnion(user.uid),
-                attendingStudentNames: arrayUnion(student.name),
-            });
-             toast({ title: 'Success!', description: `You've joined the study session for ${session.topic}.` });
-        } catch (error) {
-             console.error("Error joining session:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not join the session.' });
-        }
-    }
-
 
     if (isLoading) {
         return (
@@ -288,7 +267,7 @@ export default function GroupStudyPage() {
                                 <CardContent className="space-y-2">
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'PPP')}</span></div>
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'p')}</span></div>
-                                     <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="w-4 h-4" /><span>Attending: {session.attendingStudentNames.join(', ')}</span></div>
+                                     <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="w-4 h-4" /><span>Invited: {(session.invitedStudentUsernames || []).join(', ')}</span></div>
                                 </CardContent>
                                 <CardFooter className="gap-2">
                                     <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Start Session</Link></Button>
@@ -307,28 +286,21 @@ export default function GroupStudyPage() {
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold">My Invitations</h2>
                     {invitedSessions && invitedSessions.length > 0 ? (
-                         invitedSessions.map(session => {
-                            const hasJoined = session.attendingStudentIds.includes(user?.uid || '');
-                            return (
-                                <Card key={session.id}>
-                                    <CardHeader>
-                                        <CardTitle>{session.topic}</CardTitle>
-                                        <CardDescription>Hosted by {session.hostName}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'PPP')}</span></div>
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'p')}</span></div>
-                                    </CardContent>
-                                    <CardFooter className="gap-2">
-                                        {hasJoined ? (
-                                            <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Join Session</Link></Button>
-                                        ) : (
-                                            <Button onClick={() => handleJoinSession(session)}><UserPlus className="mr-2 h-4 w-4" />Join Session</Button>
-                                        )}
-                                    </CardFooter>
-                                </Card>
-                            )
-                         })
+                         invitedSessions.map(session => (
+                            <Card key={session.id}>
+                                <CardHeader>
+                                    <CardTitle>{session.topic}</CardTitle>
+                                    <CardDescription>Hosted by {session.hostName}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'PPP')}</span></div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'p')}</span></div>
+                                </CardContent>
+                                <CardFooter className="gap-2">
+                                    <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Join Session</Link></Button>
+                                </CardFooter>
+                            </Card>
+                         ))
                     ) : (
                         <p className="text-muted-foreground">You have no pending invitations.</p>
                     )}
