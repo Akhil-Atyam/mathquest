@@ -272,6 +272,25 @@
         "studentLimit"
       ]
     },
+    "GroupStudySession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GroupStudySession",
+      "type": "object",
+      "description": "Represents a group study session created by a student.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the session." },
+        "hostId": { "type": "string", "description": "The UID of the student hosting the session." },
+        "hostName": { "type": "string", "description": "The name of the student hosting." },
+        "topic": { "type": "string", "description": "The topic for the study session." },
+        "startTime": { "type": "string", "format": "date-time", "description": "The start time of the session." },
+        "durationMinutes": { "type": "number", "description": "Duration in minutes." },
+        "meetingLink": { "type": "string", "format": "uri", "description": "The link to the virtual meeting." },
+        "invitedStudentUsernames": { "type": "array", "items": { "type": "string" }, "description": "An array of usernames of invited students." },
+        "attendingStudentIds": { "type": "array", "items": { "type": "string" }, "description": "An array of UIDs of students attending." },
+        "attendingStudentNames": { "type": "array", "items": { "type": "string" }, "description": "An array of names of students attending." }
+      },
+      "required": ["id", "hostId", "hostName", "topic", "startTime", "durationMinutes", "meetingLink", "attendingStudentIds"]
+    },
     "StudentProgress": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "StudentProgress",
@@ -412,6 +431,17 @@
               "name": "sessionId",
               "description": "The unique identifier for the tutoring session."
             }
+          ]
+        }
+      },
+      {
+        "path": "/group_study_sessions/{sessionId}",
+        "definition": {
+          "entityName": "GroupStudySession",
+          "schema": { "$ref": "#/backend/entities/GroupStudySession" },
+          "description": "Collection for student-created group study sessions.",
+          "params": [
+            { "name": "sessionId", "description": "The unique ID for the study session." }
           ]
         }
       },

@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LayoutDashboard, BookOpen, Calendar, CalendarCheck } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Calendar, CalendarCheck, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -17,6 +17,7 @@ const menuItems = [
   { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard, id: 'tutorial-dashboard' },
   { href: '/student/resources', label: 'Resources', icon: BookOpen, id: 'tutorial-resources' },
   { href: '/student/tutoring', label: 'Book a Session', icon: Calendar, id: 'tutorial-book-session' },
+  { href: '/student/group-study', label: 'Group Study', icon: Users, id: 'tutorial-group-study' },
   { href: '/student/my-sessions', label: 'My Sessions', icon: CalendarCheck, id: 'tutorial-my-sessions' },
 ];
 

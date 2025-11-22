@@ -133,3 +133,19 @@ export type Booking = {
   attended: string[]; // Array of studentIds who attended.
   studentLimit: number;
 };
+
+/**
+ * Represents a group study session created by a student.
+ */
+export type GroupStudySession = {
+    id: string;
+    hostId: string;
+    hostName: string;
+    topic: string;
+    startTime: Timestamp;
+    durationMinutes: number;
+    meetingLink: string;
+    invitedStudentUsernames: string[];
+    attendingStudentIds: string[];
+    attendingStudentNames: string[];
+};
