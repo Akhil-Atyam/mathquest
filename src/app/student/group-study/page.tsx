@@ -139,7 +139,7 @@ function StudySessionDialog({ student, session, children }: { student: Student |
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger>
                 {children}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -233,21 +233,6 @@ export default function GroupStudyPage() {
     
     const isLoading = isUserLoading || isStudentLoading || areHostedLoading || areInvitedLoading;
 
-    const handleJoinSession = async (session: GroupStudySession) => {
-        if (!user || !student || !firestore) return;
-        const sessionRef = doc(firestore, 'group_study_sessions', session.id);
-        try {
-            await updateDoc(sessionRef, {
-                attendingStudentIds: arrayUnion(user.uid),
-                attendingStudentNames: arrayUnion(student.name)
-            });
-            toast({ title: 'Joined!', description: `You've joined the study session for ${session.topic}.` });
-        } catch (error) {
-            console.error("Error joining session:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not join the session.' });
-        }
-    };
-
     if (isLoading) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
@@ -295,10 +280,10 @@ export default function GroupStudyPage() {
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'p')}</span></div>
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="w-4 h-4" /><span>Invited: {(session.invitedStudentUsernames || []).join(', ')}</span></div>
                                 </CardContent>
-                                <CardFooter className="flex-col sm:flex-row sm:justify-center gap-2">
-                                    <Button asChild className="w-full sm:w-auto"><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Start Session</Link></Button>
+                                <CardFooter className="flex flex-wrap justify-center sm:justify-end gap-2">
+                                    <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Start Session</Link></Button>
                                     <StudySessionDialog student={student} session={session}>
-                                        <Button variant="outline" className="w-full sm:w-auto"><Edit className="mr-2 h-4 w-4" />Edit</Button>
+                                        <Button variant="outline"><Edit className="mr-2 h-4 w-4" />Edit</Button>
                                     </StudySessionDialog>
                                 </CardFooter>
                             </Card>
@@ -340,4 +325,3 @@ export default function GroupStudyPage() {
     
 
     
-
