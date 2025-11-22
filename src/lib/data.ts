@@ -10,15 +10,17 @@ import { Award, Star, Trophy } from 'lucide-react';
 // A hardcoded list of curriculum topics. This is now deprecated in favor of the dynamic topics collection.
 export const topics: string[] = [
     'Addition',
-    'Subtraction',
-    'Multiplication',
+    'Data & Graphs',
+    'Decimals',
     'Division',
     'Fractions',
     'Geometry',
     'Measurement',
-    'Data & Graphs',
-    'Time',
-    'Money'
+    'Money',
+    'Multiplication',
+    'Place Values',
+    'Subtraction',
+    'Time'
 ];
 
 // Mock data for badges that students can earn.
