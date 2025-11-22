@@ -4,7 +4,6 @@
 import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import React, { useEffect, useState, useRef } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
@@ -29,48 +28,6 @@ import ReactMarkdown from 'react-markdown';
 import { QuestPathDecorations } from './QuestPathDecorations';
 import { Separator } from '@/components/ui/separator';
 
-/**
- * A reusable component that displays a single learning lesson in a card format.
- *
- * @param {object} props - The component props.
- * @param {Lesson} props.lesson - The lesson object to display.
- * @param {Quiz | undefined} props.linkedQuiz - The quiz object linked to this lesson, if any.
- * @param {(lesson: Lesson) => void} props.onSelect - Callback function when lesson is selected.
- * @param {boolean} props.isCompleted - Flag to indicate if the lesson is completed.
- * @param {boolean} props.isAssigned - Flag to indicate if the lesson is assigned.
- */
-function LessonCard({ lesson, linkedQuiz, onSelect, onSelectQuiz, isCompleted, isAssigned }: { lesson: Lesson; linkedQuiz: Quiz | undefined; onSelect: (lesson: Lesson) => void; onSelectQuiz: (quiz: Quiz) => void; isCompleted: boolean; isAssigned: boolean; }) {
-  return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-start justify-between text-base">
-          <div className="flex items-center gap-2">
-            {isCompleted ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <BookOpen className="w-6 h-6 text-primary" />}
-            <span>{lesson.title}</span>
-          </div>
-          {isAssigned && !isCompleted && <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground mb-4">Topic: {lesson.topic}</p>
-      </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row gap-2">
-        <Button 
-            onClick={() => onSelect(lesson)} 
-            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-        >
-          {isCompleted ? 'Review Lesson' : 'Start Lesson'}
-        </Button>
-        {linkedQuiz && (
-            <Button onClick={() => onSelectQuiz(linkedQuiz)} variant="outline" className="w-full">
-                <CheckSquare className="mr-2 h-4 w-4" />
-                {linkedQuiz.isPlacementTest ? 'Placement Test' : 'Start Quiz'}
-            </Button>
-        )}
-      </CardFooter>
-    </Card>
-  );
-}
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
     switch (lessonType) {
@@ -448,13 +405,15 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
 };
 
 
-const Grade2QuestPath = ({ 
+const GradeQuestPath = ({
+    grade,
     lessons, 
     quizzes,
     student, 
     onSelectLesson,
     onSelectQuiz,
 }: { 
+    grade: number;
     lessons: Lesson[], 
     quizzes: Quiz[],
     student: Student | null, 
@@ -475,9 +434,9 @@ const Grade2QuestPath = ({
 
     const sortedItems = React.useMemo(() => {
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
-        const grade2Items = allItems.filter(l => l.grade === 2);
-        return grade2Items.sort((a, b) => (a.order || 0) - (b.order || 0));
-    }, [lessons, quizzes]);
+        const gradeItems = allItems.filter(l => l.grade === grade);
+        return gradeItems.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }, [lessons, quizzes, grade]);
     
      useEffect(() => {
         const calculatePath = (containerWidth: number) => {
@@ -540,7 +499,7 @@ const Grade2QuestPath = ({
 
 
     if (sortedItems.length === 0) {
-        return <p className="text-muted-foreground text-center py-8">No Grade 2 lessons found. Check back soon!</p>
+        return <p className="text-muted-foreground text-center py-8">No lessons found for Grade {grade}. Check back soon!</p>
     }
 
     return (
@@ -597,185 +556,6 @@ const Grade2QuestPath = ({
                     const isExplicitlyUnlocked = isItemQuiz ? unlockedQuizIds.has(item.id) : unlockedLessonIds.has(item.id);
                     const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted || isExplicitlyUnlocked;
                     
-                    const position = nodePositions[index];
-                    if (!position) return null;
-
-                    return (
-                        <div
-                            key={item.id}
-                            className="absolute z-10"
-                            style={{
-                                top: `${position.y - 48}px`,
-                                left: `${position.x}px`,
-                                transform: 'translateX(-50%)',
-                            }}
-                        >
-                            <QuestNode 
-                                title={item.title}
-                                subtitle={`Topic: ${item.topic}`}
-                                icon={getQuestNodeIcon(item)}
-                                isCompleted={isCompleted}
-                                isUnlocked={isUnlocked}
-                                isAssigned={isExplicitlyAssigned && !isCompleted}
-                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item as Lesson)}
-                            />
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    )
-}
-
-const Grade3QuestPath = ({ 
-    lessons,
-    quizzes,
-    student, 
-    onSelectLesson,
-    onSelectQuiz,
-}: { 
-    lessons: Lesson[], 
-    quizzes: Quiz[],
-    student: Student | null, 
-    onSelectLesson: (lesson: Lesson) => void;
-    onSelectQuiz: (quiz: Quiz) => void;
-}) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
-    const [nodePositions, setNodePositions] = useState<{x: number, y: number}[]>([]);
-    const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
-
-    const isQuiz = (item: any): item is Quiz => 'questions' in item;
-    const completedLessonIds = new Set(student?.completedLessons || []);
-    const completedQuizIds = new Set(Object.keys(student?.quizScores || {}));
-    const assignedIds = new Set([...(student?.assignedLessons || []), ...(student?.assignedQuizzes || [])]);
-    const unlockedLessonIds = new Set(student?.unlockedLessons || []);
-    const unlockedQuizIds = new Set(student?.unlockedQuizzes || []);
-
-    
-    const sortedItems = React.useMemo(() => {
-        const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
-        return allItems
-            .filter(l => l.grade === 3)
-            .sort((a, b) => (a.order || 0) - (b.order || 0));
-    }, [lessons, quizzes]);
-
-    useEffect(() => {
-        const calculatePath = (containerWidth: number) => {
-            if (sortedItems.length < 1 || !containerWidth) return;
-
-            const centerX = containerWidth / 2;
-            const amplitude = Math.min(containerWidth * 0.2, 150);
-            const yStep = 160;
-            const initialY = 80;
-
-             const points = sortedItems.map((item, index) => {
-                const y = initialY + index * yStep;
-                const x = centerX + amplitude * Math.sin(index * Math.PI / 3);
-                if(isQuiz(item) && item.isPlacementTest) {
-                    setPlacementTestNodeY(y);
-                }
-                return { x, y };
-            });
-            setNodePositions(points);
-
-            let lastCompletedIndex = -1;
-            for (let i = 0; i < sortedItems.length; i++) {
-                const item = sortedItems[i];
-                const isItemCompleted = isQuiz(item) ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
-                if (isItemCompleted) {
-                    lastCompletedIndex = i;
-                } else {
-                    break;
-                }
-            }
-            
-            const progressPoints = points.slice(0, lastCompletedIndex + 1);
-            const remainingPoints = lastCompletedIndex === -1 ? points : points.slice(lastCompletedIndex);
-            
-            setPathData({
-                progress: progressPoints.length > 1 ? getCurvePath(progressPoints) : '',
-                remaining: remainingPoints.length > 1 ? getCurvePath(remainingPoints) : '',
-            });
-        };
-        
-        const observer = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                 if (entry.contentRect.width > 0) {
-                    calculatePath(entry.contentRect.width);
-                 }
-            }
-        });
-
-        if (containerRef.current) {
-            observer.observe(containerRef.current);
-        }
-
-        return () => {
-            if (containerRef.current) {
-                observer.unobserve(containerRef.current);
-            }
-        };
-
-    }, [sortedItems, completedLessonIds, completedQuizIds]);
-
-
-    if (sortedItems.length === 0) {
-        return <p className="text-muted-foreground text-center py-8">No Grade 3 lessons found. Check back soon!</p>
-    }
-
-    return (
-        <div className="relative w-full overflow-x-auto p-4">
-            <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
-                <QuestPathDecorations />
-                <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
-                    {pathData.remaining && (
-                        <path
-                            d={pathData.remaining}
-                            stroke="hsl(var(--primary))"
-                            strokeWidth="10"
-                            fill="none"
-                            strokeLinecap="round"
-                        />
-                    )}
-                    {pathData.progress && (
-                        <path
-                            d={pathData.progress}
-                            stroke="hsl(142 71% 45%)" // Green color
-                            strokeWidth="10"
-                            fill="none"
-                            strokeLinecap="round"
-                        />
-                    )}
-                    {placementTestNodeY && (
-                        <line 
-                            x1="0" 
-                            y1={placementTestNodeY} 
-                            x2="100%" 
-                            y2={placementTestNodeY} 
-                            stroke="hsl(var(--border))" 
-                            strokeWidth="2" 
-                            strokeDasharray="5,5" 
-                        />
-                    )}
-                </svg>
-
-                {sortedItems.map((item, index) => {
-                    const isItemQuiz = isQuiz(item);
-                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
-                    
-                    let isSequentiallyUnlocked = false;
-                    if (index === 0 || (isItemQuiz && item.isPlacementTest)) {
-                        isSequentiallyUnlocked = true;
-                    } else {
-                        const prevItem = sortedItems[index-1];
-                        isSequentiallyUnlocked = isQuiz(prevItem) ? completedQuizIds.has(prevItem.id) : completedLessonIds.has(prevItem.id);
-                    }
-
-                    const isExplicitlyAssigned = assignedIds.has(item.id);
-                    const isExplicitlyUnlocked = isItemQuiz ? unlockedQuizIds.has(item.id) : unlockedLessonIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted || isExplicitlyUnlocked;
-
                     const position = nodePositions[index];
                     if (!position) return null;
 
@@ -1021,7 +801,7 @@ function ResourcesPageContent() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-3xl font-bold font-headline">Resources</h1>
-      <p className="text-muted-foreground">Explore lessons created by our teachers! Assigned lessons are marked with a <Star className="inline w-4 h-4 text-yellow-400 fill-yellow-400" />.</p>
+      <p className="text-muted-foreground">Explore lessons created by our teachers! Assigned items are marked with a <Star className="inline w-4 h-4 text-yellow-400 fill-yellow-400" />.</p>
 
       <Tabs defaultValue={defaultGradeTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5" id="tutorial-grade-tabs">
@@ -1030,87 +810,26 @@ function ResourcesPageContent() {
           ))}
         </TabsList>
         
-        {grades.map(grade => {
-            if (grade === 2) {
-                return (
-                    <TabsContent key={grade} value={`grade-${grade}`}>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Grade 2 Learning Path</CardTitle>
-                                <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
-                            </CardHeader>
-                            <CardContent className="overflow-x-auto">
-                                <Grade2QuestPath 
-                                    lessons={lessons || []}
-                                    quizzes={quizzes || []}
-                                    student={student}
-                                    onSelectLesson={setSelectedLesson}
-                                    onSelectQuiz={setSelectedQuiz}
-                                />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                )
-            }
-             if (grade === 3) {
-                return (
-                    <TabsContent key={grade} value={`grade-${grade}`}>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Grade 3 Learning Path</CardTitle>
-                                <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
-                            </CardHeader>
-                            <CardContent className="overflow-x-auto">
-                                <Grade3QuestPath 
-                                    lessons={lessons || []}
-                                    quizzes={quizzes || []}
-                                    student={student}
-                                    onSelectLesson={setSelectedLesson}
-                                    onSelectQuiz={setSelectedQuiz}
-                                />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                )
-            }
-            
-            const gradeLessons = lessons ? lessons.filter(l => l.grade === grade) : [];
-            const gradeTopics = [...new Set(gradeLessons.map(l => l.topic))];
-
-            return (
-                <TabsContent key={grade} value={`grade-${grade}`}>
-                    <Accordion type="multiple" className="w-full" defaultValue={gradeTopics} id="tutorial-topic-list">
-                        {gradeTopics.map((topic, index) => {
-                            const topicLessons = gradeLessons.filter(l => l.topic === topic);
-                            return (
-                                <AccordionItem key={topic} value={topic} id={index === 0 ? 'tutorial-first-topic' : undefined}>
-                                    <AccordionTrigger className="text-lg font-semibold">{topic}</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {topicLessons.map(lesson => {
-                                            const linkedQuiz = quizzes?.find(q => q.lessonId === lesson.id);
-                                            return (
-                                              <LessonCard 
-                                                  key={lesson.id} 
-                                                  lesson={lesson}
-                                                  linkedQuiz={linkedQuiz}
-                                                  onSelect={setSelectedLesson}
-                                                  onSelectQuiz={setSelectedQuiz}
-                                                  isCompleted={student?.completedLessons?.includes(lesson.id) || false}
-                                                  isAssigned={student?.assignedLessons?.includes(lesson.id) || false}
-                                              />
-                                            )
-                                        })}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            )
-                        })}
-                    </Accordion>
-                     {gradeTopics.length === 0 && <p className="text-muted-foreground text-center py-10">No lessons available for Grade {grade} yet.</p>}
-                </TabsContent>
-            )
-        })}
+        {grades.map(grade => (
+            <TabsContent key={grade} value={`grade-${grade}`}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Grade {grade} Learning Path</CardTitle>
+                        <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
+                    </CardHeader>
+                    <CardContent className="overflow-x-auto">
+                        <GradeQuestPath
+                            grade={grade}
+                            lessons={lessons || []}
+                            quizzes={quizzes || []}
+                            student={student}
+                            onSelectLesson={setSelectedLesson}
+                            onSelectQuiz={setSelectedQuiz}
+                        />
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
