@@ -233,6 +233,27 @@ export default function GroupStudyPage() {
     
     const isLoading = isUserLoading || isStudentLoading || areHostedLoading || areInvitedLoading;
 
+    const handleJoinSession = async (session: GroupStudySession) => {
+        if (!user || !student || !firestore) return;
+        if (session.attendingStudentIds.includes(user.uid)) {
+            toast({ description: "You've already joined this session." });
+            return;
+        }
+
+        try {
+            const sessionRef = doc(firestore, 'group_study_sessions', session.id);
+            await updateDoc(sessionRef, {
+                attendingStudentIds: arrayUnion(user.uid),
+                attendingStudentNames: arrayUnion(student.name)
+            });
+            toast({ title: 'Success!', description: `You've joined the group study for ${session.topic}.` });
+        } catch (error) {
+            console.error("Error joining session: ", error);
+            toast({ variant: 'destructive', title: 'Error', description: "Could not join the session." });
+        }
+    };
+
+
     if (isLoading) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
@@ -280,7 +301,7 @@ export default function GroupStudyPage() {
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'p')}</span></div>
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="w-4 h-4" /><span>Invited: {(session.invitedStudentUsernames || []).join(', ')}</span></div>
                                 </CardContent>
-                                <CardFooter className="flex flex-wrap justify-center sm:justify-end gap-2">
+                                <CardFooter className="flex flex-wrap justify-center gap-2">
                                     <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Start Session</Link></Button>
                                     <StudySessionDialog student={student} session={session}>
                                         <Button variant="outline"><Edit className="mr-2 h-4 w-4" />Edit</Button>
