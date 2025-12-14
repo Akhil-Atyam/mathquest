@@ -289,7 +289,7 @@
         "attendingStudentIds": { "type": "array", "items": { "type": "string" }, "description": "An array of UIDs of students attending." },
         "attendingStudentNames": { "type": "array", "items": { "type": "string" }, "description": "An array of names of students attending." }
       },
-      "required": ["id", "hostId", "hostName", "topic", "startTime", "durationMinutes", "meetingLink", "attendingStudentIds"]
+      "required": ["id", "hostId", "hostName", "topic", "startTime", "durationMinutes", "meetingLink", "invitedStudentUsernames"]
     },
     "StudentProgress": {
       "$schema": "http://json-schema.org/draft-07/schema#",

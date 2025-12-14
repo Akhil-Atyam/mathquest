@@ -1,4 +1,4 @@
-# Firebase Studio
+h ba# Firebase Studio
 
 This is a NextJS starter project for MathQuest, an online learning hub to make math fun and interactive.
 

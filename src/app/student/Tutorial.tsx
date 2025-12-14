@@ -78,9 +78,18 @@ const allSteps: TutorialStep[] = [
     position: 'right',
     navigateTo: '/student/tutoring',
   },
-    // --- Tutoring Page ---
+  // --- Tutoring Page ---
   {
     page: '/student/tutoring',
+    elementId: 'tutorial-group-study', // Element on the sidebar
+    title: 'Study With Friends',
+    text: "You can also create your own study sessions and invite your friends. Let's check it out!",
+    position: 'right',
+    navigateTo: '/student/group-study',
+  },
+    // --- Group Study Page ---
+  {
+    page: '/student/group-study',
     elementId: 'tutorial-my-sessions',
     title: 'View Your Sessions',
     text: 'Finally, click Next to check your upcoming and past tutoring sessions.',
