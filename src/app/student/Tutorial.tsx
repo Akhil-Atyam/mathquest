@@ -293,6 +293,7 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     const mascotWidth = 480;
     const mascotHeight = 300; 
     const offset = 20;
+    let left: number, top: number, transform: string | undefined;
 
     // Automatically adjust position based on viewport
     if (position === 'right' && targetRect.right + mascotWidth + offset > window.innerWidth) {
