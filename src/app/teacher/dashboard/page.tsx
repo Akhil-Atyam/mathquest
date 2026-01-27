@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Teacher, Booking } from '@/lib/types';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,6 +24,12 @@ import { useToast } from '@/hooks/use-toast';
 function AddLinkDialog({ booking, onSave, children }: { booking: Booking; onSave: (bookingId: string, link: string) => void, children: React.ReactNode }) {
     const [link, setLink] = useState(booking.meetingLink || '');
     const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setLink(booking.meetingLink || '');
+        }
+    }, [isOpen, booking.meetingLink]);
 
     const handleSave = () => {
         onSave(booking.id, link);

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Teacher, Booking } from '@/lib/types';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,7 +70,12 @@ function BookingsList({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <AddLinkDialog booking={booking} onSave={onUpdateLink} />
+              <AddLinkDialog booking={booking} onSave={onUpdateLink}>
+                 <Button variant="outline" size="sm">
+                    <Edit className="mr-2 h-4 w-4" />
+                    {booking.meetingLink ? 'Edit Link' : 'Add Link'}
+                </Button>
+              </AddLinkDialog>
               {title === 'Upcoming Sessions' && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -107,9 +112,15 @@ function BookingsList({
  * @param booking - The booking object to update.
  * @param onSave - Function to call when saving the link.
  */
-function AddLinkDialog({ booking, onSave }: { booking: Booking; onSave: (bookingId: string, link: string) => void }) {
+function AddLinkDialog({ booking, onSave, children }: { booking: Booking; onSave: (bookingId: string, link: string) => void, children: React.ReactNode }) {
     const [link, setLink] = useState(booking.meetingLink || '');
     const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setLink(booking.meetingLink || '');
+        }
+    }, [isOpen, booking.meetingLink]);
 
     const handleSave = () => {
         onSave(booking.id, link);
@@ -119,10 +130,7 @@ function AddLinkDialog({ booking, onSave }: { booking: Booking; onSave: (booking
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <Edit className="mr-2 h-4 w-4" />
-                    {booking.meetingLink ? 'Edit Link' : 'Add Link'}
-                </Button>
+                {children}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

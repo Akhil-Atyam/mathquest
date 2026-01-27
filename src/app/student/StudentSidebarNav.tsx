@@ -17,8 +17,8 @@ const menuItems = [
   { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard, id: 'tutorial-dashboard' },
   { href: '/student/resources', label: 'Resources', icon: BookOpen, id: 'tutorial-resources' },
   { href: '/student/tutoring', label: 'Book a Session', icon: Calendar, id: 'tutorial-book-session' },
+  { href: '/student/my-tutoring-sessions', label: 'My Tutoring Sessions', icon: CalendarCheck, id: 'tutorial-my-sessions' },
   { href: '/student/group-study', label: 'Group Study', icon: Users, id: 'tutorial-group-study' },
-  { href: '/student/my-sessions', label: 'My Sessions', icon: CalendarCheck, id: 'tutorial-my-sessions' },
 ];
 
 /**

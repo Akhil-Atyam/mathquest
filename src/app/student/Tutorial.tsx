@@ -81,24 +81,24 @@ const allSteps: TutorialStep[] = [
   // --- Tutoring Page ---
   {
     page: '/student/tutoring',
-    elementId: 'tutorial-group-study', // Element on the sidebar
+    elementId: 'tutorial-my-sessions', // Sidebar link
+    title: 'Check Your Schedule',
+    text: 'After you book a session, you can see all of your scheduled tutoring here. Let\'s go see it.',
+    position: 'right',
+    navigateTo: '/student/my-tutoring-sessions',
+  },
+  // --- My Tutoring Sessions Page ---
+  {
+    page: '/student/my-tutoring-sessions',
+    elementId: 'tutorial-group-study', // Sidebar link
     title: 'Study With Friends',
     text: "You can also create your own study sessions and invite your friends. Let's check it out!",
     position: 'right',
     navigateTo: '/student/group-study',
   },
-    // --- Group Study Page ---
+  // --- Final Step (on Group Study page) ---
   {
     page: '/student/group-study',
-    elementId: 'tutorial-my-sessions',
-    title: 'View Your Sessions',
-    text: 'Finally, click Next to check your upcoming and past tutoring sessions.',
-    position: 'right',
-    navigateTo: '/student/my-sessions',
-  },
-   // --- Final Step ---
-  {
-    page: '/student/my-sessions',
     elementId: 'tutorial-end',
     title: "You're all set!",
     text: "That's the grand tour! You're ready to start your math adventure. Have fun!",
@@ -293,11 +293,6 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     const mascotWidth = 480;
     const mascotHeight = 300; 
     const offset = 20;
-
-    // Default positions
-    let top = targetRect.top;
-    let left = targetRect.right + offset;
-    let transform = '';
 
     // Automatically adjust position based on viewport
     if (position === 'right' && targetRect.right + mascotWidth + offset > window.innerWidth) {
