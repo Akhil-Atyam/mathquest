@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Lesson, Student, Quiz, QuizQuestion, Unit } from '@/lib/types';
+import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
@@ -416,7 +416,7 @@ const UnitQuestPath = ({
     onSelectLesson,
     onSelectQuiz,
 }: { 
-    unit: Unit;
+    unit: { id: string; title: string; grade: number, order: number };
     lessons: Lesson[], 
     quizzes: Quiz[],
     student: Student | null, 
@@ -438,7 +438,8 @@ const UnitQuestPath = ({
     const sortedItems = React.useMemo(() => {
         if (!unit) return [];
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
-        const unitItems = allItems.filter(l => l.unitId === unit.id);
+        // Filter by the topic (which is the unit's title/id in our new derived model) and grade
+        const unitItems = allItems.filter(l => l.topic === unit.title && String(l.grade) === String(unit.grade));
         return unitItems.sort((a, b) => (a.order || 0) - (b.order || 0));
     }, [lessons, quizzes, unit]);
     
@@ -612,7 +613,7 @@ function ResourcesPageContent() {
 
   // New state for filters
   const [selectedGrade, setSelectedGrade] = useState<string | undefined>();
-  const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
+  const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(); // This now stores the topic name
 
   const studentDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -623,11 +624,9 @@ function ResourcesPageContent() {
 
   const lessonsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'lessons') : null, [firestore]);
   const quizzesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'quizzes') : null, [firestore]);
-  const unitsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'units') : null, [firestore]);
 
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
   const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
-  const { data: units, isLoading: areUnitsLoading } = useCollection<Unit>(unitsQuery);
   
   // Effect to automatically select a lesson or quiz if an ID is in the URL params.
   useEffect(() => {
@@ -644,37 +643,48 @@ function ResourcesPageContent() {
     }
   }, [lessons, quizzes, searchParams]);
   
-  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading || areUnitsLoading;
+  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading;
 
+  // Memoized list of "units" derived from topics for the selected grade
+  const unitsForSelectedGrade = useMemo(() => {
+    if (!lessons || !quizzes || !selectedGrade) return [];
+
+    const allContentForGrade = [...lessons, ...quizzes].filter(
+      item => String(item.grade) === selectedGrade
+    );
+    const uniqueTopics = [...new Set(allContentForGrade.map(item => item.topic))].sort();
+
+    // Mimic the Unit structure for consistency
+    return uniqueTopics.map((topic, index) => ({
+      id: topic,
+      title: topic,
+      grade: parseInt(selectedGrade, 10),
+      order: index,
+    }));
+  }, [lessons, quizzes, selectedGrade]);
+  
   // Effect to set default filters once data is loaded
   useEffect(() => {
     if (student && !selectedGrade) {
         setSelectedGrade(String(student.grade));
     }
-    if (units && selectedGrade && !selectedUnitId) {
-        const firstUnitForGrade = units
-            .filter(u => String(u.grade) === selectedGrade)
-            .sort((a, b) => a.order - b.order)[0];
-        if (firstUnitForGrade) {
-            setSelectedUnitId(firstUnitForGrade.id);
-        } else {
-             setSelectedUnitId(undefined); // No units for this grade
+    // If grade changes, or on initial load, set the selected unit to the first available one
+    if (selectedGrade && unitsForSelectedGrade.length > 0) {
+        // Check if the current selectedUnitId is valid for the new list of units
+        const currentUnitExists = unitsForSelectedGrade.some(u => u.id === selectedUnitId);
+        if (!currentUnitExists) {
+            setSelectedUnitId(unitsForSelectedGrade[0].id);
         }
+    } else if (selectedGrade && unitsForSelectedGrade.length === 0) {
+        setSelectedUnitId(undefined); // No units for this grade
     }
-  }, [student, units, selectedGrade, selectedUnitId]);
+  }, [student, unitsForSelectedGrade, selectedGrade, selectedUnitId]);
 
-  // Memoized lists for dropdowns
-  const unitsForSelectedGrade = useMemo(() => {
-      if (!units || !selectedGrade) return [];
-      return units
-          .filter(u => String(u.grade) === selectedGrade)
-          .sort((a,b) => a.order - b.order);
-  }, [units, selectedGrade]);
 
   const selectedUnit = useMemo(() => {
-      if (!units || !selectedUnitId) return null;
-      return units.find(u => u.id === selectedUnitId);
-  }, [units, selectedUnitId]);
+      if (!unitsForSelectedGrade || !selectedUnitId) return null;
+      return unitsForSelectedGrade.find(u => u.id === selectedUnitId);
+  }, [unitsForSelectedGrade, selectedUnitId]);
 
   // Handler for changing grade
   const handleGradeChange = (grade: string) => {
@@ -911,5 +921,7 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
+    
 
     
