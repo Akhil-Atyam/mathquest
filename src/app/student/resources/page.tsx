@@ -1,6 +1,7 @@
 
 
 
+
 'use client';
 
 import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField, writeBatch } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion, Gamepad2, Play, Trophy } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion, Gamepad2, Play, Trophy, Leaf } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -34,12 +35,11 @@ import { OceanTurtle } from '../characters/OceanTurtle';
 import { SpaceAlien } from '../characters/SpaceAlien';
 import { MedievalKnight } from '../characters/MedievalKnight';
 import { DinoTrex } from '../characters/DinoTrex';
-import { MascotBrainyHiker } from '../characters/MascotBrainyHiker';
-import { MascotBrainyScuba } from '../characters/MascotBrainyScuba';
-import { MascotBrainyAstronaut } from '../characters/MascotBrainyAstronaut';
-import { MascotBrainyKnight } from '../characters/MascotBrainyKnight';
-import { MascotBrainyExplorer } from '../characters/MascotBrainyExplorer';
 import { Campfire } from '../characters/Campfire';
+import { ForestTrees } from '../characters/ForestTrees';
+import { Seaweed } from '../characters/Seaweed';
+import { Seahorse } from '../characters/Seahorse';
+import { SchoolOfFish } from '../characters/SchoolOfFish';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -420,34 +420,40 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
     }
 };
 
-const themes: Record<number, { name: string; mascot: React.FC; sidekick: React.FC }> = {
-    1: { name: 'Forest', mascot: MascotBrainyHiker, sidekick: ForestFox },
-    2: { name: 'Ocean', mascot: MascotBrainyScuba, sidekick: OceanTurtle },
-    3: { name: 'Space', mascot: MascotBrainyAstronaut, sidekick: SpaceAlien },
-    4: { name: 'Medieval', mascot: MascotBrainyKnight, sidekick: MedievalKnight },
-    5: { name: 'Dinosaur', mascot: MascotBrainyExplorer, sidekick: DinoTrex },
+const themes: Record<number, { name: string; sidekick: React.FC }> = {
+    1: { name: 'Forest', sidekick: ForestFox },
+    2: { name: 'Ocean', sidekick: OceanTurtle },
+    3: { name: 'Space', sidekick: SpaceAlien },
+    4: { name: 'Medieval', sidekick: MedievalKnight },
+    5: { name: 'Dinosaur', sidekick: DinoTrex },
 };
 
-const ForestTrees = () => (
-    <svg viewBox="0 0 150 200" className="w-full h-full" style={{ filter: 'drop-shadow(3px 3px 3px rgba(0,0,0,0.15))' }}>
-        {/* Tree 1 */}
-        <rect x="50" y="120" width="15" height="80" fill="#8B4513" />
-        <polygon points="57,60 20,130 95,130" fill="#228B22" />
-        <polygon points="57,20 25,80 90,80" fill="#3CB371" />
-        {/* Tree 2 (smaller, behind) */}
-        <g transform="translate(40, 10)">
-            <rect x="70" y="130" width="10" height="60" fill="#A0522D" />
-            <polygon points="75,90 50,140 100,140" fill="#2E8B57" />
-            <polygon points="75,60 55,100 95,100" fill="#3CB371" />
-        </g>
-    </svg>
-);
-
-
 const ThemeBackground = ({ grade }: { grade: number }) => {
+    const leafStyles: React.CSSProperties[] = Array.from({ length: 15 }).map(() => ({
+        position: 'absolute',
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        animation: `fall ${Math.random() * 10 + 5}s linear infinite`,
+        animationDelay: `${Math.random() * 5}s`,
+        opacity: Math.random() * 0.2 + 0.1,
+        transform: `rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.5 + 0.5})`,
+    }));
+
     switch (grade) {
         case 1: // Forest
-            return <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200" />;
+            return (
+                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
+                    <style>{`
+                        @keyframes fall {
+                            0% { transform: translateY(-100px) rotate(0deg); }
+                            100% { transform: translateY(100vh) rotate(360deg); }
+                        }
+                    `}</style>
+                    {leafStyles.map((style, i) => (
+                        <div key={i} style={style}><Leaf className="w-6 h-6 text-green-700" /></div>
+                    ))}
+                </div>
+            );
         case 2: // Ocean
             return (
                  <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-cyan-100 to-blue-200">
@@ -455,6 +461,8 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
                     <div className="absolute top-[10%] left-[15%] w-8 h-8 rounded-full bg-blue-300/30 animate-pulse"></div>
                     <div className="absolute top-[25%] left-[5%] w-4 h-4 rounded-full bg-blue-300/40 animate-pulse [animation-delay:1s]"></div>
                     <div className="absolute bottom-[20%] right-[10%] w-12 h-12 rounded-full bg-blue-300/30 animate-pulse [animation-delay:0.5s]"></div>
+                    <div className="absolute top-[50%] right-[15%] w-6 h-6 rounded-full bg-blue-300/30 animate-pulse [animation-delay:1.5s]"></div>
+                    <div className="absolute bottom-[5%] left-[20%] w-3 h-3 rounded-full bg-blue-300/40 animate-pulse [animation-delay:0.2s]"></div>
                     {/* Kelp */}
                     <svg className="absolute bottom-0 left-0 w-24 h-48 text-green-400/40" viewBox="0 0 100 200">
                         <path d="M 50 200 C 20 150, 80 100, 50 50 S 20 0, 50 0" fill="none" stroke="currentColor" strokeWidth="4" />
@@ -527,11 +535,10 @@ const UnitQuestPath = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
     const [nodePositions, setNodePositions] = useState<{x: number, y: number}[]>([]);
-    const [sidekickPositions, setSidekickPositions] = useState<{x: number, y: number}[]>([]);
+    const [sceneryPositions, setSceneryPositions] = useState<Record<string, { x: number; y: number }>>({});
     const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
 
     const theme = themes[grade] || themes[1];
-    const MascotComponent = theme.mascot;
     const SidekickComponent = theme.sidekick;
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
@@ -567,18 +574,17 @@ const UnitQuestPath = ({
             });
             setNodePositions(points);
 
-            const newSidekickPositions: {x: number, y: number}[] = [];
-            for (let i = 0; i < sortedItems.length; i++) {
-                if (grade !== 1 && i > 0 && i % 3 === 0) { // Don't show sidekick for Grade 1 as it's a special layout
-                     const sineValue = Math.sin(i * Math.PI / 3);
-                     const y = initialY + (i - 0.5) * yStep;
-                     const x = sineValue > 0 
-                         ? centerX - (amplitude * 1.2) - 75
-                         : centerX + (amplitude * 1.2) + 75;
-                     newSidekickPositions.push({ x, y });
+            const newScenery: Record<string, { x: number; y: number }> = {};
+            if (grade === 2) {
+                if (points.length > 4) {
+                    newScenery['seaweed'] = { x: points[4].x + 100, y: points[4].y };
+                    newScenery['seahorse'] = { x: points[4].x + 130, y: points[4].y - 20 };
+                }
+                if (points.length > 7) {
+                    newScenery['fishSchool'] = { x: centerX, y: points[7].y };
                 }
             }
-            setSidekickPositions(newSidekickPositions);
+            setSceneryPositions(newScenery);
 
             let lastCompletedIndex = -1;
             for (let i = 0; i < sortedItems.length; i++) {
@@ -671,42 +677,54 @@ const UnitQuestPath = ({
                             )}
                         </svg>
 
-                        {/* Special Scenery for Grade 1 */}
+                        {/* Grade 1 Scenery */}
                         {grade === 1 && firstNodePos && (
                             <>
-                                <div className="absolute z-10 w-48 h-48" style={{ top: firstNodePos.y - 140, left: firstNodePos.x + 120, transform: 'translateX(-50%)' }}>
+                                <div className="absolute z-10 w-40 h-48" style={{ top: firstNodePos.y - 120, left: firstNodePos.x + 80 }}>
                                     <ForestTrees />
                                 </div>
-                                <div className="absolute z-10 w-24 h-24" style={{ top: firstNodePos.y + 20, left: firstNodePos.x + 150, transform: 'translateX(-50%)' }}>
+                                <div className="absolute z-10 w-24 h-24" style={{ top: firstNodePos.y - 20, left: firstNodePos.x + 110 }}>
                                     <Campfire />
                                 </div>
-                                 <div className="absolute z-10 w-40 h-40" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 130, transform: 'translateX(-50%) rotate(-15deg)' }}>
-                                    <MascotComponent />
+                                <div className="absolute z-10 w-36 h-36" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 130 }}>
+                                    <SidekickComponent />
                                 </div>
                             </>
                         )}
                         
-                        {/* Render default mascot for other grades */}
-                        {grade !== 1 && firstNodePos && (
+                        {/* Grade 2 Scenery */}
+                        {grade === 2 && firstNodePos && (
+                             <>
+                                <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 80, left: firstNodePos.x - 150 }}>
+                                    <OceanTurtle />
+                                </div>
+                                 <div className="absolute z-10 w-32 h-32 transition-transform hover:scale-110 opacity-80" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 100 }}>
+                                    <OceanTurtle />
+                                </div>
+                                {sceneryPositions.seaweed && (
+                                    <div className="absolute z-10 w-20 h-40" style={{ top: sceneryPositions.seaweed.y - 80, left: sceneryPositions.seaweed.x }}>
+                                        <Seaweed />
+                                    </div>
+                                )}
+                                 {sceneryPositions.seahorse && (
+                                    <div className="absolute z-10 w-12 h-24" style={{ top: sceneryPositions.seahorse.y, left: sceneryPositions.seahorse.x }}>
+                                        <Seahorse />
+                                    </div>
+                                )}
+                                {sceneryPositions.fishSchool && (
+                                     <div className="absolute z-10 w-48 h-32" style={{ top: sceneryPositions.fishSchool.y, left: sceneryPositions.fishSchool.x, transform: 'translateX(-50%)' }}>
+                                        <SchoolOfFish />
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Generic Sidekicks for other grades */}
+                        {grade > 2 && firstNodePos && (
                             <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
-                                <MascotComponent />
+                                <SidekickComponent />
                             </div>
                         )}
-                        
-
-                        {sidekickPositions.map((pos, index) => (
-                           <div
-                                key={`sidekick-${index}`}
-                                className="absolute z-10 w-24 h-24 md:w-36 md:h-36 transition-transform hover:scale-110"
-                                style={{
-                                    top: `${pos.y - 75}px`,
-                                    left: `${pos.x}px`,
-                                    transform: 'translateX(-50%)',
-                                }}
-                           >
-                               <SidekickComponent />
-                           </div>
-                        ))}
 
                         {sortedItems.map((item, index) => {
                             const isItemQuiz = isQuiz(item);
@@ -1079,5 +1097,6 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
 
 
