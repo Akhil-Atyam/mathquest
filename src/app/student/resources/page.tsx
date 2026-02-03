@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
@@ -33,6 +34,12 @@ import { OceanTurtle } from '../characters/OceanTurtle';
 import { SpaceAlien } from '../characters/SpaceAlien';
 import { MedievalKnight } from '../characters/MedievalKnight';
 import { DinoTrex } from '../characters/DinoTrex';
+import { MascotBrainyHiker } from '../characters/MascotBrainyHiker';
+import { MascotBrainyScuba } from '../characters/MascotBrainyScuba';
+import { MascotBrainyAstronaut } from '../characters/MascotBrainyAstronaut';
+import { MascotBrainyKnight } from '../characters/MascotBrainyKnight';
+import { MascotBrainyExplorer } from '../characters/MascotBrainyExplorer';
+import { Campfire } from '../characters/Campfire';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -413,35 +420,34 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
     }
 };
 
-const themes: Record<number, { name: string; character: React.FC }> = {
-    1: { name: 'Forest', character: ForestFox },
-    2: { name: 'Ocean', character: OceanTurtle },
-    3: { name: 'Space', character: SpaceAlien },
-    4: { name: 'Medieval', character: MedievalKnight },
-    5: { name: 'Dinosaur', character: DinoTrex },
+const themes: Record<number, { name: string; mascot: React.FC; sidekick: React.FC }> = {
+    1: { name: 'Forest', mascot: MascotBrainyHiker, sidekick: ForestFox },
+    2: { name: 'Ocean', mascot: MascotBrainyScuba, sidekick: OceanTurtle },
+    3: { name: 'Space', mascot: MascotBrainyAstronaut, sidekick: SpaceAlien },
+    4: { name: 'Medieval', mascot: MascotBrainyKnight, sidekick: MedievalKnight },
+    5: { name: 'Dinosaur', mascot: MascotBrainyExplorer, sidekick: DinoTrex },
 };
+
+const ForestTrees = () => (
+    <svg viewBox="0 0 150 200" className="w-full h-full" style={{ filter: 'drop-shadow(3px 3px 3px rgba(0,0,0,0.15))' }}>
+        {/* Tree 1 */}
+        <rect x="50" y="120" width="15" height="80" fill="#8B4513" />
+        <polygon points="57,60 20,130 95,130" fill="#228B22" />
+        <polygon points="57,20 25,80 90,80" fill="#3CB371" />
+        {/* Tree 2 (smaller, behind) */}
+        <g transform="translate(40, 10)">
+            <rect x="70" y="130" width="10" height="60" fill="#A0522D" />
+            <polygon points="75,90 50,140 100,140" fill="#2E8B57" />
+            <polygon points="75,60 55,100 95,100" fill="#3CB371" />
+        </g>
+    </svg>
+);
+
 
 const ThemeBackground = ({ grade }: { grade: number }) => {
     switch (grade) {
         case 1: // Forest
-            return (
-                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
-                    <div className="absolute top-[160px] left-[5%] w-24 h-40 opacity-60">
-                         <svg viewBox="0 0 60 100" className="absolute left-0 bottom-0 w-20 h-32" style={{ filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.1))' }}>
-                            <rect x="25" y="80" width="10" height="20" fill="#704214" />
-                            <polygon points="30,50 0,90 60,90" fill="#285430" />
-                            <polygon points="30,25 5,65 55,65" fill="#3A7D44" />
-                            <polygon points="30,0 10,40 50,40" fill="#5F9D68" />
-                        </svg>
-                        <svg viewBox="0 0 60 100" className="absolute right-0 bottom-5 w-16 h-24" style={{ filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.1))' }}>
-                            <rect x="25" y="80" width="10" height="20" fill="#704214" />
-                            <polygon points="30,50 0,90 60,90" fill="#285430" />
-                            <polygon points="30,25 5,65 55,65" fill="#3A7D44" />
-                            <polygon points="30,0 10,40 50,40" fill="#5F9D68" />
-                        </svg>
-                    </div>
-                </div>
-            );
+            return <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200" />;
         case 2: // Ocean
             return (
                  <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-cyan-100 to-blue-200">
@@ -521,11 +527,12 @@ const UnitQuestPath = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
     const [nodePositions, setNodePositions] = useState<{x: number, y: number}[]>([]);
-    const [characterPositions, setCharacterPositions] = useState<{x: number, y: number}[]>([]);
+    const [sidekickPositions, setSidekickPositions] = useState<{x: number, y: number}[]>([]);
     const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
 
-    const theme = themes[grade] || themes[1]; // Default to grade 1 theme
-    const CharacterComponent = theme.character;
+    const theme = themes[grade] || themes[1];
+    const MascotComponent = theme.mascot;
+    const SidekickComponent = theme.sidekick;
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
@@ -537,7 +544,6 @@ const UnitQuestPath = ({
     const sortedItems = React.useMemo(() => {
         if (!unit) return [];
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
-        // Filter by the topic (which is the unit's title/id in our new derived model) and grade
         const unitItems = allItems.filter(l => l.topic === unit.title && String(l.grade) === String(unit.grade));
         return unitItems.sort((a, b) => (a.order || 0) - (b.order || 0));
     }, [lessons, quizzes, unit]);
@@ -561,20 +567,18 @@ const UnitQuestPath = ({
             });
             setNodePositions(points);
 
-            // Calculate Character Positions
-            const newCharPositions: {x: number, y: number}[] = [];
+            const newSidekickPositions: {x: number, y: number}[] = [];
             for (let i = 0; i < sortedItems.length; i++) {
-                if (i > 0 && i % 3 === 0) {
+                if (grade !== 1 && i > 0 && i % 3 === 0) { // Don't show sidekick for Grade 1 as it's a special layout
                      const sineValue = Math.sin(i * Math.PI / 3);
                      const y = initialY + (i - 0.5) * yStep;
                      const x = sineValue > 0 
                          ? centerX - (amplitude * 1.2) - 75
                          : centerX + (amplitude * 1.2) + 75;
-                     newCharPositions.push({ x, y });
+                     newSidekickPositions.push({ x, y });
                 }
             }
-            setCharacterPositions(newCharPositions);
-
+            setSidekickPositions(newSidekickPositions);
 
             let lastCompletedIndex = -1;
             for (let i = 0; i < sortedItems.length; i++) {
@@ -614,12 +618,15 @@ const UnitQuestPath = ({
                 observer.unobserve(containerRef.current);
             }
         };
-    }, [sortedItems, completedLessonIds, completedQuizIds]);
+    }, [sortedItems, completedLessonIds, completedQuizIds, grade]);
 
 
     if (sortedItems.length === 0) {
         return <p className="text-muted-foreground text-center py-8">No lessons found for this unit. Check back soon!</p>
     }
+    
+    const firstNodePos = nodePositions[0] || { x: 0, y: 0 };
+
 
     return (
         <Card className="overflow-hidden">
@@ -664,17 +671,40 @@ const UnitQuestPath = ({
                             )}
                         </svg>
 
-                        {characterPositions.map((char, index) => (
+                        {/* Special Scenery for Grade 1 */}
+                        {grade === 1 && firstNodePos && (
+                            <>
+                                <div className="absolute z-10 w-48 h-48" style={{ top: firstNodePos.y - 140, left: firstNodePos.x + 120, transform: 'translateX(-50%)' }}>
+                                    <ForestTrees />
+                                </div>
+                                <div className="absolute z-10 w-24 h-24" style={{ top: firstNodePos.y + 20, left: firstNodePos.x + 150, transform: 'translateX(-50%)' }}>
+                                    <Campfire />
+                                </div>
+                                 <div className="absolute z-10 w-40 h-40" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 130, transform: 'translateX(-50%) rotate(-15deg)' }}>
+                                    <MascotComponent />
+                                </div>
+                            </>
+                        )}
+                        
+                        {/* Render default mascot for other grades */}
+                        {grade !== 1 && firstNodePos && (
+                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
+                                <MascotComponent />
+                            </div>
+                        )}
+                        
+
+                        {sidekickPositions.map((pos, index) => (
                            <div
-                                key={`char-${index}`}
+                                key={`sidekick-${index}`}
                                 className="absolute z-10 w-24 h-24 md:w-36 md:h-36 transition-transform hover:scale-110"
                                 style={{
-                                    top: `${char.y - 75}px`, // Adjust for character height
-                                    left: `${char.x}px`,
+                                    top: `${pos.y - 75}px`,
+                                    left: `${pos.x}px`,
                                     transform: 'translateX(-50%)',
                                 }}
                            >
-                               <CharacterComponent />
+                               <SidekickComponent />
                            </div>
                         ))}
 
@@ -1049,4 +1079,5 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
 
