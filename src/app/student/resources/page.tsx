@@ -26,8 +26,12 @@ import { Progress } from '@/components/ui/progress';
 import ReactMarkdown from 'react-markdown';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+import { ForestFox } from '../characters/ForestFox';
+import { OceanTurtle } from '../characters/OceanTurtle';
+import { SpaceAlien } from '../characters/SpaceAlien';
+import { MedievalKnight } from '../characters/MedievalKnight';
+import { DinoTrex } from '../characters/DinoTrex';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -408,18 +412,12 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
     }
 };
 
-type Theme = {
-    name: string;
-    backgroundId: string;
-    characterIds: string[];
-};
-
-const themes: Record<number, Theme> = {
-    1: { name: 'Forest', backgroundId: 'grade-1-background', characterIds: ['grade-1-char-1'] },
-    2: { name: 'Ocean', backgroundId: 'grade-2-background', characterIds: ['grade-2-char-1'] },
-    3: { name: 'Space', backgroundId: 'grade-3-background', characterIds: ['grade-3-char-1'] },
-    4: { name: 'Medieval', backgroundId: 'grade-4-background', characterIds: ['grade-4-char-1'] },
-    5: { name: 'Dinosaur', backgroundId: 'grade-5-background', characterIds: ['grade-5-char-1'] },
+const themes: Record<number, { name: string; bg: string; character: React.FC }> = {
+    1: { name: 'Forest', bg: 'bg-gradient-to-b from-green-100 to-green-200', character: ForestFox },
+    2: { name: 'Ocean', bg: 'bg-gradient-to-b from-blue-100 to-cyan-100', character: OceanTurtle },
+    3: { name: 'Space', bg: 'bg-gradient-to-b from-indigo-200 to-slate-300', character: SpaceAlien },
+    4: { name: 'Medieval', bg: 'bg-gradient-to-b from-gray-200 to-stone-300', character: MedievalKnight },
+    5: { name: 'Dinosaur', bg: 'bg-gradient-to-b from-amber-100 to-yellow-200', character: DinoTrex },
 };
 
 
@@ -443,12 +441,11 @@ const UnitQuestPath = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
     const [nodePositions, setNodePositions] = useState<{x: number, y: number}[]>([]);
-    const [characterPositions, setCharacterPositions] = useState<{x: number, y: number, imageUrl: string, imageHint: string}[]>([]);
+    const [characterPositions, setCharacterPositions] = useState<{x: number, y: number}[]>([]);
     const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
 
     const theme = themes[grade] || themes[1]; // Default to grade 1 theme
-    const background = PlaceHolderImages.find(img => img.id === theme.backgroundId);
-    const characters = theme.characterIds.map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean) as { id: string; description: string; imageUrl: string; imageHint: string; }[];
+    const CharacterComponent = theme.character;
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
@@ -485,24 +482,15 @@ const UnitQuestPath = ({
             setNodePositions(points);
 
             // Calculate Character Positions
-            const newCharPositions: {x: number, y: number, imageUrl: string, imageHint: string}[] = [];
-            if (characters.length > 0) {
-                 for (let i = 0; i < sortedItems.length; i++) {
-                     // Place a character every 3 nodes
-                    if (i > 0 && i % 3 === 0) {
-                        const charIndex = (i / 3 - 1) % characters.length;
-                        const character = characters[charIndex];
-                        if (character) {
-                             const sineValue = Math.sin(i * Math.PI / 3);
-                             const y = initialY + (i - 0.5) * yStep; // Place between nodes
-                             // Place on opposite side of the path's curve
-                             const x = sineValue > 0 
-                                 ? centerX - (amplitude * 1.2) - 75 // Place on the left
-                                 : centerX + (amplitude * 1.2) + 75; // Place on the right
-
-                             newCharPositions.push({ x: x, y: y, imageUrl: character.imageUrl, imageHint: character.imageHint });
-                        }
-                    }
+            const newCharPositions: {x: number, y: number}[] = [];
+            for (let i = 0; i < sortedItems.length; i++) {
+                if (i > 0 && i % 3 === 0) {
+                     const sineValue = Math.sin(i * Math.PI / 3);
+                     const y = initialY + (i - 0.5) * yStep;
+                     const x = sineValue > 0 
+                         ? centerX - (amplitude * 1.2) - 75
+                         : centerX + (amplitude * 1.2) + 75;
+                     newCharPositions.push({ x, y });
                 }
             }
             setCharacterPositions(newCharPositions);
@@ -546,7 +534,7 @@ const UnitQuestPath = ({
                 observer.unobserve(containerRef.current);
             }
         };
-    }, [sortedItems, completedLessonIds, completedQuizIds, characters]);
+    }, [sortedItems, completedLessonIds, completedQuizIds]);
 
 
     if (sortedItems.length === 0) {
@@ -560,16 +548,7 @@ const UnitQuestPath = ({
                 <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
             </CardHeader>
             <CardContent>
-                <div id="tutorial-topic-list" className="relative w-full overflow-x-auto p-4 rounded-lg">
-                    {background && (
-                        <Image
-                            src={background.imageUrl}
-                            alt={`${theme.name} theme background`}
-                            fill
-                            className="object-cover z-[-10]"
-                            data-ai-hint={background.imageHint}
-                        />
-                    )}
+                <div id="tutorial-topic-list" className={cn("relative w-full overflow-x-auto p-4 rounded-lg", theme.bg)}>
                     <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                         <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
                             {pathData.remaining && (
@@ -614,14 +593,7 @@ const UnitQuestPath = ({
                                     transform: 'translateX(-50%)',
                                 }}
                            >
-                                <Image
-                                    src={char.imageUrl}
-                                    alt="Theme character"
-                                    width={150}
-                                    height={150}
-                                    className="object-contain"
-                                    data-ai-hint={char.imageHint}
-                                />
+                               <CharacterComponent />
                            </div>
                         ))}
 

@@ -87,8 +87,6 @@ export function StudentProfile() {
     return (
         <div className="flex items-center gap-3">
              <Avatar className="h-10 w-10">
-                {/* Using a placeholder image from picsum.photos */}
-                <AvatarImage src={`https://picsum.photos/seed/${user.uid}/100/100`} data-ai-hint="avatar" />
                 {/* Fallback avatar shows the first initial of the student's name. */}
                 <AvatarFallback>{student?.name?.charAt(0) || ''}</AvatarFallback>
             </Avatar>
