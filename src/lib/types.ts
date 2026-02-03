@@ -23,6 +23,16 @@ export type Resource = {
 };
 
 /**
+ * Represents a learning unit which contains lessons and quizzes.
+ */
+export type Unit = {
+  id: string;
+  title: string;
+  grade: number;
+  order: number;
+};
+
+/**
  * Represents a single lesson created by a teacher.
  */
 export type Lesson = {
@@ -36,6 +46,7 @@ export type Lesson = {
   imageUrl?: string;
   order?: number; // Optional field to define sequence
   citation?: string; // Optional citation
+  unitId?: string;
 };
 
 
@@ -70,6 +81,8 @@ export type Quiz = {
   order?: number; // Optional field to define sequence
   isPlacementTest?: boolean; // If true, this quiz acts as a placement test.
   citation?: string; // Optional citation
+  unitId?: string;
+  isUnitTest?: boolean;
 };
 
 
@@ -149,3 +162,5 @@ export type GroupStudySession = {
     attendingStudentIds: string[];
     attendingStudentNames: string[];
 };
+
+    

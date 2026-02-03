@@ -1,14 +1,13 @@
 
 'use client';
 
-import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
+import type { Lesson, Student, Quiz, QuizQuestion, Unit } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField, writeBatch } from 'firebase/firestore';
-import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion, Gamepad2, Play } from 'lucide-react';
+import { BookOpen, ArrowLeft, CheckCircle2, RotateCcw, Star, Lock, CheckSquare, FileQuestion, Gamepad2, Play, Trophy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -27,6 +26,7 @@ import { Progress } from '@/components/ui/progress';
 import ReactMarkdown from 'react-markdown';
 import { QuestPathDecorations } from './QuestPathDecorations';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -390,6 +390,9 @@ function getCurvePath(points: { x: number; y: number }[], tension = 0.4) {
 
 const getQuestNodeIcon = (item: Lesson | Quiz) => {
     if ('questions' in item) { // It's a Quiz
+        if (item.isUnitTest) {
+            return Trophy;
+        }
         return CheckSquare;
     }
     // It's a Lesson
@@ -405,15 +408,15 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
 };
 
 
-const GradeQuestPath = ({
-    grade,
+const UnitQuestPath = ({
+    unit,
     lessons, 
     quizzes,
     student, 
     onSelectLesson,
     onSelectQuiz,
 }: { 
-    grade: number;
+    unit: Unit;
     lessons: Lesson[], 
     quizzes: Quiz[],
     student: Student | null, 
@@ -433,10 +436,11 @@ const GradeQuestPath = ({
     const unlockedQuizIds = new Set(student?.unlockedQuizzes || []);
 
     const sortedItems = React.useMemo(() => {
+        if (!unit) return [];
         const allItems: (Lesson | Quiz)[] = [...(lessons || []), ...(quizzes || [])];
-        const gradeItems = allItems.filter(l => l.grade === grade);
-        return gradeItems.sort((a, b) => (a.order || 0) - (b.order || 0));
-    }, [lessons, quizzes, grade]);
+        const unitItems = allItems.filter(l => l.unitId === unit.id);
+        return unitItems.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }, [lessons, quizzes, unit]);
     
      useEffect(() => {
         const calculatePath = (containerWidth: number) => {
@@ -499,90 +503,98 @@ const GradeQuestPath = ({
 
 
     if (sortedItems.length === 0) {
-        return <p className="text-muted-foreground text-center py-8">No lessons found for Grade {grade}. Check back soon!</p>
+        return <p className="text-muted-foreground text-center py-8">No lessons found for this unit. Check back soon!</p>
     }
 
     return (
-        <div id="tutorial-topic-list" className="relative w-full overflow-x-auto p-4">
-            <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
-                <QuestPathDecorations />
-                <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
-                     {/* Draw the remaining path first (bottom layer) */}
-                    {pathData.remaining && (
-                        <path
-                            d={pathData.remaining}
-                            stroke="hsl(var(--primary))"
-                            strokeWidth="10"
-                            fill="none"
-                            strokeLinecap="round"
-                        />
-                    )}
-                    {/* Draw the progress path on top */}
-                    {pathData.progress && (
-                         <path
-                            d={pathData.progress}
-                            stroke="hsl(142 71% 45%)" // Green color
-                            strokeWidth="10" // Make it slightly thicker to cover the underlying path
-                            fill="none"
-                            strokeLinecap="round"
-                        />
-                    )}
-                    {placementTestNodeY && (
-                        <line 
-                            x1="0" 
-                            y1={placementTestNodeY} 
-                            x2="100%" 
-                            y2={placementTestNodeY} 
-                            stroke="hsl(var(--border))" 
-                            strokeWidth="2" 
-                            strokeDasharray="5,5" 
-                        />
-                    )}
-                </svg>
+        <Card>
+            <CardHeader>
+                <CardTitle>{unit.title}</CardTitle>
+                <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div id="tutorial-topic-list" className="relative w-full overflow-x-auto p-4">
+                    <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
+                        <QuestPathDecorations />
+                        <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
+                            {/* Draw the remaining path first (bottom layer) */}
+                            {pathData.remaining && (
+                                <path
+                                    d={pathData.remaining}
+                                    stroke="hsl(var(--primary))"
+                                    strokeWidth="10"
+                                    fill="none"
+                                    strokeLinecap="round"
+                                />
+                            )}
+                            {/* Draw the progress path on top */}
+                            {pathData.progress && (
+                                <path
+                                    d={pathData.progress}
+                                    stroke="hsl(142 71% 45%)" // Green color
+                                    strokeWidth="10" // Make it slightly thicker to cover the underlying path
+                                    fill="none"
+                                    strokeLinecap="round"
+                                />
+                            )}
+                            {placementTestNodeY && (
+                                <line 
+                                    x1="0" 
+                                    y1={placementTestNodeY} 
+                                    x2="100%" 
+                                    y2={placementTestNodeY} 
+                                    stroke="hsl(var(--border))" 
+                                    strokeWidth="2" 
+                                    strokeDasharray="5,5" 
+                                />
+                            )}
+                        </svg>
 
-                {sortedItems.map((item, index) => {
-                    const isItemQuiz = isQuiz(item);
-                    const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
-                    
-                    let isSequentiallyUnlocked = false;
-                    if (index === 0 || (isItemQuiz && item.isPlacementTest)) {
-                        isSequentiallyUnlocked = true;
-                    } else {
-                        const prevItem = sortedItems[index-1];
-                        isSequentiallyUnlocked = isQuiz(prevItem) ? completedQuizIds.has(prevItem.id) : completedLessonIds.has(prevItem.id);
-                    }
-                    
-                    const isExplicitlyAssigned = assignedIds.has(item.id);
-                    const isExplicitlyUnlocked = isItemQuiz ? unlockedQuizIds.has(item.id) : unlockedLessonIds.has(item.id);
-                    const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted || isExplicitlyUnlocked;
-                    
-                    const position = nodePositions[index];
-                    if (!position) return null;
+                        {sortedItems.map((item, index) => {
+                            const isItemQuiz = isQuiz(item);
+                            const isCompleted = isItemQuiz ? completedQuizIds.has(item.id) : completedLessonIds.has(item.id);
+                            
+                            let isSequentiallyUnlocked = false;
+                            if (index === 0 || (isItemQuiz && item.isPlacementTest)) {
+                                isSequentiallyUnlocked = true;
+                            } else {
+                                const prevItem = sortedItems[index-1];
+                                isSequentiallyUnlocked = isQuiz(prevItem) ? completedQuizIds.has(prevItem.id) : completedLessonIds.has(prevItem.id);
+                            }
+                            
+                            const isExplicitlyAssigned = assignedIds.has(item.id);
+                            const isExplicitlyUnlocked = isItemQuiz ? unlockedQuizIds.has(item.id) : unlockedLessonIds.has(item.id);
+                            const isUnlocked = isSequentiallyUnlocked || isExplicitlyAssigned || isCompleted || isExplicitlyUnlocked;
+                            
+                            const position = nodePositions[index];
+                            if (!position) return null;
 
-                    return (
-                        <div
-                            key={item.id}
-                            className="absolute z-10"
-                            style={{
-                                top: `${position.y - 48}px`,
-                                left: `${position.x}px`,
-                                transform: 'translateX(-50%)',
-                            }}
-                        >
-                            <QuestNode 
-                                title={item.title}
-                                subtitle={`Topic: ${item.topic}`}
-                                icon={getQuestNodeIcon(item)}
-                                isCompleted={isCompleted}
-                                isUnlocked={isUnlocked}
-                                isAssigned={isExplicitlyAssigned && !isCompleted}
-                                onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item as Lesson)}
-                            />
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="absolute z-10"
+                                    style={{
+                                        top: `${position.y - 48}px`,
+                                        left: `${position.x}px`,
+                                        transform: 'translateX(-50%)',
+                                    }}
+                                >
+                                    <QuestNode 
+                                        title={item.title}
+                                        subtitle={`Topic: ${item.topic}`}
+                                        icon={getQuestNodeIcon(item)}
+                                        isCompleted={isCompleted}
+                                        isUnlocked={isUnlocked}
+                                        isAssigned={isExplicitlyAssigned && !isCompleted}
+                                        onClick={() => isItemQuiz ? onSelectQuiz(item) : onSelectLesson(item as Lesson)}
+                                    />
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     )
 }
 
@@ -598,6 +610,10 @@ function ResourcesPageContent() {
   const [selectedLesson, setSelectedLesson] = React.useState<Lesson | null>(null);
   const [selectedQuiz, setSelectedQuiz] = React.useState<Quiz | null>(null);
 
+  // New state for filters
+  const [selectedGrade, setSelectedGrade] = useState<string | undefined>();
+  const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>();
+
   const studentDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
@@ -607,9 +623,11 @@ function ResourcesPageContent() {
 
   const lessonsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'lessons') : null, [firestore]);
   const quizzesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'quizzes') : null, [firestore]);
+  const unitsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'units') : null, [firestore]);
 
   const { data: lessons, isLoading: areLessonsLoading } = useCollection<Lesson>(lessonsQuery);
   const { data: quizzes, isLoading: areQuizzesLoading } = useCollection<Quiz>(quizzesQuery);
+  const { data: units, isLoading: areUnitsLoading } = useCollection<Unit>(unitsQuery);
   
   // Effect to automatically select a lesson or quiz if an ID is in the URL params.
   useEffect(() => {
@@ -626,9 +644,44 @@ function ResourcesPageContent() {
     }
   }, [lessons, quizzes, searchParams]);
   
-  const grades = [1, 2, 3, 4, 5];
-  
-  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading;
+  const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading || areUnitsLoading;
+
+  // Effect to set default filters once data is loaded
+  useEffect(() => {
+    if (student && !selectedGrade) {
+        setSelectedGrade(String(student.grade));
+    }
+    if (units && selectedGrade && !selectedUnitId) {
+        const firstUnitForGrade = units
+            .filter(u => String(u.grade) === selectedGrade)
+            .sort((a, b) => a.order - b.order)[0];
+        if (firstUnitForGrade) {
+            setSelectedUnitId(firstUnitForGrade.id);
+        } else {
+             setSelectedUnitId(undefined); // No units for this grade
+        }
+    }
+  }, [student, units, selectedGrade, selectedUnitId]);
+
+  // Memoized lists for dropdowns
+  const unitsForSelectedGrade = useMemo(() => {
+      if (!units || !selectedGrade) return [];
+      return units
+          .filter(u => String(u.grade) === selectedGrade)
+          .sort((a,b) => a.order - b.order);
+  }, [units, selectedGrade]);
+
+  const selectedUnit = useMemo(() => {
+      if (!units || !selectedUnitId) return null;
+      return units.find(u => u.id === selectedUnitId);
+  }, [units, selectedUnitId]);
+
+  // Handler for changing grade
+  const handleGradeChange = (grade: string) => {
+      setSelectedGrade(grade);
+      setSelectedUnitId(undefined); // Reset unit when grade changes, useEffect will pick the new default
+  };
+
 
   const handleCompleteLesson = (lessonId: string) => {
     if (!studentDocRef) return;
@@ -796,41 +849,52 @@ function ResourcesPageContent() {
     )
   }
   
-  const defaultGradeTab = student?.grade ? `grade-${student.grade}` : 'grade-1';
-  
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-3xl font-bold font-headline">Resources</h1>
       <p className="text-muted-foreground">Explore lessons created by our teachers! Assigned items are marked with a <Star className="inline w-4 h-4 text-yellow-400 fill-yellow-400" />.</p>
 
-      <Tabs defaultValue={defaultGradeTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5" id="tutorial-grade-tabs">
-          {grades.map(grade => (
-            <TabsTrigger key={grade} value={`grade-${grade}`}>Grade {grade}</TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 space-y-2">
+                <Label htmlFor="grade-filter">Grade</Label>
+                <Select value={selectedGrade} onValueChange={handleGradeChange}>
+                    <SelectTrigger id="grade-filter">
+                        <SelectValue placeholder="Select a grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {[1,2,3,4,5].map(g => <SelectItem key={g} value={String(g)}>Grade {g}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex-1 space-y-2">
+                <Label htmlFor="unit-filter">Unit</Label>
+                 <Select value={selectedUnitId} onValueChange={setSelectedUnitId} disabled={!selectedGrade || unitsForSelectedGrade.length === 0}>
+                    <SelectTrigger id="unit-filter">
+                        <SelectValue placeholder="Select a unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {unitsForSelectedGrade.map(u => <SelectItem key={u.id} value={u.id}>{u.title}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
         
-        {grades.map(grade => (
-            <TabsContent key={grade} value={`grade-${grade}`}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Grade {grade} Learning Path</CardTitle>
-                        <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
-                    </CardHeader>
-                    <CardContent className="overflow-x-auto">
-                        <GradeQuestPath
-                            grade={grade}
-                            lessons={lessons || []}
-                            quizzes={quizzes || []}
-                            student={student}
-                            onSelectLesson={setSelectedLesson}
-                            onSelectQuiz={setSelectedQuiz}
-                        />
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        ))}
-      </Tabs>
+        {selectedUnit ? (
+            <UnitQuestPath
+                unit={selectedUnit}
+                lessons={lessons || []}
+                quizzes={quizzes || []}
+                student={student}
+                onSelectLesson={setSelectedLesson}
+                onSelectQuiz={setSelectedQuiz}
+            />
+        ) : (
+            <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                    <p>{selectedGrade ? "No units found for this grade." : "Select a grade to see available units."}</p>
+                </CardContent>
+            </Card>
+        )}
     </div>
   );
 }
@@ -847,3 +911,5 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
+    
