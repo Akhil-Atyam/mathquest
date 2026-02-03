@@ -29,13 +29,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { OceanTurtle } from '../characters/OceanTurtle';
 import { SpaceAlien } from '../characters/SpaceAlien';
-import { MedievalKnight } from '../characters/MedievalKnight';
 import { DinoTrex } from '../characters/DinoTrex';
 import { Campfire } from '../characters/Campfire';
 import { ForestTrees } from '../characters/ForestTrees';
 import { Seaweed } from '../characters/Seaweed';
 import { Seahorse } from '../characters/Seahorse';
 import { SchoolOfFish } from '../characters/SchoolOfFish';
+import { Astronaut } from '../characters/Astronaut';
+import { Rocket } from '../characters/Rocket';
+import { Shield } from '../characters/Shield';
+import { PrehistoricTrees } from '../characters/PrehistoricTrees';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -488,23 +491,22 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
                     <svg width="100%" height="100%" className="absolute inset-0 opacity-70">
                         {[...Array(100)].map((_, i) => <circle key={i} cx={`${Math.random()*100}%`} cy={`${Math.random()*100}%`} r={Math.random()*1.2} fill="white" />)}
                     </svg>
-                     {/* Planet */}
-                     <div className="absolute top-[15%] right-[10%] w-24 h-24 rounded-full bg-gradient-to-br from-amber-300 to-orange-500 opacity-60">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 rounded-full bg-black/10"></div>
-                     </div>
-                     <div className="absolute bottom-[10%] left-[5%] w-16 h-16 rounded-full bg-gradient-to-tr from-blue-300 to-purple-500 opacity-70"></div>
                 </div>
             );
         case 4: // Medieval
             return (
-                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-gray-200 to-stone-300">
-                    {/* Castle silhouette */}
-                    <div className="absolute bottom-0 left-10 w-48 h-32 opacity-20">
-                        <svg viewBox="0 0 200 100" fill="#78716C"><path d="M0 100 V 50 L 20 50 V 30 L 40 30 V 50 L 60 50 V 20 L 80 20 V 50 H 120 V 20 L 140 20 V 50 L 160 50 V 30 L 180 30 V 50 L 200 50 V 100 Z" /></svg>
-                    </div>
-                     <div className="absolute top-10 right-5 w-24 h-16 opacity-15">
-                        <svg viewBox="0 0 100 100" fill="#FBBF24"><path d="M50,0,61.8,38.2,100,38.2,69.1,61.8,80.9,100,50,76.4,19.1,100,30.9,61.8,0,38.2,38.2,38.2Z"/></svg>
-                    </div>
+                <div className="absolute inset-0 z-0 overflow-hidden bg-stone-400">
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="brick" patternUnits="userSpaceOnUse" width="100" height="50">
+                                <rect width="100" height="50" fill="#A8A29E" />
+                                <rect x="0" y="22" width="100" height="6" fill="#78716C" />
+                                <rect x="47" y="0" width="6" height="25" fill="#78716C" />
+                                <rect x="-3" y="25" width="6" height="25" fill="#78716C" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#brick)" opacity="0.5" />
+                    </svg>
                 </div>
             );
         case 5: // Dinosaur
@@ -593,7 +595,21 @@ const UnitQuestPath = ({
                     newScenery['fishSchool'] = { x: centerX, y: points[7].y };
                 }
             }
+             if (grade === 3 && points.length > 3) {
+                newScenery['rocket'] = { x: points[3].x - 150, y: points[3].y };
+                newScenery['astronaut'] = { x: points[3].x - 90, y: points[3].y + 50 };
+            }
+            if (grade === 4 && points.length > 2) {
+                newScenery['shield'] = { x: centerX, y: points[2].y + 100 };
+            }
+            if (grade === 5 && points.length > 1) {
+                newScenery['trees1'] = { x: points[1].x + 100, y: points[1].y };
+            }
+            if (grade === 5 && points.length > 5) {
+                newScenery['trees2'] = { x: points[5].x - 150, y: points[5].y };
+            }
             setSceneryPositions(newScenery);
+
 
             let lastCompletedIndex = -1;
             for (let i = 0; i < sortedItems.length; i++) {
@@ -725,22 +741,47 @@ const UnitQuestPath = ({
                             </>
                         )}
 
-                        {/* Generic Sidekicks for other grades */}
+                        {/* Grade 3 Scenery */}
                         {grade === 3 && firstNodePos && (
-                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
+                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 80, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
                                 <SpaceAlien />
                             </div>
                         )}
-                         {grade === 4 && firstNodePos && (
-                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
-                                <MedievalKnight />
+                        {grade === 3 && sceneryPositions.rocket && (
+                            <>
+                                <div className="absolute z-10 w-24 h-48 transition-transform hover:scale-105" style={{ top: sceneryPositions.rocket.y - 80, left: sceneryPositions.rocket.x }}>
+                                    <Rocket />
+                                </div>
+                                <div className="absolute z-10 w-20 h-32 transition-transform hover:scale-105" style={{ top: sceneryPositions.astronaut.y - 40, left: sceneryPositions.astronaut.x }}>
+                                    <Astronaut />
+                                </div>
+                            </>
+                        )}
+
+                        {/* Grade 4 Scenery */}
+                        {grade === 4 && sceneryPositions.shield && (
+                            <div className="absolute z-10 w-24 h-32 opacity-70" style={{ top: sceneryPositions.shield.y, left: sceneryPositions.shield.x, transform: 'translateX(-50%)' }}>
+                                <Shield />
                             </div>
                         )}
+                         
+                        {/* Grade 5 Scenery */}
                          {grade === 5 && firstNodePos && (
                             <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
                                 <DinoTrex />
                             </div>
                         )}
+                        {grade === 5 && sceneryPositions.trees1 && (
+                            <div className="absolute z-10 w-32 h-40" style={{ top: sceneryPositions.trees1.y, left: sceneryPositions.trees1.x }}>
+                                <PrehistoricTrees />
+                            </div>
+                        )}
+                        {grade === 5 && sceneryPositions.trees2 && (
+                            <div className="absolute z-10 w-32 h-40" style={{ top: sceneryPositions.trees2.y, left: sceneryPositions.trees2.x }}>
+                                <PrehistoricTrees />
+                            </div>
+                        )}
+
 
                         {sortedItems.map((item, index) => {
                             const isItemQuiz = isQuiz(item);
