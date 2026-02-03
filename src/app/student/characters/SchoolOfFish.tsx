@@ -30,7 +30,7 @@ export function SchoolOfFish() {
       `}</style>
       {fish.map((f, i) => (
         <g key={i} transform={`translate(${f.x}, ${f.y}) scale(${f.scale})`} className="fish-body" style={{ animationDelay: f.delay }}>
-          <path d="M 0 5 C 10 0, 20 0, 30 5 S 40 10, 30 15 C 20 20, 10 20, 0 15 S -10 10, 0 5 Z" fill="#FBBF24" />
+          <path d="M 0 5 C 10 0, 20 0, 30 5 C 40 10, 30 15, 20 20 C 10 20, 10 20, 0 15 S -10 10, 0 5 Z" fill="#FBBF24" />
           <path d="M 28 5 L 35 0 L 35 10 Z" fill="#F97316" />
           <circle cx="5" cy="6" r="1.5" fill="black" />
         </g>

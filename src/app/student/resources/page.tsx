@@ -1,7 +1,4 @@
 
-
-
-
 'use client';
 
 import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
@@ -30,7 +27,6 @@ import ReactMarkdown from 'react-markdown';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ForestFox } from '../characters/ForestFox';
 import { OceanTurtle } from '../characters/OceanTurtle';
 import { SpaceAlien } from '../characters/SpaceAlien';
 import { MedievalKnight } from '../characters/MedievalKnight';
@@ -420,12 +416,12 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
     }
 };
 
-const themes: Record<number, { name: string; sidekick: React.FC }> = {
-    1: { name: 'Forest', sidekick: ForestFox },
-    2: { name: 'Ocean', sidekick: OceanTurtle },
-    3: { name: 'Space', sidekick: SpaceAlien },
-    4: { name: 'Medieval', sidekick: MedievalKnight },
-    5: { name: 'Dinosaur', sidekick: DinoTrex },
+const themes: Record<number, { name: string; }> = {
+    1: { name: 'Forest' },
+    2: { name: 'Ocean' },
+    3: { name: 'Space' },
+    4: { name: 'Medieval' },
+    5: { name: 'Dinosaur' },
 };
 
 const ThemeBackground = ({ grade }: { grade: number }) => {
@@ -463,13 +459,6 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
                     <div className="absolute bottom-[20%] right-[10%] w-12 h-12 rounded-full bg-blue-300/30 animate-pulse [animation-delay:0.5s]"></div>
                     <div className="absolute top-[50%] right-[15%] w-6 h-6 rounded-full bg-blue-300/30 animate-pulse [animation-delay:1.5s]"></div>
                     <div className="absolute bottom-[5%] left-[20%] w-3 h-3 rounded-full bg-blue-300/40 animate-pulse [animation-delay:0.2s]"></div>
-                    {/* Kelp */}
-                    <svg className="absolute bottom-0 left-0 w-24 h-48 text-green-400/40" viewBox="0 0 100 200">
-                        <path d="M 50 200 C 20 150, 80 100, 50 50 S 20 0, 50 0" fill="none" stroke="currentColor" strokeWidth="4" />
-                    </svg>
-                     <svg className="absolute bottom-0 right-5 w-16 h-32 text-green-400/30" viewBox="0 0 100 200">
-                        <path d="M 50 200 C 80 150, 20 100, 50 50 S 80 0, 50 0" fill="none" stroke="currentColor" strokeWidth="3" />
-                    </svg>
                 </div>
             );
         case 3: // Space
@@ -539,7 +528,6 @@ const UnitQuestPath = ({
     const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
 
     const theme = themes[grade] || themes[1];
-    const SidekickComponent = theme.sidekick;
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
@@ -686,9 +674,6 @@ const UnitQuestPath = ({
                                 <div className="absolute z-10 w-24 h-24" style={{ top: firstNodePos.y - 20, left: firstNodePos.x + 110 }}>
                                     <Campfire />
                                 </div>
-                                <div className="absolute z-10 w-36 h-36" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 130 }}>
-                                    <SidekickComponent />
-                                </div>
                             </>
                         )}
                         
@@ -720,9 +705,19 @@ const UnitQuestPath = ({
                         )}
 
                         {/* Generic Sidekicks for other grades */}
-                        {grade > 2 && firstNodePos && (
+                        {grade === 3 && firstNodePos && (
                             <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
-                                <SidekickComponent />
+                                <SpaceAlien />
+                            </div>
+                        )}
+                         {grade === 4 && firstNodePos && (
+                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
+                                <MedievalKnight />
+                            </div>
+                        )}
+                         {grade === 5 && firstNodePos && (
+                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
+                                <DinoTrex />
                             </div>
                         )}
 
@@ -1097,6 +1092,3 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
-
-
-

@@ -12,6 +12,7 @@ export function Seaweed() {
         <path d="M 50 200 C 20 150, 80 100, 50 50 S 20 0, 50 0" fill="none" stroke="currentColor" strokeWidth="6" />
         <path d="M 50 180 C 60 160, 40 140, 50 120" fill="none" stroke="currentColor" strokeWidth="4" />
         <path d="M 50 90 C 40 70, 60 50, 50 30" fill="none" stroke="currentColor" strokeWidth="4" />
+        <path d="M 40 200 C 70 150, 20 100, 40 50 S 70 0, 40 0" fill="none" stroke="currentColor" strokeWidth="3" />
     </svg>
   );
 }
