@@ -412,14 +412,75 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
     }
 };
 
-const themes: Record<number, { name: string; bg: string; character: React.FC }> = {
-    1: { name: 'Forest', bg: 'bg-gradient-to-b from-green-100 to-green-200', character: ForestFox },
-    2: { name: 'Ocean', bg: 'bg-gradient-to-b from-blue-100 to-cyan-100', character: OceanTurtle },
-    3: { name: 'Space', bg: 'bg-gradient-to-b from-indigo-200 to-slate-300', character: SpaceAlien },
-    4: { name: 'Medieval', bg: 'bg-gradient-to-b from-gray-200 to-stone-300', character: MedievalKnight },
-    5: { name: 'Dinosaur', bg: 'bg-gradient-to-b from-amber-100 to-yellow-200', character: DinoTrex },
+const themes: Record<number, { name: string; character: React.FC }> = {
+    1: { name: 'Forest', character: ForestFox },
+    2: { name: 'Ocean', character: OceanTurtle },
+    3: { name: 'Space', character: SpaceAlien },
+    4: { name: 'Medieval', character: MedievalKnight },
+    5: { name: 'Dinosaur', character: DinoTrex },
 };
 
+const ThemeBackground = ({ grade }: { grade: number }) => {
+    switch (grade) {
+        case 1: // Forest
+            return (
+                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
+                    <svg width="100%" height="100%" className="absolute inset-0">
+                        <defs><pattern id="p1" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse"><circle cx="40" cy="40" r="1" fill="hsl(142 71% 45% / 0.1)" /></pattern></defs>
+                        <rect width="100%" height="100%" fill="url(#p1)" />
+                    </svg>
+                    <div className="absolute -bottom-10 -left-10 w-48 h-48 text-green-300/50">
+                        <svg viewBox="0 0 100 100"><path d="M 50 0 L 100 100 L 0 100 Z" fill="currentColor" /></svg>
+                    </div>
+                     <div className="absolute -top-10 -right-5 w-32 h-32 text-green-300/50">
+                        <svg viewBox="0 0 100 100"><path d="M 50 0 L 100 100 L 0 100 Z" fill="currentColor" /></svg>
+                    </div>
+                </div>
+            );
+        case 2: // Ocean
+            return (
+                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-blue-100 to-cyan-100">
+                     <svg width="100%" height="100%" className="absolute inset-0 opacity-50">
+                        {[...Array(20)].map((_, i) => <circle key={i} cx={`${Math.random()*100}%`} cy={`${Math.random()*100}%`} r={Math.random()*10 + 2} fill="white" className="animate-pulse" style={{animationDelay: `${i*0.2}s`}} />)}
+                     </svg>
+                </div>
+            );
+        case 3: // Space
+             return (
+                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-indigo-200 to-slate-300">
+                    <svg width="100%" height="100%" className="absolute inset-0 opacity-70">
+                         {[...Array(50)].map((_, i) => <circle key={i} cx={`${Math.random()*100}%`} cy={`${Math.random()*100}%`} r={Math.random()*1.5 + 0.5} fill="white" />)}
+                         <circle cx="85%" cy="20%" r="25" fill="#FBBF24" opacity="0.3" />
+                         <circle cx="15%" cy="70%" r="15" fill="#93C5FD" opacity="0.4" />
+                    </svg>
+                </div>
+            );
+        case 4: // Medieval
+            return (
+                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-gray-200 to-stone-300">
+                    <div className="absolute top-10 left-5 w-24 h-32 opacity-20">
+                        <svg viewBox="0 0 50 80" fill="#9CA3AF"><path d="M0 0 H 50 V 10 H 40 V 20 H 50 V 80 H 0 Z" /></svg>
+                    </div>
+                     <div className="absolute bottom-10 right-5 w-32 h-48 opacity-20">
+                        <svg viewBox="0 0 50 80" fill="#9CA3AF"><path d="M0 0 H 50 V 10 H 40 V 20 H 50 V 80 H 0 Z" /></svg>
+                    </div>
+                </div>
+            );
+        case 5: // Dinosaur
+            return (
+                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-amber-100 to-yellow-200">
+                    <div className="absolute -bottom-5 -left-5 w-48 h-48 text-green-400/30">
+                        <svg viewBox="0 0 100 100"><path d="M50 0 C 80 20, 80 80, 50 100 C 20 80, 20 20, 50 0 M 50 20 C 40 40, 60 60, 50 80" stroke="currentColor" fill="none" strokeWidth="2"/></svg>
+                    </div>
+                     <div className="absolute top-5 -right-5 w-32 h-32 text-green-400/30 transform -scale-x-100">
+                        <svg viewBox="0 0 100 100"><path d="M50 0 C 80 20, 80 80, 50 100 C 20 80, 20 20, 50 0 M 50 20 C 40 40, 60 60, 50 80" stroke="currentColor" fill="none" strokeWidth="2"/></svg>
+                    </div>
+                </div>
+            );
+        default:
+            return <div className="absolute inset-0 z-0 bg-gray-100" />;
+    }
+};
 
 const UnitQuestPath = ({
     unit,
@@ -548,7 +609,8 @@ const UnitQuestPath = ({
                 <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
             </CardHeader>
             <CardContent>
-                <div id="tutorial-topic-list" className={cn("relative w-full overflow-x-auto p-4 rounded-lg", theme.bg)}>
+                <div id="tutorial-topic-list" className="relative w-full overflow-x-auto p-4 rounded-lg">
+                    <ThemeBackground grade={grade} />
                     <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
                         <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
                             {pathData.remaining && (
