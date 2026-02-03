@@ -429,19 +429,19 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
         position: 'absolute',
         top: `${Math.random() * 100}%`,
         left: `${Math.random() * 100}%`,
-        animation: `fall ${Math.random() * 15 + 10}s linear infinite`,
+        animation: `fall ${Math.random() * 20 + 25}s linear infinite`,
         animationDelay: `${Math.random() * 10}s`,
         opacity: Math.random() * 0.1 + 0.05,
         transform: `rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.5 + 0.5})`,
     }));
-     const bubbleStyles: React.CSSProperties[] = Array.from({ length: 15 }).map(() => ({
+     const bubbleStyles: React.CSSProperties[] = Array.from({ length: 25 }).map(() => ({
         position: 'absolute',
         bottom: '-10px',
         left: `${Math.random() * 100}%`,
         width: `${Math.random() * 20 + 5}px`,
         height: `${Math.random() * 20 + 5}px`,
         borderRadius: '50%',
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
         animation: `bubble ${Math.random() * 10 + 5}s linear infinite`,
         animationDelay: `${Math.random() * 5}s`,
     }));
@@ -689,10 +689,10 @@ const UnitQuestPath = ({
                         {/* Grade 1 Scenery */}
                         {grade === 1 && firstNodePos && (
                             <>
-                                <div className="absolute z-10 w-32 h-40" style={{ top: firstNodePos.y - 80, left: firstNodePos.x + 80 }}>
+                                <div className="absolute z-10 w-24 h-32" style={{ top: firstNodePos.y - 40, left: firstNodePos.x + 90 }}>
                                     <ForestTrees />
                                 </div>
-                                <div className="absolute z-10 w-24 h-24" style={{ top: firstNodePos.y + 20, left: firstNodePos.x + 100 }}>
+                                <div className="absolute z-10 w-20 h-20" style={{ top: firstNodePos.y + 40, left: firstNodePos.x + 80 }}>
                                     <Campfire />
                                 </div>
                             </>
