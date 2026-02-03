@@ -429,10 +429,21 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
         position: 'absolute',
         top: `${Math.random() * 100}%`,
         left: `${Math.random() * 100}%`,
-        animation: `fall ${Math.random() * 10 + 5}s linear infinite`,
-        animationDelay: `${Math.random() * 5}s`,
-        opacity: Math.random() * 0.2 + 0.1,
+        animation: `fall ${Math.random() * 15 + 10}s linear infinite`,
+        animationDelay: `${Math.random() * 10}s`,
+        opacity: Math.random() * 0.1 + 0.05,
         transform: `rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.5 + 0.5})`,
+    }));
+     const bubbleStyles: React.CSSProperties[] = Array.from({ length: 15 }).map(() => ({
+        position: 'absolute',
+        bottom: '-10px',
+        left: `${Math.random() * 100}%`,
+        width: `${Math.random() * 20 + 5}px`,
+        height: `${Math.random() * 20 + 5}px`,
+        borderRadius: '50%',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        animation: `bubble ${Math.random() * 10 + 5}s linear infinite`,
+        animationDelay: `${Math.random() * 5}s`,
     }));
 
     switch (grade) {
@@ -441,8 +452,10 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
                     <style>{`
                         @keyframes fall {
-                            0% { transform: translateY(-100px) rotate(0deg); }
-                            100% { transform: translateY(100vh) rotate(360deg); }
+                            0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+                            10% { opacity: 0.1; }
+                            90% { opacity: 0.1; }
+                            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
                         }
                     `}</style>
                     {leafStyles.map((style, i) => (
@@ -452,13 +465,21 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
             );
         case 2: // Ocean
             return (
-                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-cyan-100 to-blue-200">
+                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-cyan-200 to-blue-400">
+                    <style>{`
+                        @keyframes bubble {
+                            0% { transform: translateY(0); opacity: 0.5; }
+                            100% { transform: translateY(-100vh); opacity: 0; }
+                        }
+                    `}</style>
+                    {/* Waves */}
+                    <svg className="absolute bottom-0 w-full opacity-20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#ffffff" fillOpacity="0.5" d="M0,160L48,181.3C96,203,192,245,288,240C384,235,480,181,576,170.7C672,160,768,192,864,208C960,224,1056,224,1152,202.7C1248,181,1344,139,1392,117.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+                    <svg className="absolute bottom-0 w-full opacity-20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#ffffff" fillOpacity="0.7" d="M0,224L48,208C96,192,192,160,288,165.3C384,171,480,213,576,202.7C672,192,768,128,864,117.3C960,107,1056,149,1152,160C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+                    
                     {/* Bubbles */}
-                    <div className="absolute top-[10%] left-[15%] w-8 h-8 rounded-full bg-blue-300/30 animate-pulse"></div>
-                    <div className="absolute top-[25%] left-[5%] w-4 h-4 rounded-full bg-blue-300/40 animate-pulse [animation-delay:1s]"></div>
-                    <div className="absolute bottom-[20%] right-[10%] w-12 h-12 rounded-full bg-blue-300/30 animate-pulse [animation-delay:0.5s]"></div>
-                    <div className="absolute top-[50%] right-[15%] w-6 h-6 rounded-full bg-blue-300/30 animate-pulse [animation-delay:1.5s]"></div>
-                    <div className="absolute bottom-[5%] left-[20%] w-3 h-3 rounded-full bg-blue-300/40 animate-pulse [animation-delay:0.2s]"></div>
+                    {bubbleStyles.map((style, i) => (
+                        <div key={i} style={style}></div>
+                    ))}
                 </div>
             );
         case 3: // Space
@@ -668,10 +689,10 @@ const UnitQuestPath = ({
                         {/* Grade 1 Scenery */}
                         {grade === 1 && firstNodePos && (
                             <>
-                                <div className="absolute z-10 w-40 h-48" style={{ top: firstNodePos.y - 120, left: firstNodePos.x + 80 }}>
+                                <div className="absolute z-10 w-32 h-40" style={{ top: firstNodePos.y - 80, left: firstNodePos.x + 80 }}>
                                     <ForestTrees />
                                 </div>
-                                <div className="absolute z-10 w-24 h-24" style={{ top: firstNodePos.y - 20, left: firstNodePos.x + 110 }}>
+                                <div className="absolute z-10 w-24 h-24" style={{ top: firstNodePos.y + 20, left: firstNodePos.x + 100 }}>
                                     <Campfire />
                                 </div>
                             </>
@@ -680,19 +701,19 @@ const UnitQuestPath = ({
                         {/* Grade 2 Scenery */}
                         {grade === 2 && firstNodePos && (
                              <>
-                                <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 80, left: firstNodePos.x - 150 }}>
+                                <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 80, left: firstNodePos.x - 200 }}>
                                     <OceanTurtle />
                                 </div>
-                                 <div className="absolute z-10 w-32 h-32 transition-transform hover:scale-110 opacity-80" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 100 }}>
+                                 <div className="absolute z-10 w-32 h-32 transition-transform hover:scale-110 opacity-80" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 150 }}>
                                     <OceanTurtle />
                                 </div>
                                 {sceneryPositions.seaweed && (
-                                    <div className="absolute z-10 w-20 h-40" style={{ top: sceneryPositions.seaweed.y - 80, left: sceneryPositions.seaweed.x }}>
+                                    <div className="absolute z-10 w-24 h-48" style={{ top: sceneryPositions.seaweed.y - 80, left: sceneryPositions.seaweed.x }}>
                                         <Seaweed />
                                     </div>
                                 )}
                                  {sceneryPositions.seahorse && (
-                                    <div className="absolute z-10 w-12 h-24" style={{ top: sceneryPositions.seahorse.y, left: sceneryPositions.seahorse.x }}>
+                                    <div className="absolute z-10 w-16 h-32" style={{ top: sceneryPositions.seahorse.y, left: sceneryPositions.seahorse.x + 20 }}>
                                         <Seahorse />
                                     </div>
                                 )}
