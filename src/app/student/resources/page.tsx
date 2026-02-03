@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
@@ -425,56 +426,74 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
         case 1: // Forest
             return (
                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
-                    <svg width="100%" height="100%" className="absolute inset-0">
-                        <defs><pattern id="p1" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse"><circle cx="40" cy="40" r="1" fill="hsl(142 71% 45% / 0.1)" /></pattern></defs>
-                        <rect width="100%" height="100%" fill="url(#p1)" />
-                    </svg>
-                    <div className="absolute -bottom-10 -left-10 w-48 h-48 text-green-300/50">
-                        <svg viewBox="0 0 100 100"><path d="M 50 0 L 100 100 L 0 100 Z" fill="currentColor" /></svg>
-                    </div>
-                     <div className="absolute -top-10 -right-5 w-32 h-32 text-green-300/50">
-                        <svg viewBox="0 0 100 100"><path d="M 50 0 L 100 100 L 0 100 Z" fill="currentColor" /></svg>
+                    <div className="absolute top-[160px] left-[5%] w-24 h-40 opacity-60">
+                         <svg viewBox="0 0 60 100" className="absolute left-0 bottom-0 w-20 h-32" style={{ filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.1))' }}>
+                            <rect x="25" y="80" width="10" height="20" fill="#704214" />
+                            <polygon points="30,50 0,90 60,90" fill="#285430" />
+                            <polygon points="30,25 5,65 55,65" fill="#3A7D44" />
+                            <polygon points="30,0 10,40 50,40" fill="#5F9D68" />
+                        </svg>
+                        <svg viewBox="0 0 60 100" className="absolute right-0 bottom-5 w-16 h-24" style={{ filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.1))' }}>
+                            <rect x="25" y="80" width="10" height="20" fill="#704214" />
+                            <polygon points="30,50 0,90 60,90" fill="#285430" />
+                            <polygon points="30,25 5,65 55,65" fill="#3A7D44" />
+                            <polygon points="30,0 10,40 50,40" fill="#5F9D68" />
+                        </svg>
                     </div>
                 </div>
             );
         case 2: // Ocean
             return (
-                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-blue-100 to-cyan-100">
-                     <svg width="100%" height="100%" className="absolute inset-0 opacity-50">
-                        {[...Array(20)].map((_, i) => <circle key={i} cx={`${Math.random()*100}%`} cy={`${Math.random()*100}%`} r={Math.random()*10 + 2} fill="white" className="animate-pulse" style={{animationDelay: `${i*0.2}s`}} />)}
-                     </svg>
+                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-cyan-100 to-blue-200">
+                    {/* Bubbles */}
+                    <div className="absolute top-[10%] left-[15%] w-8 h-8 rounded-full bg-blue-300/30 animate-pulse"></div>
+                    <div className="absolute top-[25%] left-[5%] w-4 h-4 rounded-full bg-blue-300/40 animate-pulse [animation-delay:1s]"></div>
+                    <div className="absolute bottom-[20%] right-[10%] w-12 h-12 rounded-full bg-blue-300/30 animate-pulse [animation-delay:0.5s]"></div>
+                    {/* Kelp */}
+                    <svg className="absolute bottom-0 left-0 w-24 h-48 text-green-400/40" viewBox="0 0 100 200">
+                        <path d="M 50 200 C 20 150, 80 100, 50 50 S 20 0, 50 0" fill="none" stroke="currentColor" strokeWidth="4" />
+                    </svg>
+                     <svg className="absolute bottom-0 right-5 w-16 h-32 text-green-400/30" viewBox="0 0 100 200">
+                        <path d="M 50 200 C 80 150, 20 100, 50 50 S 80 0, 50 0" fill="none" stroke="currentColor" strokeWidth="3" />
+                    </svg>
                 </div>
             );
         case 3: // Space
              return (
-                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-indigo-200 to-slate-300">
+                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-slate-800 to-indigo-900">
                     <svg width="100%" height="100%" className="absolute inset-0 opacity-70">
-                         {[...Array(50)].map((_, i) => <circle key={i} cx={`${Math.random()*100}%`} cy={`${Math.random()*100}%`} r={Math.random()*1.5 + 0.5} fill="white" />)}
-                         <circle cx="85%" cy="20%" r="25" fill="#FBBF24" opacity="0.3" />
-                         <circle cx="15%" cy="70%" r="15" fill="#93C5FD" opacity="0.4" />
+                        {[...Array(100)].map((_, i) => <circle key={i} cx={`${Math.random()*100}%`} cy={`${Math.random()*100}%`} r={Math.random()*1.2} fill="white" />)}
                     </svg>
+                     {/* Planet */}
+                     <div className="absolute top-[15%] right-[10%] w-24 h-24 rounded-full bg-gradient-to-br from-amber-300 to-orange-500 opacity-60">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 rounded-full bg-black/10"></div>
+                     </div>
+                     <div className="absolute bottom-[10%] left-[5%] w-16 h-16 rounded-full bg-gradient-to-tr from-blue-300 to-purple-500 opacity-70"></div>
                 </div>
             );
         case 4: // Medieval
             return (
                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-gray-200 to-stone-300">
-                    <div className="absolute top-10 left-5 w-24 h-32 opacity-20">
-                        <svg viewBox="0 0 50 80" fill="#9CA3AF"><path d="M0 0 H 50 V 10 H 40 V 20 H 50 V 80 H 0 Z" /></svg>
+                    {/* Castle silhouette */}
+                    <div className="absolute bottom-0 left-10 w-48 h-32 opacity-20">
+                        <svg viewBox="0 0 200 100" fill="#78716C"><path d="M0 100 V 50 L 20 50 V 30 L 40 30 V 50 L 60 50 V 20 L 80 20 V 50 H 120 V 20 L 140 20 V 50 L 160 50 V 30 L 180 30 V 50 L 200 50 V 100 Z" /></svg>
                     </div>
-                     <div className="absolute bottom-10 right-5 w-32 h-48 opacity-20">
-                        <svg viewBox="0 0 50 80" fill="#9CA3AF"><path d="M0 0 H 50 V 10 H 40 V 20 H 50 V 80 H 0 Z" /></svg>
+                     <div className="absolute top-10 right-5 w-24 h-16 opacity-15">
+                        <svg viewBox="0 0 100 100" fill="#FBBF24"><path d="M50,0,61.8,38.2,100,38.2,69.1,61.8,80.9,100,50,76.4,19.1,100,30.9,61.8,0,38.2,38.2,38.2Z"/></svg>
                     </div>
                 </div>
             );
         case 5: // Dinosaur
             return (
-                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-amber-100 to-yellow-200">
-                    <div className="absolute -bottom-5 -left-5 w-48 h-48 text-green-400/30">
-                        <svg viewBox="0 0 100 100"><path d="M50 0 C 80 20, 80 80, 50 100 C 20 80, 20 20, 50 0 M 50 20 C 40 40, 60 60, 50 80" stroke="currentColor" fill="none" strokeWidth="2"/></svg>
-                    </div>
-                     <div className="absolute top-5 -right-5 w-32 h-32 text-green-400/30 transform -scale-x-100">
-                        <svg viewBox="0 0 100 100"><path d="M50 0 C 80 20, 80 80, 50 100 C 20 80, 20 20, 50 0 M 50 20 C 40 40, 60 60, 50 80" stroke="currentColor" fill="none" strokeWidth="2"/></svg>
-                    </div>
+                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-amber-100 to-lime-200">
+                    {/* Volcano silhouette */}
+                    <svg className="absolute bottom-0 right-0 w-64 h-48 text-orange-800/20" viewBox="0 0 200 100">
+                        <path d="M 0 100 L 80 100 L 120 20 L 140 40 L 200 100 Z" fill="currentColor" />
+                    </svg>
+                    {/* Fern */}
+                     <svg className="absolute bottom-5 left-5 w-32 h-32 text-green-700/20" viewBox="0 0 100 100">
+                        <path d="M50 90 C 20 70, 80 70, 50 90 M50 90 C 50 50, 20 60, 20 20 M50 90 C 50 50, 80 60, 80 20 M20 20 C 0 20, 30 20, 20 40 M20 40 C 0 40, 30 40, 20 60 M 80 20 C 100 20, 70 20, 80 40 M 80 40 C 100 40, 70 40, 80 60" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
                 </div>
             );
         default:
@@ -932,7 +951,7 @@ function ResourcesPageContent() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <h1 className="text-3xl font-bold font-headline">Resources</h1>
-            <p className="text-muted-foreground">Explore lessons created by our teachers!</p>
+            <p className="text-muted-foreground">Explore lessons created by our teachers! Assigned items are marked with a <Star className="inline w-4 h-4 text-yellow-400 fill-yellow-400" />.</p>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-64 w-full" />
         </div>
@@ -976,7 +995,7 @@ function ResourcesPageContent() {
             <div className="flex-1 space-y-2">
                 <Label htmlFor="grade-filter">Grade</Label>
                 <Select value={selectedGrade} onValueChange={handleGradeChange}>
-                    <SelectTrigger id="grade-filter">
+                    <SelectTrigger id="grade-filter" data-ai-hint="grade dropdown">
                         <SelectValue placeholder="Select a grade" />
                     </SelectTrigger>
                     <SelectContent>
@@ -987,7 +1006,7 @@ function ResourcesPageContent() {
             <div className="flex-1 space-y-2">
                 <Label htmlFor="unit-filter">Unit</Label>
                  <Select value={selectedUnitId} onValueChange={setSelectedUnitId} disabled={!selectedGrade || unitsForSelectedGrade.length === 0}>
-                    <SelectTrigger id="unit-filter">
+                    <SelectTrigger id="unit-filter" data-ai-hint="unit dropdown">
                         <SelectValue placeholder="Select a unit" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1030,3 +1049,4 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
