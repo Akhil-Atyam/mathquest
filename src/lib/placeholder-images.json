@@ -1,3 +1,64 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "grade-1-background",
+      "description": "A whimsical forest path background for grade 1.",
+      "imageUrl": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxmb3Jlc3QlMjBwYXRofGVufDB8fHx8MTc3MDAxNzM5OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "forest path"
+    },
+    {
+      "id": "grade-1-char-1",
+      "description": "A friendly cartoon fox character for the forest theme.",
+      "imageUrl": "https://images.unsplash.com/photo-1727884747979-da39611f3712?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmcmllbmRseSUyMGZveHxlbnwwfHx8fDE3NzAwODgzNjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "friendly fox"
+    },
+    {
+      "id": "grade-2-background",
+      "description": "An underwater ocean scene background for grade 2.",
+      "imageUrl": "https://images.unsplash.com/photo-1676164599180-6591ad5d3a15?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx1bmRlcndhdGVyJTIwc2NlbmV8ZW58MHx8fHwxNzcwMDg4MzYwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "underwater scene"
+    },
+    {
+      "id": "grade-2-char-1",
+      "description": "A cute cartoon turtle character for the ocean theme.",
+      "imageUrl": "https://images.unsplash.com/photo-1698430310129-17e01f622e96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjYXJ0b29uJTIwdHVydGxlfGVufDB8fHx8MTc3MDA4ODM2MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cartoon turtle"
+    },
+    {
+      "id": "grade-3-background",
+      "description": "A vibrant galaxy background for the space theme for grade 3.",
+      "imageUrl": "https://images.unsplash.com/photo-1594896661312-3a41f3439870?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c3RhcnJ5JTIwZ2FsYXh5fGVufDB8fHx8MTc3MDA3MzExN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "starry galaxy"
+    },
+    {
+      "id": "grade-3-char-1",
+      "description": "A cute alien character for the space theme.",
+      "imageUrl": "https://images.unsplash.com/photo-1610714872462-2d62b7dfecf4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjdXRlJTIwYWxpZW58ZW58MHx8fHwxNzcwMDg4MzYwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cute alien"
+    },
+    {
+      "id": "grade-4-background",
+      "description": "A medieval castle background for grade 4.",
+      "imageUrl": "https://images.unsplash.com/photo-1649609765086-99fa1335c470?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtZWRpZXZhbCUyMGNhc3RsZXxlbnwwfHx8fDE3NzAwMzU5ODd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "medieval castle"
+    },
+    {
+      "id": "grade-4-char-1",
+      "description": "A brave knight character for the medieval theme.",
+      "imageUrl": "https://images.unsplash.com/photo-1560339788-c1fd31736074?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxicmF2ZSUyMGtuaWdodHxlbnwwfHx8fDE3NzAwODgzNjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "brave knight"
+    },
+    {
+      "id": "grade-5-background",
+      "description": "A lush jungle background for the dinosaur theme for grade 5.",
+      "imageUrl": "https://images.unsplash.com/photo-1650644610653-5f8514718a8e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxkaW5vc2F1ciUyMGp1bmdsZXxlbnwwfHx8fDE3NzAwODgzNjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dinosaur jungle"
+    },
+    {
+      "id": "grade-5-char-1",
+      "description": "A friendly baby t-rex character for the dinosaur theme.",
+      "imageUrl": "https://images.unsplash.com/photo-1495399375768-af8af1b8b9f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxiYWJ5JTIwdC1yZXh8ZW58MHx8fHwxNzcwMDg4MzYwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "baby t-rex"
+    }
+  ]
 }

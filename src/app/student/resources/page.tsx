@@ -24,9 +24,10 @@ import { useToast } from '@/hooks/use-toast';
 import { badges as allBadges } from '@/lib/data';
 import { Progress } from '@/components/ui/progress';
 import ReactMarkdown from 'react-markdown';
-import { QuestPathDecorations } from './QuestPathDecorations';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -407,6 +408,20 @@ const getQuestNodeIcon = (item: Lesson | Quiz) => {
     }
 };
 
+type Theme = {
+    name: string;
+    backgroundId: string;
+    characterIds: string[];
+};
+
+const themes: Record<number, Theme> = {
+    1: { name: 'Forest', backgroundId: 'grade-1-background', characterIds: ['grade-1-char-1'] },
+    2: { name: 'Ocean', backgroundId: 'grade-2-background', characterIds: ['grade-2-char-1'] },
+    3: { name: 'Space', backgroundId: 'grade-3-background', characterIds: ['grade-3-char-1'] },
+    4: { name: 'Medieval', backgroundId: 'grade-4-background', characterIds: ['grade-4-char-1'] },
+    5: { name: 'Dinosaur', backgroundId: 'grade-5-background', characterIds: ['grade-5-char-1'] },
+};
+
 
 const UnitQuestPath = ({
     unit,
@@ -415,6 +430,7 @@ const UnitQuestPath = ({
     student, 
     onSelectLesson,
     onSelectQuiz,
+    grade,
 }: { 
     unit: { id: string; title: string; grade: number, order: number };
     lessons: Lesson[], 
@@ -422,11 +438,17 @@ const UnitQuestPath = ({
     student: Student | null, 
     onSelectLesson: (lesson: Lesson) => void;
     onSelectQuiz: (quiz: Quiz) => void;
+    grade: number;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pathData, setPathData] = useState<{ progress: string, remaining: string }>({ progress: '', remaining: '' });
     const [nodePositions, setNodePositions] = useState<{x: number, y: number}[]>([]);
+    const [characterPositions, setCharacterPositions] = useState<{x: number, y: number, imageUrl: string, imageHint: string}[]>([]);
     const [placementTestNodeY, setPlacementTestNodeY] = useState<number | null>(null);
+
+    const theme = themes[grade] || themes[1]; // Default to grade 1 theme
+    const background = PlaceHolderImages.find(img => img.id === theme.backgroundId);
+    const characters = theme.characterIds.map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean) as { id: string; description: string; imageUrl: string; imageHint: string; }[];
 
     const isQuiz = (item: any): item is Quiz => 'questions' in item;
     const completedLessonIds = new Set(student?.completedLessons || []);
@@ -448,7 +470,7 @@ const UnitQuestPath = ({
             if (sortedItems.length < 1 || !containerWidth) return;
 
             const centerX = containerWidth / 2;
-            const amplitude = Math.min(containerWidth * 0.2, 150); // Cap amplitude
+            const amplitude = Math.min(containerWidth * 0.2, 150);
             const yStep = 160;
             const initialY = 80;
 
@@ -461,6 +483,30 @@ const UnitQuestPath = ({
                 return { x, y };
             });
             setNodePositions(points);
+
+            // Calculate Character Positions
+            const newCharPositions: {x: number, y: number, imageUrl: string, imageHint: string}[] = [];
+            if (characters.length > 0) {
+                 for (let i = 0; i < sortedItems.length; i++) {
+                     // Place a character every 3 nodes
+                    if (i > 0 && i % 3 === 0) {
+                        const charIndex = (i / 3 - 1) % characters.length;
+                        const character = characters[charIndex];
+                        if (character) {
+                             const sineValue = Math.sin(i * Math.PI / 3);
+                             const y = initialY + (i - 0.5) * yStep; // Place between nodes
+                             // Place on opposite side of the path's curve
+                             const x = sineValue > 0 
+                                 ? centerX - (amplitude * 1.2) - 75 // Place on the left
+                                 : centerX + (amplitude * 1.2) + 75; // Place on the right
+
+                             newCharPositions.push({ x: x, y: y, imageUrl: character.imageUrl, imageHint: character.imageHint });
+                        }
+                    }
+                }
+            }
+            setCharacterPositions(newCharPositions);
+
 
             let lastCompletedIndex = -1;
             for (let i = 0; i < sortedItems.length; i++) {
@@ -500,7 +546,7 @@ const UnitQuestPath = ({
                 observer.unobserve(containerRef.current);
             }
         };
-    }, [sortedItems, completedLessonIds, completedQuizIds]);
+    }, [sortedItems, completedLessonIds, completedQuizIds, characters]);
 
 
     if (sortedItems.length === 0) {
@@ -508,32 +554,39 @@ const UnitQuestPath = ({
     }
 
     return (
-        <Card>
+        <Card className="overflow-hidden">
             <CardHeader>
                 <CardTitle>{unit.title}</CardTitle>
                 <CardDescription>Complete the lessons in order to unlock the next one!</CardDescription>
             </CardHeader>
             <CardContent>
-                <div id="tutorial-topic-list" className="relative w-full overflow-x-auto p-4">
+                <div id="tutorial-topic-list" className="relative w-full overflow-x-auto p-4 rounded-lg">
+                    {background && (
+                        <Image
+                            src={background.imageUrl}
+                            alt={`${theme.name} theme background`}
+                            fill
+                            className="object-cover z-[-10]"
+                            data-ai-hint={background.imageHint}
+                        />
+                    )}
                     <div ref={containerRef} className="relative" style={{ minHeight: `${sortedItems.length * 10 + 5}rem`}}>
-                        <QuestPathDecorations />
                         <svg className="absolute top-0 left-0 w-full h-full z-0" overflow="visible">
-                            {/* Draw the remaining path first (bottom layer) */}
                             {pathData.remaining && (
                                 <path
                                     d={pathData.remaining}
                                     stroke="hsl(var(--primary))"
+                                    strokeOpacity="0.5"
                                     strokeWidth="10"
                                     fill="none"
                                     strokeLinecap="round"
                                 />
                             )}
-                            {/* Draw the progress path on top */}
                             {pathData.progress && (
                                 <path
                                     d={pathData.progress}
                                     stroke="hsl(142 71% 45%)" // Green color
-                                    strokeWidth="10" // Make it slightly thicker to cover the underlying path
+                                    strokeWidth="10" 
                                     fill="none"
                                     strokeLinecap="round"
                                 />
@@ -550,6 +603,27 @@ const UnitQuestPath = ({
                                 />
                             )}
                         </svg>
+
+                        {characterPositions.map((char, index) => (
+                           <div
+                                key={`char-${index}`}
+                                className="absolute z-10 w-24 h-24 md:w-36 md:h-36 transition-transform hover:scale-110"
+                                style={{
+                                    top: `${char.y - 75}px`, // Adjust for character height
+                                    left: `${char.x}px`,
+                                    transform: 'translateX(-50%)',
+                                }}
+                           >
+                                <Image
+                                    src={char.imageUrl}
+                                    alt="Theme character"
+                                    width={150}
+                                    height={150}
+                                    className="object-contain"
+                                    data-ai-hint={char.imageHint}
+                                />
+                           </div>
+                        ))}
 
                         {sortedItems.map((item, index) => {
                             const isItemQuiz = isQuiz(item);
@@ -573,7 +647,7 @@ const UnitQuestPath = ({
                             return (
                                 <div
                                     key={item.id}
-                                    className="absolute z-10"
+                                    className="absolute z-20"
                                     style={{
                                         top: `${position.y - 48}px`,
                                         left: `${position.x}px`,
@@ -889,7 +963,7 @@ function ResourcesPageContent() {
             </div>
         </div>
         
-        {selectedUnit ? (
+        {selectedUnit && selectedGrade ? (
             <UnitQuestPath
                 unit={selectedUnit}
                 lessons={lessons || []}
@@ -897,6 +971,7 @@ function ResourcesPageContent() {
                 student={student}
                 onSelectLesson={setSelectedLesson}
                 onSelectQuiz={setSelectedQuiz}
+                grade={parseInt(selectedGrade)}
             />
         ) : (
             <Card>
@@ -921,7 +996,3 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
-
-    
-
-    
