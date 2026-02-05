@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useRef } from 'react';
@@ -69,6 +70,7 @@ export const InteractiveDotGrid = () => {
   return (
     <div
       ref={gridRef}
+      aria-hidden="true"
       className="absolute inset-0 -z-10 grid gap-4 items-center justify-center p-8 overflow-hidden"
       style={{
         gridTemplateColumns: `repeat(${numCols}, 1fr)`,

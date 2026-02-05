@@ -27,7 +27,7 @@ function DecorativeIcons() {
   }
 
   return (
-    <>
+    <div aria-hidden="true">
       <div className="absolute top-10 left-10 bg-accent/20 text-accent p-2 rounded-full animate-bounce">
         <Plus className="w-8 h-8" />
       </div>
@@ -43,7 +43,7 @@ function DecorativeIcons() {
       <div className="absolute bottom-10 right-1/2 bg-purple-500/20 text-purple-600 p-2 rounded-full animate-pulse delay-300">
         <Grip className="w-8 h-8" />
       </div>
-    </>
+    </div>
   );
 }
 

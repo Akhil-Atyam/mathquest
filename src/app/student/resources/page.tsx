@@ -341,6 +341,7 @@ const QuestNode = ({
           <button
             onClick={onClick}
             disabled={!isUnlocked}
+            aria-label={`${title} - ${isCompleted ? 'Completed' : isUnlocked ? 'Unlocked' : 'Locked'}`}
             className={cn(
               "relative flex h-24 w-24 items-center justify-center rounded-full border-4 shadow-lg transition-all duration-300 transform hover:scale-110",
               isUnlocked ? "cursor-pointer" : "cursor-not-allowed",
@@ -452,7 +453,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
     switch (grade) {
         case 1: // Forest
             return (
-                <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
+                <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
                     <style>{`
                         @keyframes fall {
                             0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
@@ -468,7 +469,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
             );
         case 2: // Ocean
             return (
-                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-cyan-200 to-blue-400">
+                 <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-cyan-200 to-blue-400">
                     <style>{`
                         @keyframes bubble {
                             0% { transform: translateY(0); opacity: 0.5; }
@@ -487,7 +488,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
             );
         case 3: // Space
              return (
-                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-slate-800 to-indigo-900">
+                 <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-slate-800 to-indigo-900">
                     <svg width="100%" height="100%" className="absolute inset-0 opacity-70">
                         {[...Array(100)].map((_, i) => <circle key={i} cx={`${Math.random()*100}%`} cy={`${Math.random()*100}%`} r={Math.random()*1.2} fill="white" />)}
                     </svg>
@@ -495,7 +496,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
             );
         case 4: // Medieval
             return (
-                <div className="absolute inset-0 z-0 overflow-hidden bg-stone-400">
+                <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden bg-stone-400">
                     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <pattern id="brick" patternUnits="userSpaceOnUse" width="100" height="50">
@@ -511,7 +512,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
             );
         case 5: // Dinosaur
             return (
-                 <div className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-amber-100 to-lime-200">
+                 <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-amber-100 to-lime-200">
                     {/* Volcano silhouette */}
                     <svg className="absolute bottom-0 right-0 w-64 h-48 text-orange-800/20" viewBox="0 0 200 100">
                         <path d="M 0 100 L 80 100 L 120 20 L 140 40 L 200 100 Z" fill="currentColor" />
@@ -523,7 +524,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
                 </div>
             );
         default:
-            return <div className="absolute inset-0 z-0 bg-gray-100" />;
+            return <div aria-hidden="true" className="absolute inset-0 z-0 bg-gray-100" />;
     }
 };
 
