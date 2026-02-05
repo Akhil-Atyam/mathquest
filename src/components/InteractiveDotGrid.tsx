@@ -73,7 +73,7 @@ export const InteractiveDotGrid = () => {
   const numCols = 30;
 
   return (
-    <section className="py-20 relative bg-card overflow-hidden">
+    <section className="py-20 relative overflow-hidden">
       {/* The grid of dots, positioned absolutely to fill the section and layered behind the text */}
       <div
         ref={gridRef}
@@ -86,7 +86,7 @@ export const InteractiveDotGrid = () => {
         {Array.from({ length: numRows * numCols }).map((_, i) => (
           <div
             key={i}
-            className="dot-item w-2 h-2 bg-primary/50 rounded-full transition-transform duration-300 ease-out"
+            className="dot-item w-2 h-2 bg-foreground/50 rounded-full transition-transform duration-300 ease-out"
           />
         ))}
       </div>
