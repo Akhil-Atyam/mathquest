@@ -167,7 +167,13 @@ export default function Home() {
           </div>
         </section>
 
-        <InteractiveDotGrid />
+        <section className="relative py-20">
+            <InteractiveDotGrid />
+            <div className="container mx-auto px-4 text-center relative">
+                <h2 className="text-3xl font-bold mb-2">Just for Fun</h2>
+                <p className="text-muted-foreground">Move your mouse around to see the effect.</p>
+            </div>
+        </section>
       </main>
 
       {/* Footer section with copyright information */}

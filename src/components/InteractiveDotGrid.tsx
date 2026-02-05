@@ -1,24 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 /**
  * A component that renders an interactive grid of dots that react to mouse movement.
- *
- * This component is client-side only ('use client') because it relies on browser APIs
- * like `window.addEventListener` and `requestAnimationFrame` for interactivity.
+ * This component is designed to be used as a background effect within a relatively positioned container.
  *
  * How it works:
  * 1. It creates a grid of small `div` elements, each representing a dot.
- * 2. An effect hook (`useEffect`) adds a `mousemove` event listener to the `window`.
- * 3. When the mouse moves, the handler function iterates through each dot.
- * 4. For each dot, it calculates the distance between the dot's center and the mouse cursor.
- * 5. Based on this distance, it calculates a "force" that pushes the dot away from the cursor.
- *    The closer the mouse, the stronger the push.
- * 6. It applies this push effect using a CSS `transform`, which is smoothly animated
- *    thanks to Tailwind's transition and duration utility classes on the dot elements.
- * 7. A `requestAnimationFrame` is used to ensure the animation is smooth and efficient.
- * 8. The event listener is removed when the component unmounts to prevent memory leaks.
+ * 2. It is absolutely positioned to fill its parent and sits on a negative z-index to stay in the background.
+ * 3. An effect hook adds a `mousemove` event listener to the `window`.
+ * 4. When the mouse moves, the handler calculates the distance from the cursor to each dot and applies a CSS transform to "push" the dot away.
+ * 5. This effect is animated smoothly using CSS transitions.
  */
 export const InteractiveDotGrid = () => {
   const gridRef = useRef<HTMLDivElement>(null);
@@ -29,17 +22,15 @@ export const InteractiveDotGrid = () => {
     if (!grid) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      // Cancel the previous animation frame to avoid multiple updates in one frame
+      // Use requestAnimationFrame to batch updates for smooth performance
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
 
-      // Request a new animation frame to process the mouse move
       animationFrameRef.current = requestAnimationFrame(() => {
-        const dots = grid.querySelectorAll('.dot-item');
-        dots.forEach(dot => {
-          const rect = dot.getBoundingClientRect();
-          const dotEl = dot as HTMLElement;
+        const dots = grid.querySelectorAll<HTMLElement>('.dot-item');
+        dots.forEach(dotEl => {
+          const rect = dotEl.getBoundingClientRect();
           const dx = e.clientX - (rect.left + rect.width / 2);
           const dy = e.clientY - (rect.top + rect.height / 2);
           const distance = Math.sqrt(dx * dx + dy * dy);
@@ -47,55 +38,49 @@ export const InteractiveDotGrid = () => {
           const maxDistance = 200; // The radius of influence around the cursor
           const force = Math.max(0, 1 - distance / maxDistance); // Normalized force (0 to 1)
           
-          // Calculate how much to push the dot away. The push is stronger when closer.
-          // The -30 is a multiplier for the push distance.
+          // Calculate the push distance. The push is stronger when closer.
           const tx = (dx / distance) * force * -30;
           const ty = (dy / distance) * force * -30;
           
-          // Apply the transform to the dot's style
-          dotEl.style.transform = `translateX(${tx || 0}px) translateY(${ty || 0}px)`;
+          // Apply the transform, handling the edge case where distance is 0
+          if (isNaN(tx) || isNaN(ty)) {
+            dotEl.style.transform = `translateX(0px) translateY(0px)`;
+          } else {
+            dotEl.style.transform = `translateX(${tx}px) translateY(${ty}px)`;
+          }
         });
       });
     };
 
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Cleanup function to remove the event listener and cancel any pending animation frame
+    // Cleanup: remove the event listener and cancel any pending animation frame on unmount
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const numRows = 10;
   const numCols = 30;
 
   return (
-    <section className="py-20 relative overflow-hidden">
-      {/* The grid of dots, positioned absolutely to fill the section and layered behind the text */}
-      <div
-        ref={gridRef}
-        className="absolute inset-0 z-0 grid gap-4 items-center justify-center p-8"
-        style={{
-          gridTemplateColumns: `repeat(${numCols}, 1fr)`,
-          gridTemplateRows: `repeat(${numRows}, 1fr)`,
-        }}
-      >
-        {Array.from({ length: numRows * numCols }).map((_, i) => (
-          <div
-            key={i}
-            className="dot-item w-2 h-2 bg-foreground/50 rounded-full transition-transform duration-300 ease-out"
-          />
-        ))}
-      </div>
-      
-      {/* The text content, layered on top of the dots */}
-      <div className="container mx-auto px-4 text-center z-10 relative">
-        <h2 className="text-3xl font-bold mb-2">Just for Fun</h2>
-        <p className="text-muted-foreground">Move your mouse around to see the effect.</p>
-      </div>
-    </section>
+    <div
+      ref={gridRef}
+      className="absolute inset-0 -z-10 grid gap-4 items-center justify-center p-8 overflow-hidden"
+      style={{
+        gridTemplateColumns: `repeat(${numCols}, 1fr)`,
+        gridTemplateRows: `repeat(${numRows}, 1fr)`,
+      }}
+    >
+      {Array.from({ length: numRows * numCols }).map((_, i) => (
+        <div
+          key={i}
+          className="dot-item w-2 h-2 bg-foreground/20 rounded-full transition-transform duration-300 ease-out"
+        />
+      ))}
+    </div>
   );
 };
