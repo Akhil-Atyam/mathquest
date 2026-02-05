@@ -445,8 +445,8 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
         height: `${Math.random() * 20 + 5}px`,
         borderRadius: '50%',
         backgroundColor: 'rgba(255, 255, 255, 0.6)',
-        animation: `bubble ${Math.random() * 10 + 5}s linear infinite`,
-        animationDelay: `${Math.random() * 5}s`,
+        animation: `bubble ${Math.random() * 20 + 15}s linear infinite`,
+        animationDelay: `${Math.random() * 10}s`,
     }));
 
     switch (grade) {
@@ -597,7 +597,8 @@ const UnitQuestPath = ({
             // Scenery for Grade 2: Ocean
             if (grade === 2) {
                 if (points.length > 0) {
-                    newScenery['turtles'] = { x: firstNodePos.x - 250, y: firstNodePos.y - 80 };
+                    newScenery['turtles1'] = { x: firstNodePos.x - 250, y: firstNodePos.y - 80 };
+                    newScenery['turtles2'] = { x: firstNodePos.x - 200, y: firstNodePos.y - 50 };
                 }
                 if (points.length > 4) {
                     newScenery['seaweed'] = { x: points[4].x + 100, y: points[4].y };
@@ -611,7 +612,7 @@ const UnitQuestPath = ({
             // Scenery for Grade 3: Space
              if (grade === 3) {
                 if (points.length > 0) {
-                    newScenery['alien'] = { x: firstNodePos.x - 120, y: firstNodePos.y - 40 };
+                    newScenery['alien'] = { x: firstNodePos.x - 120, y: firstNodePos.y };
                 }
                 if (points.length > 3) {
                     newScenery['rocket'] = { x: points[3].x + 100, y: points[3].y - 80 };
@@ -743,12 +744,12 @@ const UnitQuestPath = ({
                         )}
                         
                         {/* Grade 2 Scenery */}
-                        {grade === 2 && sceneryPositions.turtles && (
+                        {grade === 2 && sceneryPositions.turtles1 && (
                              <>
-                                <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.turtles.y, left: sceneryPositions.turtles.x }}>
+                                <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.turtles1.y, left: sceneryPositions.turtles1.x }}>
                                     <OceanTurtle />
                                 </div>
-                                 <div className="absolute z-10 w-32 h-32 transition-transform hover:scale-110 opacity-80" style={{ top: sceneryPositions.turtles.y + 40, left: sceneryPositions.turtles.x + 50 }}>
+                                 <div className="absolute z-10 w-32 h-32 transition-transform hover:scale-110 opacity-80" style={{ top: sceneryPositions.turtles2.y, left: sceneryPositions.turtles2.x }}>
                                     <OceanTurtle />
                                 </div>
                             </>
