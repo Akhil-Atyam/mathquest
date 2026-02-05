@@ -874,6 +874,55 @@ function ResourcesPageContent() {
       }
     }
   }, [lessons, quizzes, searchParams]);
+
+  // Effect to award badges for lesson completion milestones.
+  useEffect(() => {
+    // Ensure we have the necessary data and are on the client side.
+    if (!student || !studentDocRef) return;
+
+    const completedCount = student.completedLessons?.length || 0;
+    const studentBadges = new Set(student.badges || []);
+    
+    // An array to hold any new badges that should be awarded.
+    const newBadgesToAward: string[] = [];
+
+    // Define the lesson completion milestones and their corresponding badge IDs.
+    const lessonMilestones = [
+      { count: 1, id: 'badge-lesson-1' },
+      { count: 5, id: 'badge-lesson-5' },
+      { count: 10, id: 'badge-lesson-10' },
+      { count: 50, id: 'badge-lesson-50' },
+      { count: 100, id: 'badge-lesson-100' },
+    ];
+
+    // Check each milestone.
+    lessonMilestones.forEach(milestone => {
+      if (completedCount >= milestone.count && !studentBadges.has(milestone.id)) {
+        newBadgesToAward.push(milestone.id);
+      }
+    });
+
+    // If new badges were earned, update Firestore and show a toast notification.
+    if (newBadgesToAward.length > 0) {
+      updateDoc(studentDocRef, {
+        badges: arrayUnion(...newBadgesToAward)
+      }).then(() => {
+        // Find the highest-tiered badge that was just awarded to show in the toast.
+        const highestNewBadgeId = newBadgesToAward[newBadgesToAward.length - 1];
+        const badgeForToast = allBadges.find(b => b.id === highestNewBadgeId);
+        
+        if (badgeForToast) {
+          toast({
+            title: "New Badge Unlocked!",
+            description: `You've earned the "${badgeForToast.name}" badge!`,
+          });
+        }
+      }).catch(error => {
+        // Handle potential errors during the update.
+        console.error("Error awarding badge:", error);
+      });
+    }
+  }, [student, studentDocRef, toast]); // Re-run when the student data changes.
   
   const isLoading = isUserLoading || isStudentLoading || areLessonsLoading || areQuizzesLoading;
 

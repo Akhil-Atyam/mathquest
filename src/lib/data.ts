@@ -1,5 +1,5 @@
 import type { Student, Teacher, Resource, Quiz, Badge, Booking } from '@/lib/types';
-import { Award, Star, Trophy } from 'lucide-react';
+import { Award, Star, Trophy, BookOpen, Library, Shield, BrainCircuit, GraduationCap } from 'lucide-react';
 
 /**
  * @fileoverview This file contains mock data for the application.
@@ -25,10 +25,19 @@ export const topics: string[] = [
 
 // Mock data for badges that students can earn.
 export const badges: Badge[] = [
-  { id: 'badge-1', name: 'Addition Ace', icon: Award },
-  { id: 'badge-2', name: 'Subtraction Star', icon: Star },
-  { id: 'badge-3', name: 'Fraction Fanatic', icon: Trophy },
+  // Topic Badges (awarded for high quiz scores)
+  { id: 'badge-topic-addition', name: 'Addition Ace', icon: Award },
+  { id: 'badge-topic-subtraction', name: 'Subtraction Star', icon: Star },
+  { id: 'badge-topic-fractions', name: 'Fraction Fanatic', icon: Trophy },
+
+  // Lesson Completion Badges
+  { id: 'badge-lesson-1', name: 'First Step', icon: BookOpen },
+  { id: 'badge-lesson-5', name: 'Bookworm', icon: Library },
+  { id: 'badge-lesson-10', name: 'Knowledge Knight', icon: Shield },
+  { id: 'badge-lesson-50', name: 'Wisdom Wizard', icon: BrainCircuit },
+  { id: 'badge-lesson-100', name: 'Sage of the School', icon: GraduationCap },
 ];
+
 
 // Mock data for learning resources (lessons, videos, etc.).
 // This is now deprecated in favor of fetching live lessons from Firestore.
