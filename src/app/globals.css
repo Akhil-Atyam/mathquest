@@ -16,9 +16,9 @@
 }
 
 .animated-gradient-background {
-  background: linear-gradient(-45deg, hsl(var(--background)), hsl(207, 100%, 97%), hsl(207, 90%, 90%), hsl(33, 100%, 95%));
-  background-size: 200% 200%;
-  animation: gradient-bg 25s ease infinite;
+  background: linear-gradient(-45deg, hsl(207, 90%, 85%), hsl(var(--background)), hsl(33, 100%, 85%), hsl(240, 100%, 95%));
+  background-size: 400% 400%;
+  animation: gradient-bg 15s ease infinite;
 }
 
 @layer base {
