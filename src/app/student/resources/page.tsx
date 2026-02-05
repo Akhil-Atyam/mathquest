@@ -32,7 +32,6 @@ import { SpaceAlien } from '../characters/SpaceAlien';
 import { DinoTrex } from '../characters/DinoTrex';
 import { Campfire } from '../characters/Campfire';
 import { ForestTrees } from '../characters/ForestTrees';
-import { Seaweed } from '../characters/Seaweed';
 import { Seahorse } from '../characters/Seahorse';
 import { SchoolOfFish } from '../characters/SchoolOfFish';
 import { Astronaut } from '../characters/Astronaut';
@@ -41,6 +40,7 @@ import { Shield } from '../characters/Shield';
 import { MedievalKnight } from '../characters/MedievalKnight';
 import { PrehistoricTrees } from '../characters/PrehistoricTrees';
 import { Bubbles } from '../characters/Bubbles';
+import { MascotBrainyScuba } from '../characters/MascotBrainyScuba';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -439,7 +439,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
         transform: `rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.7 + 0.6})`,
     })), []);
     
-     const bubbleStyles: React.CSSProperties[] = Array.from({ length: 25 }).map(() => ({
+     const bubbleStyles: React.CSSProperties[] = useMemo(() => Array.from({ length: 25 }).map(() => ({
         position: 'absolute',
         bottom: '-10px',
         left: `${Math.random() * 100}%`,
@@ -449,7 +449,7 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
         backgroundColor: 'rgba(255, 255, 255, 0.6)',
         animation: `bubble ${Math.random() * 20 + 15}s linear infinite`,
         animationDelay: `${Math.random() * 10}s`,
-    }));
+    })), []);
 
     switch (grade) {
         case 1: // Forest
@@ -594,6 +594,9 @@ const UnitQuestPath = ({
                     newScenery['turtles1'] = { x: firstNodePos.x - 250, y: firstNodePos.y - 80 };
                     newScenery['singingSeaweed1'] = { x: firstNodePos.x + 150, y: firstNodePos.y - 100 };
                     newScenery['bubbles1'] = { x: firstNodePos.x - 180, y: firstNodePos.y + 120 };
+                }
+                 if (points.length > 1) { // User wants it near the second assignment
+                    newScenery['scubaBrainy'] = { x: points[1].x - 200, y: points[1].y - 100 };
                 }
                 if (points.length > 4) {
                     newScenery['singingSeaweed2'] = { x: points[4].x - 200, y: points[4].y + 50 };
@@ -746,6 +749,11 @@ const UnitQuestPath = ({
                             )}
                             
                             {/* Grade 2 Scenery */}
+                             {grade === 2 && sceneryPositions.scubaBrainy && (
+                                <div className="absolute z-20 w-80 h-52" style={{ top: sceneryPositions.scubaBrainy.y, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
+                                    <MascotBrainyScuba />
+                                </div>
+                            )}
                             {grade === 2 && sceneryPositions.turtles1 && (
                                 <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.turtles1.y, left: sceneryPositions.turtles1.x }}>
                                     <OceanTurtle />
@@ -818,7 +826,7 @@ const UnitQuestPath = ({
                             )}
                             
                             {/* Grade 5 Scenery */}
-                            {grade === 5 && sceneryPositions.dino && (
+                             {grade === 5 && sceneryPositions.dino && (
                                 <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.dino.y, left: sceneryPositions.dino.x, transform: 'translateX(-50%)' }}>
                                     <DinoTrex />
                                 </div>
