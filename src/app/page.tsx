@@ -117,10 +117,10 @@ export default function Home() {
           {/* Decorative math symbols floating around the hero text */}
           <DecorativeIcons />
 
-          <h1 className="text-5xl md:text-7xl font-bold font-headline mb-4 relative bg-background/80">
+          <h1 className="text-5xl md:text-7xl font-bold font-headline mb-4 relative z-10">
             Welcome to MathQuest
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 relative bg-background/80">
+          <p className="text-xl md:text-2xl text-muted-foreground mb-8 relative z-10">
             Where math becomes an adventure!
           </p>
           <HeroButtons />
