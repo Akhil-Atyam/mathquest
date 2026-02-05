@@ -1,26 +1,10 @@
-
 'use client';
 
 import React from 'react';
 
 /**
- * A realistic seahorse SVG component.
+ * A realistic seahorse SVG component. This component has been removed from the scene.
  */
 export function Seahorse() {
-  return (
-    <svg viewBox="0 0 80 120" className="w-full h-full">
-      <defs>
-        <filter id="drop-shadow-seahorse" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="2" dy="3" stdDeviation="2" floodColor="#000" floodOpacity="0.1" />
-        </filter>
-      </defs>
-      <g transform="scale(1.2) translate(5, 0)" filter="url(#drop-shadow-seahorse)">
-        <path d="M41.8,2.2c-2.3-1.8-5.5-0.7-6.5,2.1c-0.8,2.2-2.1,4.1-3.8,5.7c-2.7,2.5-5.9,4.2-9.4,5.1 C13.3,17.2,6.4,23,4,31.4c-2.4,8.5,0.3,17.6,6.3,23.8c4.2,4.3,9.5,6.8,15.1,7c-0.2,2.3-0.5,4.6-0.8,6.8c-0.7,4.3-1.4,8.6-1.4,12.9 c0,6.1,1.5,12,4.3,17.2c2.8,5.2,6.8,9.5,11.8,12.4c3.8,2.2,8.1,3.2,12.5,2.9c4.4-0.3,8.6-1.9,12.2-4.6c1.2-0.9,1.9-2.3,1.9-3.7 c0-1.4-0.7-2.8-1.9-3.7c-2.3-1.8-5.5-0.7-6.5,2.1c-0.6,1.6-2.1,2.5-3.7,2.5c-0.9,0-1.8-0.3-2.5-0.9c-2.7-2.3-4.3-5.6-4.3-9.1 c0-3.5,1.6-6.8,4.3-9.1c2.7-2.3,6.3-2.3,9.1,0c2.7,2.3,4.3,5.6,4.3,9.1c0,1.6-1,3.1-2.5,3.7c-2.8,1-4.8,3.7-4.8,6.8 c0,3.1,2,5.8,4.8,6.8c2.8,1,4.8,3.7,4.8,6.8c0,2-0.8,3.9-2.2,5.3c-1.4,1.4-3.3,2.2-5.3,2.2c-4,0-7.7-1.6-10.4-4.3 c-4-4-6.4-9.3-6.4-15.1c0-4.7,0.7-9.4,1.5-14c0.5-2.6,0.8-5.3,1-8c-5.9-0.2-11.6-2.9-16.1-7.5c-6.8-6.9-9.8-16.9-6.9-26.2 c2.1-7,7.8-12.7,14.6-14.8c3.1-1,6.3-2.4,9.1-4.4c2-1.4,3.8-3.1,5.1-5.1C42.9,3.8,42.7,2.9,41.8,2.2z" fill="#F9A825" stroke="#C7881A" strokeWidth="1.5"/>
-        <path d="M29,29 C33,35 32,45 28,50" fill="none" stroke="#C7881A" strokeWidth="1" strokeOpacity="0.7"/>
-        <path d="M25,55 C30,60 30,70 25,75" fill="none" stroke="#C7881A" strokeWidth="1" strokeOpacity="0.7"/>
-        <circle cx="34" cy="9.5" r="2" fill="black"/>
-        <path d="M24,20 C28,18 30,22 28,26" fill="#C7881A" stroke="#C7881A" strokeWidth="1" opacity="0.5"/>
-      </g>
-    </svg>
-  );
+  return null;
 }

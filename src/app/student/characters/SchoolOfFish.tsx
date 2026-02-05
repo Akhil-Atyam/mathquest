@@ -20,14 +20,6 @@ export function SchoolOfFish() {
         <circle cx="9.5" cy="-4.5" r="1.2" fill="white"/>
       </g>
 
-      {/* Fish 3 */}
-      <g transform="translate(270,150) scale(0.75)">
-        <ellipse cx="0" cy="0" rx="22" ry="14" fill="#ffd166" stroke="#b07d1c" strokeWidth="3"/>
-        <polygon points="-22,0 -36,-10 -36,10" fill="#ffd166" stroke="#b07d1c" strokeWidth="3"/>
-        <circle cx="8" cy="-3" r="3.5" fill="black"/>
-        <circle cx="9.5" cy="-4.5" r="1.2" fill="white"/>
-      </g>
-
       {/* Fish 4 */}
       <g transform="translate(310,170) scale(0.7)">
         <ellipse cx="0" cy="0" rx="22" ry="14" fill="#ff9ecf" stroke="#a24a75" strokeWidth="3"/>

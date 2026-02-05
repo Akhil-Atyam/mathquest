@@ -33,7 +33,6 @@ import { DinoTrex } from '../characters/DinoTrex';
 import { Campfire } from '../characters/Campfire';
 import { ForestTrees } from '../characters/ForestTrees';
 import { Seaweed } from '../characters/Seaweed';
-import { Seahorse } from '../characters/Seahorse';
 import { SchoolOfFish } from '../characters/SchoolOfFish';
 import { Astronaut } from '../characters/Astronaut';
 import { Rocket } from '../characters/Rocket';
@@ -601,7 +600,6 @@ const UnitQuestPath = ({
                 }
                 if (points.length > 4) {
                     newScenery['seaweed'] = { x: points[4].x + 100, y: points[4].y };
-                    newScenery['seahorse'] = { x: points[4].x + 130, y: points[4].y - 20 };
                 }
                 if (points.length > 7) {
                     newScenery['fishSchool'] = { x: centerX, y: points[7].y };
@@ -625,7 +623,7 @@ const UnitQuestPath = ({
             }
             
             // Scenery for Grade 5: Dinosaur
-            if (grade === 5) {
+             if (grade === 5) {
                 if (points.length > 0) {
                     newScenery['dino'] = { x: firstNodePos.x - 120, y: firstNodePos.y - 120 };
                 }
@@ -751,11 +749,6 @@ const UnitQuestPath = ({
                         {grade === 2 && sceneryPositions.seaweed && (
                             <div className="absolute z-10 w-24 h-48" style={{ top: sceneryPositions.seaweed.y - 80, left: sceneryPositions.seaweed.x }}>
                                 <Seaweed />
-                            </div>
-                        )}
-                         {grade === 2 && sceneryPositions.seahorse && (
-                            <div className="absolute z-10 w-16 h-32" style={{ top: sceneryPositions.seahorse.y, left: sceneryPositions.seahorse.x + 20 }}>
-                                <Seahorse />
                             </div>
                         )}
                         {grade === 2 && sceneryPositions.fishSchool && (
