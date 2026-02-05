@@ -26,19 +26,19 @@ function DecorativeIcons() {
 
   return (
     <>
-      <div className="absolute top-10 left-10 bg-accent/20 text-accent p-2 rounded-full animate-bounce z-[-10]">
+      <div className="absolute top-10 left-10 bg-accent/20 text-accent p-2 rounded-full animate-bounce">
         <Plus className="w-8 h-8" />
       </div>
-      <div className="absolute top-10 right-10 bg-primary/20 text-primary p-2 rounded-full animate-pulse z-[-10]">
+      <div className="absolute top-10 right-10 bg-primary/20 text-primary p-2 rounded-full animate-pulse">
         <Minus className="w-8 h-8" />
       </div>
-      <div className="absolute bottom-1/4 left-1/4 bg-destructive/20 text-destructive p-2 rounded-full animate-pulse delay-500 z-[-10]">
+      <div className="absolute bottom-1/4 left-1/4 bg-destructive/20 text-destructive p-2 rounded-full animate-pulse delay-500">
         <X className="w-6 h-6" />
       </div>
-      <div className="absolute bottom-10 right-1/4 bg-green-500/20 text-green-600 p-3 rounded-full animate-bounce delay-700 z-[-10]">
+      <div className="absolute bottom-10 right-1/4 bg-green-500/20 text-green-600 p-3 rounded-full animate-bounce delay-700">
         <Divide className="w-8 h-8" />
       </div>
-      <div className="absolute bottom-10 right-1/2 bg-purple-500/20 text-purple-600 p-2 rounded-full animate-pulse delay-300 z-[-10]">
+      <div className="absolute bottom-10 right-1/2 bg-purple-500/20 text-purple-600 p-2 rounded-full animate-pulse delay-300">
         <Grip className="w-8 h-8" />
       </div>
     </>
