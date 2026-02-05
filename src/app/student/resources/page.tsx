@@ -586,7 +586,19 @@ const UnitQuestPath = ({
             setNodePositions(points);
 
             const newScenery: Record<string, { x: number; y: number }> = {};
+            const firstNodePos = points[0] || { x: 0, y: 0 };
+            
+            // Scenery for Grade 1: Forest
+            if (grade === 1 && firstNodePos) {
+                 newScenery['trees'] = { x: firstNodePos.x + 90, y: firstNodePos.y - 40 };
+                 newScenery['campfire'] = { x: firstNodePos.x + 80, y: firstNodePos.y + 40 };
+            }
+
+            // Scenery for Grade 2: Ocean
             if (grade === 2) {
+                if (points.length > 0) {
+                    newScenery['turtles'] = { x: firstNodePos.x - 250, y: firstNodePos.y - 80 };
+                }
                 if (points.length > 4) {
                     newScenery['seaweed'] = { x: points[4].x + 100, y: points[4].y };
                     newScenery['seahorse'] = { x: points[4].x + 130, y: points[4].y - 20 };
@@ -595,18 +607,34 @@ const UnitQuestPath = ({
                     newScenery['fishSchool'] = { x: centerX, y: points[7].y };
                 }
             }
-             if (grade === 3 && points.length > 3) {
-                newScenery['rocket'] = { x: points[3].x - 150, y: points[3].y };
-                newScenery['astronaut'] = { x: points[3].x - 90, y: points[3].y + 50 };
+
+            // Scenery for Grade 3: Space
+             if (grade === 3) {
+                if (points.length > 0) {
+                    newScenery['alien'] = { x: firstNodePos.x - 120, y: firstNodePos.y - 40 };
+                }
+                if (points.length > 3) {
+                    newScenery['rocket'] = { x: points[3].x + 100, y: points[3].y - 80 };
+                    newScenery['astronaut'] = { x: points[3].x + 150, y: points[3].y + 10 };
+                }
             }
+            
+            // Scenery for Grade 4: Medieval
             if (grade === 4 && points.length > 2) {
                 newScenery['shield'] = { x: centerX, y: points[2].y + 100 };
             }
-            if (grade === 5 && points.length > 1) {
-                newScenery['trees1'] = { x: points[1].x + 100, y: points[1].y };
-            }
-            if (grade === 5 && points.length > 5) {
-                newScenery['trees2'] = { x: points[5].x - 150, y: points[5].y };
+            
+            // Scenery for Grade 5: Dinosaur
+            if (grade === 5) {
+                if (points.length > 0) {
+                    newScenery['dino'] = { x: firstNodePos.x - 120, y: firstNodePos.y - 120 };
+                }
+                if (points.length > 1) {
+                    newScenery['trees1'] = { x: points[1].x + 100, y: points[1].y };
+                }
+                if (points.length > 5) {
+                    newScenery['trees2'] = { x: points[5].x - 150, y: points[5].y };
+                }
             }
             setSceneryPositions(newScenery);
 
@@ -703,56 +731,56 @@ const UnitQuestPath = ({
                         </svg>
 
                         {/* Grade 1 Scenery */}
-                        {grade === 1 && firstNodePos && (
+                        {grade === 1 && sceneryPositions.trees && (
                             <>
-                                <div className="absolute z-10 w-24 h-32" style={{ top: firstNodePos.y - 40, left: firstNodePos.x + 90 }}>
+                                <div className="absolute z-10 w-24 h-32" style={{ top: sceneryPositions.trees.y, left: sceneryPositions.trees.x }}>
                                     <ForestTrees />
                                 </div>
-                                <div className="absolute z-10 w-20 h-20" style={{ top: firstNodePos.y + 40, left: firstNodePos.x + 80 }}>
+                                <div className="absolute z-10 w-20 h-20" style={{ top: sceneryPositions.campfire.y, left: sceneryPositions.campfire.x }}>
                                     <Campfire />
                                 </div>
                             </>
                         )}
                         
                         {/* Grade 2 Scenery */}
-                        {grade === 2 && firstNodePos && (
+                        {grade === 2 && sceneryPositions.turtles && (
                              <>
-                                <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 80, left: firstNodePos.x - 200 }}>
+                                <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.turtles.y, left: sceneryPositions.turtles.x }}>
                                     <OceanTurtle />
                                 </div>
-                                 <div className="absolute z-10 w-32 h-32 transition-transform hover:scale-110 opacity-80" style={{ top: firstNodePos.y - 40, left: firstNodePos.x - 150 }}>
+                                 <div className="absolute z-10 w-32 h-32 transition-transform hover:scale-110 opacity-80" style={{ top: sceneryPositions.turtles.y + 40, left: sceneryPositions.turtles.x + 50 }}>
                                     <OceanTurtle />
                                 </div>
-                                {sceneryPositions.seaweed && (
-                                    <div className="absolute z-10 w-24 h-48" style={{ top: sceneryPositions.seaweed.y - 80, left: sceneryPositions.seaweed.x }}>
-                                        <Seaweed />
-                                    </div>
-                                )}
-                                 {sceneryPositions.seahorse && (
-                                    <div className="absolute z-10 w-16 h-32" style={{ top: sceneryPositions.seahorse.y, left: sceneryPositions.seahorse.x + 20 }}>
-                                        <Seahorse />
-                                    </div>
-                                )}
-                                {sceneryPositions.fishSchool && (
-                                     <div className="absolute z-10 w-48 h-32" style={{ top: sceneryPositions.fishSchool.y, left: sceneryPositions.fishSchool.x, transform: 'translateX(-50%)' }}>
-                                        <SchoolOfFish />
-                                    </div>
-                                )}
                             </>
+                        )}
+                        {grade === 2 && sceneryPositions.seaweed && (
+                            <div className="absolute z-10 w-24 h-48" style={{ top: sceneryPositions.seaweed.y - 80, left: sceneryPositions.seaweed.x }}>
+                                <Seaweed />
+                            </div>
+                        )}
+                         {grade === 2 && sceneryPositions.seahorse && (
+                            <div className="absolute z-10 w-16 h-32" style={{ top: sceneryPositions.seahorse.y, left: sceneryPositions.seahorse.x + 20 }}>
+                                <Seahorse />
+                            </div>
+                        )}
+                        {grade === 2 && sceneryPositions.fishSchool && (
+                             <div className="absolute z-10 w-48 h-32" style={{ top: sceneryPositions.fishSchool.y, left: sceneryPositions.fishSchool.x, transform: 'translateX(-50%)' }}>
+                                <SchoolOfFish />
+                            </div>
                         )}
 
                         {/* Grade 3 Scenery */}
-                        {grade === 3 && firstNodePos && (
-                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 80, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
+                        {grade === 3 && sceneryPositions.alien && (
+                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.alien.y, left: sceneryPositions.alien.x, transform: 'translateX(-50%)' }}>
                                 <SpaceAlien />
                             </div>
                         )}
                         {grade === 3 && sceneryPositions.rocket && (
                             <>
-                                <div className="absolute z-10 w-24 h-48 transition-transform hover:scale-105" style={{ top: sceneryPositions.rocket.y - 80, left: sceneryPositions.rocket.x }}>
+                                <div className="absolute z-10 w-24 h-48 transition-transform hover:scale-105" style={{ top: sceneryPositions.rocket.y, left: sceneryPositions.rocket.x }}>
                                     <Rocket />
                                 </div>
-                                <div className="absolute z-10 w-20 h-32 transition-transform hover:scale-105" style={{ top: sceneryPositions.astronaut.y - 40, left: sceneryPositions.astronaut.x }}>
+                                <div className="absolute z-10 w-20 h-32 transition-transform hover:scale-105" style={{ top: sceneryPositions.astronaut.y, left: sceneryPositions.astronaut.x }}>
                                     <Astronaut />
                                 </div>
                             </>
@@ -766,8 +794,8 @@ const UnitQuestPath = ({
                         )}
                          
                         {/* Grade 5 Scenery */}
-                         {grade === 5 && firstNodePos && (
-                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: firstNodePos.y - 120, left: firstNodePos.x - 120, transform: 'translateX(-50%)' }}>
+                         {grade === 5 && sceneryPositions.dino && (
+                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.dino.y, left: sceneryPositions.dino.x, transform: 'translateX(-50%)' }}>
                                 <DinoTrex />
                             </div>
                         )}
