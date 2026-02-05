@@ -1,40 +1,80 @@
-
 'use client';
 
 import React from 'react';
 
 /**
- * A more realistic, green, swimming turtle character for the Grade 2 ocean theme.
+ * A cute, friendly green turtle character for the Grade 2 ocean theme.
+ * The SVG is provided by the user.
  */
 export function OceanTurtle() {
   return (
-    <svg viewBox="0 0 150 150" className="w-full h-full">
-      <g transform="rotate(-20, 75, 75) translate(0, 10)">
-        {/* Rear Flipper */}
-        <path d="M 50 110 C 30 120, 60 130, 70 115" fill="#3A8E5A" stroke="#2B6B43" strokeWidth="2.5" strokeLinecap="round" />
+    <svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      {/* Turtle rotated to face Northeast */}
+      <g transform="rotate(45 200 200)">
 
-        {/* Body */}
-        <path d="M 50 80 C 20 50, 110 50, 120 80 C 140 110, 80 140, 50 120 C 20 100, 30 90, 50 80 Z" fill="#4C9A62" stroke="#2B6B43" strokeWidth="3"/>
-        
-        {/* Front Flipper */}
-        <path d="M 40 70 C 10 60, 20 100, 45 90" fill="#3A8E5A" stroke="#2B6B43" strokeWidth="3" strokeLinecap="round" />
-        
-        {/* Head */}
-        <circle cx="115" cy="70" r="22" fill="#4C9A62" stroke="#2B6B43" strokeWidth="3"/>
-        <g transform="translate(120, 65)">
-            <circle cx="0" cy="0" r="5" fill="white" />
-            <circle cx="1" cy="0" r="2.5" fill="black" />
-        </g>
-        <path d="M 110 80 C 115 85, 122 84, 125 80" stroke="#2B6B43" strokeWidth="2" fill="none" strokeLinecap="round"/>
+        {/* ===== BACKMOST ELEMENTS ===== */}
 
-        {/* Shell */}
-        <path d="M 50 85 C 50 120, 110 125, 110 85 C 110 60, 50 60, 50 85 Z" fill="#6B4F3A" stroke="#4A3728" strokeWidth="3"/>
-        {/* Shell pattern */}
-        <path d="M 75 70 L 60 87 L 75 105 L 90 87 Z" stroke="#8D6E4D" strokeWidth="2" fill="none"/>
-        <path d="M 75 70 L 75 65" stroke="#8D6E4D" strokeWidth="2" fill="none"/>
-        <path d="M 60 87 L 50 85" stroke="#8D6E4D" strokeWidth="2" fill="none"/>
-        <path d="M 90 87 L 105 85" stroke="#8D6E4D" strokeWidth="2" fill="none"/>
-        <path d="M 75 105 L 75 115" stroke="#8D6E4D" strokeWidth="2" fill="none"/>
+        {/* Tail */}
+        <path d="
+          M 200 295
+          C 185 315, 175 335, 200 350
+          C 225 335, 215 315, 200 295
+          Z"
+          fill="#A8E6CF"
+          stroke="#2d6a4f"
+          strokeWidth="3"/>
+
+        {/* Back Flippers */}
+        <ellipse cx="150" cy="300" rx="32" ry="18"
+                 fill="#A8E6CF" stroke="#2d6a4f" strokeWidth="3"/>
+
+        <ellipse cx="250" cy="300" rx="32" ry="18"
+                 fill="#A8E6CF" stroke="#2d6a4f" strokeWidth="3"/>
+
+        {/* ===== FRONT FLIPPERS (UNDER SHELL) ===== */}
+
+        <ellipse cx="110" cy="210" rx="42" ry="22"
+                 fill="#A8E6CF" stroke="#2d6a4f" strokeWidth="3"/>
+
+        <ellipse cx="290" cy="210" rx="42" ry="22"
+                 fill="#A8E6CF" stroke="#2d6a4f" strokeWidth="3"/>
+
+        {/* ===== SHELL (NOW ABOVE FRONT LIMBS) ===== */}
+
+        <ellipse cx="200" cy="220" rx="95" ry="75"
+                 fill="#6BCB77" stroke="#2d6a4f" strokeWidth="4"/>
+
+        {/* Shell Pattern */}
+        <circle cx="200" cy="220" r="26" fill="#2d6a4f"/>
+        <circle cx="160" cy="205" r="18" fill="#2d6a4f"/>
+        <circle cx="240" cy="205" r="18" fill="#2d6a4f"/>
+        <circle cx="175" cy="255" r="18" fill="#2d6a4f"/>
+        <circle cx="225" cy="255" r="18" fill="#2d6a4f"/>
+
+        {/* ===== HEAD (TOPMOST) ===== */}
+
+        <ellipse cx="200" cy="120" rx="46" ry="40"
+                 fill="#A8E6CF" stroke="#2d6a4f" strokeWidth="4"/>
+
+        {/* Eyes */}
+        <circle cx="185" cy="115" r="9" fill="black"/>
+        <circle cx="215" cy="115" r="9" fill="black"/>
+
+        {/* Eye Highlights */}
+        <circle cx="188" cy="112" r="3" fill="white"/>
+        <circle cx="218" cy="112" r="3" fill="white"/>
+
+        {/* Smile */}
+        <path d="M185 130 Q200 145 215 130"
+              stroke="#2d6a4f"
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"/>
+
+        {/* Blush */}
+        <circle cx="165" cy="135" r="6" fill="#FFB3C6" opacity="0.85"/>
+        <circle cx="235" cy="135" r="6" fill="#FFB3C6" opacity="0.85"/>
+
       </g>
     </svg>
   );
