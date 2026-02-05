@@ -9,23 +9,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
     
-    // Users can only read/write their own profile
+    // Users can only read, create, or update their own profile
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
+      allow read, update, create: if request.auth.uid == userId;
     }
     
-    // Teachers can only read/write their own profile
+    // Teachers can only read/write their own profile. 'write' includes create, update, delete.
     match /teachers/{teacherId} {
       allow read, write: if request.auth.uid == teacherId;
-    }
-    
-    // Anyone authenticated can create a user/teacher profile during sign-up
-    // Note: A more secure rule would validate the data being written
-    match /users/{userId} {
-      allow create: if request.auth != null;
-    }
-    match /teachers/{teacherId} {
-      allow create: if request.auth != null;
     }
 
     // All authenticated users can read lessons.
@@ -63,9 +54,11 @@ service cloud.firestore {
     }
 
 
-    // Allow lookup of usernames for login
+    // Allow lookup of usernames for login, but creation is restricted.
     match /usernames/{username} {
-      allow read, create: if request.auth != null;
+      allow read: if request.auth != null;
+      // A user can only create a username document that maps to their own UID.
+      allow create: if request.auth.uid == request.resource.data.uid;
     }
     
     // Allow teachers to get their role document
