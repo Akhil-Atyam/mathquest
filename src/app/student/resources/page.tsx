@@ -37,6 +37,7 @@ import { SchoolOfFish } from '../characters/SchoolOfFish';
 import { Astronaut } from '../characters/Astronaut';
 import { Rocket } from '../characters/Rocket';
 import { Shield } from '../characters/Shield';
+import { MedievalKnight } from '../characters/MedievalKnight';
 import { PrehistoricTrees } from '../characters/PrehistoricTrees';
 
 
@@ -618,8 +619,13 @@ const UnitQuestPath = ({
             }
             
             // Scenery for Grade 4: Medieval
-            if (grade === 4 && points.length > 2) {
-                newScenery['shield'] = { x: centerX, y: points[2].y + 100 };
+            if (grade === 4) {
+                if (points.length > 2) {
+                    newScenery['shield'] = { x: centerX, y: points[2].y + 100 };
+                }
+                if (points.length > 0) {
+                   newScenery['knight'] = { x: firstNodePos.x + 120, y: firstNodePos.y - 80 };
+               }
             }
             
             // Scenery for Grade 5: Dinosaur
@@ -778,6 +784,11 @@ const UnitQuestPath = ({
                         {grade === 4 && sceneryPositions.shield && (
                             <div className="absolute z-10 w-24 h-32 opacity-70" style={{ top: sceneryPositions.shield.y, left: sceneryPositions.shield.x, transform: 'translateX(-50%)' }}>
                                 <Shield />
+                            </div>
+                        )}
+                        {grade === 4 && sceneryPositions.knight && (
+                            <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-105" style={{ top: sceneryPositions.knight.y, left: sceneryPositions.knight.x }}>
+                                <MedievalKnight />
                             </div>
                         )}
                          
