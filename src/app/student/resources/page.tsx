@@ -603,7 +603,6 @@ const UnitQuestPath = ({
                     newScenery['singingSeaweed1'] = { x: firstNodePos.x + 150, y: firstNodePos.y - 100 }; // New
                 }
                 if (points.length > 4) {
-                    newScenery['seaweed'] = { x: points[4].x + 100, y: points[4].y };
                     newScenery['singingSeaweed2'] = { x: points[4].x - 200, y: points[4].y + 50 }; // New
                 }
                 if (points.length > 7) {
@@ -755,11 +754,6 @@ const UnitQuestPath = ({
                             {grade === 2 && sceneryPositions.turtles1 && (
                                 <div className="absolute z-10 w-40 h-40 transition-transform hover:scale-110" style={{ top: sceneryPositions.turtles1.y, left: sceneryPositions.turtles1.x }}>
                                     <OceanTurtle />
-                                </div>
-                            )}
-                            {grade === 2 && sceneryPositions.seaweed && (
-                                <div className="absolute z-10 w-24 h-48" style={{ top: sceneryPositions.seaweed.y - 80, left: sceneryPositions.seaweed.x }}>
-                                    <Seaweed />
                                 </div>
                             )}
                             {grade === 2 && sceneryPositions.fishSchool && (
