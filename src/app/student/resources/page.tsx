@@ -750,7 +750,7 @@ const UnitQuestPath = ({
                             
                             {/* Grade 2 Scenery */}
                              {grade === 2 && sceneryPositions.scubaBrainy && (
-                                <div className="absolute z-20 w-40 h-40" style={{ top: sceneryPositions.scubaBrainy.y, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
+                                <div className="absolute z-20 w-48 h-48" style={{ top: sceneryPositions.scubaBrainy.y + 60, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
                                     <MascotBrainyScuba />
                                 </div>
                             )}
@@ -1263,3 +1263,5 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
+
+    
