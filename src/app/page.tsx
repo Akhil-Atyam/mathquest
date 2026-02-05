@@ -9,6 +9,7 @@ import { Logo } from '@/components/logo';
 import { useEffect, useState } from 'react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { InteractiveDotGrid } from '@/components/InteractiveDotGrid';
 
 /**
  * A client-side component to render decorative, animated icons.
@@ -165,6 +166,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <InteractiveDotGrid />
       </main>
 
       {/* Footer section with copyright information */}
