@@ -28,20 +28,20 @@ service cloud.firestore {
       allow create: if request.auth != null;
     }
 
-    // Teachers can create, read, update, and delete their own lessons
+    // All authenticated users can read lessons.
     match /lessons/{lessonId} {
       allow read;
-      allow write: if request.auth.uid == resource.data.teacherId;
+      // Teachers can create lessons.
+      allow create: if request.auth.uid == request.resource.data.teacherId;
+      // The teacher who created the lesson can update or delete it.
+      allow update, delete: if request.auth.uid == resource.data.teacherId;
     }
 
-    // All authenticated users can read all quizzes (e.g., for students to take them)
+    // Quizzes can be read by any authenticated user, but only modified by their creator.
     match /quizzes/{quizId} {
       allow read: if request.auth != null;
-    }
-
-    // Only the teacher who created a quiz can write to it
-    match /quizzes/{quizId} {
-      allow write: if request.auth.uid == resource.data.teacherId;
+      allow create: if request.auth.uid == request.resource.data.teacherId;
+      allow update, delete: if request.auth.uid == resource.data.teacherId;
     }
     
     // All authenticated users can read tutoring sessions
