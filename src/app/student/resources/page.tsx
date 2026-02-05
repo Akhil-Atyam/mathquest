@@ -432,7 +432,7 @@ const themes: Record<number, { name: string; }> = {
 
 const ThemeBackground = ({ grade }: { grade: number }) => {
     const leafStyles = useMemo(() => Array.from({ length: 20 }).map(() => ({
-        position: 'absolute',
+        position: 'absolute' as const,
         top: `${Math.random() * 100}%`,
         left: `${Math.random() * 100}%`,
         opacity: Math.random() * 0.2 + 0.1,
@@ -596,7 +596,7 @@ const UnitQuestPath = ({
                     newScenery['bubbles1'] = { x: firstNodePos.x - 180, y: firstNodePos.y + 120 };
                 }
                  if (points.length > 1) { // User wants it near the second assignment
-                    newScenery['scubaBrainy'] = { x: points[1].x - 200, y: points[1].y - 100 };
+                    newScenery['scubaBrainy'] = { x: points[1].x - 200, y: points[1].y - 40 };
                 }
                 if (points.length > 4) {
                     newScenery['singingSeaweed2'] = { x: points[4].x - 200, y: points[4].y + 50 };
@@ -750,7 +750,7 @@ const UnitQuestPath = ({
                             
                             {/* Grade 2 Scenery */}
                              {grade === 2 && sceneryPositions.scubaBrainy && (
-                                <div className="absolute z-20 w-80 h-52" style={{ top: sceneryPositions.scubaBrainy.y, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
+                                <div className="absolute z-20 w-40 h-40" style={{ top: sceneryPositions.scubaBrainy.y, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
                                     <MascotBrainyScuba />
                                 </div>
                             )}
