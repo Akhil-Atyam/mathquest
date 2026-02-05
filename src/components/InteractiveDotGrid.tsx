@@ -74,25 +74,28 @@ export const InteractiveDotGrid = () => {
 
   return (
     <section className="py-20 relative bg-card overflow-hidden">
-        <div className="container mx-auto px-4 text-center z-10 relative">
-            <h2 className="text-3xl font-bold mb-2">Just for Fun</h2>
-            <p className="text-muted-foreground">Move your mouse around to see the effect.</p>
-        </div>
-        <div 
-            ref={gridRef} 
-            className="absolute inset-0 grid gap-4 items-center justify-center p-8 opacity-50"
-            style={{ 
-                gridTemplateColumns: `repeat(${numCols}, 1fr)`,
-                gridTemplateRows: `repeat(${numRows}, 1fr)`
-             }}
-        >
-            {Array.from({ length: numRows * numCols }).map((_, i) => (
-                <div 
-                    key={i} 
-                    className="dot-item w-2 h-2 bg-primary rounded-full transition-transform duration-300 ease-out" 
-                />
-            ))}
-        </div>
+      {/* The grid of dots, positioned absolutely to fill the section and layered behind the text */}
+      <div
+        ref={gridRef}
+        className="absolute inset-0 z-0 grid gap-4 items-center justify-center p-8"
+        style={{
+          gridTemplateColumns: `repeat(${numCols}, 1fr)`,
+          gridTemplateRows: `repeat(${numRows}, 1fr)`,
+        }}
+      >
+        {Array.from({ length: numRows * numCols }).map((_, i) => (
+          <div
+            key={i}
+            className="dot-item w-2 h-2 bg-primary/50 rounded-full transition-transform duration-300 ease-out"
+          />
+        ))}
+      </div>
+      
+      {/* The text content, layered on top of the dots */}
+      <div className="container mx-auto px-4 text-center z-10 relative">
+        <h2 className="text-3xl font-bold mb-2">Just for Fun</h2>
+        <p className="text-muted-foreground">Move your mouse around to see the effect.</p>
+      </div>
     </section>
   );
 };
