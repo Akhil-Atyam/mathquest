@@ -40,6 +40,7 @@ import { Rocket } from '../characters/Rocket';
 import { Shield } from '../characters/Shield';
 import { MedievalKnight } from '../characters/MedievalKnight';
 import { PrehistoricTrees } from '../characters/PrehistoricTrees';
+import { Bubbles } from '../characters/Bubbles';
 
 
 const getLessonViewIcon = (lessonType: Lesson['type']) => {
@@ -430,14 +431,12 @@ const themes: Record<number, { name: string; }> = {
 };
 
 const ThemeBackground = ({ grade }: { grade: number }) => {
-    const leafStyles: React.CSSProperties[] = Array.from({ length: 15 }).map(() => ({
+    const leafStyles: React.CSSProperties[] = Array.from({ length: 20 }).map(() => ({
         position: 'absolute',
         top: `${Math.random() * 100}%`,
         left: `${Math.random() * 100}%`,
-        animation: `fall ${Math.random() * 20 + 25}s linear infinite`,
-        animationDelay: `${Math.random() * 10}s`,
-        opacity: Math.random() * 0.1 + 0.05,
-        transform: `rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.5 + 0.5})`,
+        opacity: Math.random() * 0.2 + 0.1,
+        transform: `rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.7 + 0.6})`,
     }));
      const bubbleStyles: React.CSSProperties[] = Array.from({ length: 25 }).map(() => ({
         position: 'absolute',
@@ -455,14 +454,6 @@ const ThemeBackground = ({ grade }: { grade: number }) => {
         case 1: // Forest
             return (
                 <div aria-hidden="true" className="absolute inset-0 z-0 overflow-hidden bg-gradient-to-b from-green-100 to-green-200">
-                    <style>{`
-                        @keyframes fall {
-                            0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
-                            10% { opacity: 0.1; }
-                            90% { opacity: 0.1; }
-                            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-                        }
-                    `}</style>
                     {leafStyles.map((style, i) => (
                         <div key={i} style={style}><Leaf className="w-6 h-6 text-green-700" /></div>
                     ))}
@@ -600,14 +591,17 @@ const UnitQuestPath = ({
             if (grade === 2) {
                 if (points.length > 0) {
                     newScenery['turtles1'] = { x: firstNodePos.x - 250, y: firstNodePos.y - 80 };
-                    newScenery['singingSeaweed1'] = { x: firstNodePos.x + 150, y: firstNodePos.y - 100 }; // New
+                    newScenery['singingSeaweed1'] = { x: firstNodePos.x + 150, y: firstNodePos.y - 100 };
+                    newScenery['bubbles1'] = { x: firstNodePos.x - 180, y: firstNodePos.y + 120 };
                 }
                 if (points.length > 4) {
-                    newScenery['singingSeaweed2'] = { x: points[4].x - 200, y: points[4].y + 50 }; // New
+                    newScenery['singingSeaweed2'] = { x: points[4].x - 200, y: points[4].y + 50 };
+                    newScenery['bubbles2'] = { x: points[4].x + 150, y: points[4].y - 60 };
                 }
                 if (points.length > 7) {
                     newScenery['fishSchool'] = { x: centerX, y: points[7].y };
-                    newScenery['singingSeaweed3'] = { x: points[7].x + 180, y: points[7].y - 50 }; // New
+                    newScenery['singingSeaweed3'] = { x: points[7].x + 180, y: points[7].y - 50 };
+                    newScenery['bubbles3'] = { x: points[7].x - 100, y: points[7].y + 150 };
                 }
             }
 
@@ -776,6 +770,22 @@ const UnitQuestPath = ({
                                     <Seahorse />
                                 </div>
                             )}
+                            {grade === 2 && sceneryPositions.bubbles1 && (
+                                <div className="absolute z-0 w-24 h-24 opacity-60" style={{ top: sceneryPositions.bubbles1.y, left: sceneryPositions.bubbles1.x }}>
+                                    <Bubbles />
+                                </div>
+                            )}
+                            {grade === 2 && sceneryPositions.bubbles2 && (
+                                <div className="absolute z-0 w-32 h-32 opacity-50" style={{ top: sceneryPositions.bubbles2.y, left: sceneryPositions.bubbles2.x }}>
+                                    <Bubbles />
+                                </div>
+                            )}
+                            {grade === 2 && sceneryPositions.bubbles3 && (
+                                <div className="absolute z-0 w-20 h-20 opacity-70" style={{ top: sceneryPositions.bubbles3.y, left: sceneryPositions.bubbles3.x }}>
+                                    <Bubbles />
+                                </div>
+                            )}
+
 
                             {/* Grade 3 Scenery */}
                             {grade === 3 && sceneryPositions.alien && (
