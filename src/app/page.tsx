@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -98,7 +99,7 @@ export default function Home() {
   const year = new Date().getFullYear();
 
   return (
-    <div className="flex flex-col min-h-screen animated-gradient-background">
+    <div className="flex flex-col min-h-screen">
       {/* Header section with Logo and Login button */}
       <header className="p-4 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
         <div className="container mx-auto flex justify-between items-center">
