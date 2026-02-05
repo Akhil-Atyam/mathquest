@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes gradient-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient-background {
+  background: linear-gradient(-45deg, hsl(var(--background)), hsl(207, 100%, 97%), hsl(207, 90%, 90%), hsl(33, 100%, 95%));
+  background-size: 200% 200%;
+  animation: gradient-bg 25s ease infinite;
+}
+
 @layer base {
   :root {
     --background: 207 92% 94%;
