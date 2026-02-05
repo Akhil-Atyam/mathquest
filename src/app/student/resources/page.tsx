@@ -431,13 +431,14 @@ const themes: Record<number, { name: string; }> = {
 };
 
 const ThemeBackground = ({ grade }: { grade: number }) => {
-    const leafStyles: React.CSSProperties[] = Array.from({ length: 20 }).map(() => ({
+    const leafStyles = useMemo(() => Array.from({ length: 20 }).map(() => ({
         position: 'absolute',
         top: `${Math.random() * 100}%`,
         left: `${Math.random() * 100}%`,
         opacity: Math.random() * 0.2 + 0.1,
         transform: `rotate(${Math.random() * 360}deg) scale(${Math.random() * 0.7 + 0.6})`,
-    }));
+    })), []);
+    
      const bubbleStyles: React.CSSProperties[] = Array.from({ length: 25 }).map(() => ({
         position: 'absolute',
         bottom: '-10px',
