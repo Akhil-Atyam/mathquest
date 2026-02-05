@@ -1,36 +1,40 @@
-
 'use client';
-
 import React from 'react';
 
-/**
- * A component for a school of fish swimming.
- */
 export function SchoolOfFish() {
-  const fish = [
-    { x: 20, y: 40, scale: 0.8, delay: '0s' },
-    { x: 60, y: 15, scale: 1, delay: '0.2s' },
-    { x: 5, y: 10, scale: 0.9, delay: '0.1s' },
-    { x: 80, y: 30, scale: 1.1, delay: '0.3s' },
-  ];
-
   return (
-    <svg viewBox="0 0 120 80" className="w-full h-full overflow-visible">
-      <style>{`
-        .fish-body {
-          animation: swim 6s ease-in-out infinite;
-        }
-        @keyframes swim {
-          0%, 100% { transform: translateX(0); }
-          50% { transform: translateX(15px); }
-        }
-      `}</style>
-      {fish.map((f, i) => (
-        <g key={i} transform={`translate(${f.x}, ${f.y}) scale(${f.scale})`} className="fish-body" style={{ animationDelay: f.delay }}>
-          <path d="M 10 10 C 20 5, 30 5, 35 10 C 30 15, 20 15, 10 10 L 0 5 L 0 15 Z" fill="#FBBF24" stroke="#F97316" strokeWidth="1"/>
-          <circle cx="30" cy="9" r="1.5" fill="black" />
-        </g>
-      ))}
+    <svg viewBox="240 140 120 90" className="w-full h-full overflow-visible">
+      {/* Fish 1 */}
+      <g transform="translate(250,180)">
+        <ellipse cx="0" cy="0" rx="22" ry="14" fill="#7fd8be" stroke="#2a6f6b" strokeWidth="3"/>
+        <polygon points="-22,0 -36,-10 -36,10" fill="#7fd8be" stroke="#2a6f6b" strokeWidth="3"/>
+        <circle cx="8" cy="-3" r="3.5" fill="black"/>
+        <circle cx="9.5" cy="-4.5" r="1.2" fill="white"/>
+      </g>
+
+      {/* Fish 2 */}
+      <g transform="translate(290,210) scale(0.9)">
+        <ellipse cx="0" cy="0" rx="22" ry="14" fill="#6ec1ff" stroke="#2a5c8a" strokeWidth="3"/>
+        <polygon points="-22,0 -36,-10 -36,10" fill="#6ec1ff" stroke="#2a5c8a" strokeWidth="3"/>
+        <circle cx="8" cy="-3" r="3.5" fill="black"/>
+        <circle cx="9.5" cy="-4.5" r="1.2" fill="white"/>
+      </g>
+
+      {/* Fish 3 */}
+      <g transform="translate(270,150) scale(0.75)">
+        <ellipse cx="0" cy="0" rx="22" ry="14" fill="#ffd166" stroke="#b07d1c" strokeWidth="3"/>
+        <polygon points="-22,0 -36,-10 -36,10" fill="#ffd166" stroke="#b07d1c" strokeWidth="3"/>
+        <circle cx="8" cy="-3" r="3.5" fill="black"/>
+        <circle cx="9.5" cy="-4.5" r="1.2" fill="white"/>
+      </g>
+
+      {/* Fish 4 */}
+      <g transform="translate(310,170) scale(0.7)">
+        <ellipse cx="0" cy="0" rx="22" ry="14" fill="#ff9ecf" stroke="#a24a75" strokeWidth="3"/>
+        <polygon points="-22,0 -36,-10 -36,10" fill="#ff9ecf" stroke="#a24a75" strokeWidth="3"/>
+        <circle cx="8" cy="-3" r="3.5" fill="black"/>
+        <circle cx="9.5" cy="-4.5" r="1.2" fill="white"/>
+      </g>
     </svg>
   );
 }
