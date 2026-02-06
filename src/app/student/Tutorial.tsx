@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -195,26 +196,36 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   
 
   const updateTargetRect = useCallback(() => {
-    // If there's a previously highlighted element, remove its class.
-    if (highlightedElementRef.current) {
+    if (!step?.elementId || step.elementId === 'tutorial-end') {
+      setTargetRect(null);
+      if (highlightedElementRef.current) {
         highlightedElementRef.current.classList.remove('tutorial-highlight');
         highlightedElementRef.current = null;
-    }
-    
-    if (!step || !step.elementId || step.elementId === 'tutorial-end') {
-      setTargetRect(null);
+      }
       return;
     }
     
     const element = document.getElementById(step.elementId);
     if (element) {
         setTargetRect(element.getBoundingClientRect());
-        // Add highlight to the new element and store its ref.
-        element.classList.add('tutorial-highlight');
-        highlightedElementRef.current = element;
+        if (highlightedElementRef.current !== element) {
+            highlightedElementRef.current?.classList.remove('tutorial-highlight');
+            element.classList.add('tutorial-highlight');
+            highlightedElementRef.current = element;
+        }
     } else {
-        // If element is not found, ensure no spotlight is shown.
-        setTargetRect(null);
+        // If element not found, retry after a short delay
+        const elementId = step.elementId;
+        setTimeout(() => {
+            const el = document.getElementById(elementId);
+            if (el) {
+                setTargetRect(el.getBoundingClientRect());
+                el.classList.add('tutorial-highlight');
+                highlightedElementRef.current = el;
+            } else {
+                setTargetRect(null);
+            }
+        }, 300);
     }
   }, [step]);
   
