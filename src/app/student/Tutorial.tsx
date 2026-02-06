@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -94,6 +93,7 @@ const allSteps: TutorialStep[] = [
     title: 'Your Booked Sessions',
     text: 'This page lists all your upcoming and past tutoring sessions. Now, let\'s check out group study!',
     position: 'bottom',
+    navigateTo: '/student/group-study',
   },
   {
     page: '/student/my-tutoring-sessions',
@@ -195,36 +195,26 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
   
 
   const updateTargetRect = useCallback(() => {
-    if (!step?.elementId || step.elementId === 'tutorial-end') {
-      setTargetRect(null);
-      if (highlightedElementRef.current) {
+    // If there's a previously highlighted element, remove its class.
+    if (highlightedElementRef.current) {
         highlightedElementRef.current.classList.remove('tutorial-highlight');
         highlightedElementRef.current = null;
-      }
+    }
+    
+    if (!step || !step.elementId || step.elementId === 'tutorial-end') {
+      setTargetRect(null);
       return;
     }
     
     const element = document.getElementById(step.elementId);
     if (element) {
         setTargetRect(element.getBoundingClientRect());
-        if (highlightedElementRef.current !== element) {
-            highlightedElementRef.current?.classList.remove('tutorial-highlight');
-            element.classList.add('tutorial-highlight');
-            highlightedElementRef.current = element;
-        }
+        // Add highlight to the new element and store its ref.
+        element.classList.add('tutorial-highlight');
+        highlightedElementRef.current = element;
     } else {
-        const elementId = step.elementId;
-        // If element not found, retry after a short delay
-        setTimeout(() => {
-            const el = document.getElementById(elementId);
-            if (el) {
-                setTargetRect(el.getBoundingClientRect());
-                el.classList.add('tutorial-highlight');
-                highlightedElementRef.current = el;
-            } else {
-                setTargetRect(null);
-            }
-        }, 300);
+        // If element is not found, ensure no spotlight is shown.
+        setTargetRect(null);
     }
   }, [step]);
   

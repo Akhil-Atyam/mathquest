@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Logo } from "@/components/logo";
@@ -36,9 +35,9 @@ function PageHeader() {
 }
 
 function StudentLayoutContent({ children }: { children: React.ReactNode }) {
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const [showTutorial, setShowTutorial] = useState(false);
+    const [showTutorial, setShowTutorial] = useState<boolean | undefined>(undefined);
 
     const studentDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -48,23 +47,22 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
     const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
 
     useEffect(() => {
-        // Don't make a decision until the student profile is loaded.
-        if (isStudentLoading) {
+        // Wait until both user and student profile loading are finished.
+        if (isUserLoading || isStudentLoading) {
             return;
         }
-
+        
+        // Now we know for sure if we have a user and a student profile.
         const tutorialCompletedInLocalStorage = localStorage.getItem('tutorialCompleted') === 'true';
 
-        // Show the tutorial IF:
-        // 1. We have a student profile.
-        // 2. The profile does NOT have hasCompletedTutorial set to true.
-        // 3. The tutorial is NOT marked as completed in local storage.
+        // If we have a student profile, and it's not marked as complete, and local storage doesn't say it's complete...
         if (student && student.hasCompletedTutorial !== true && !tutorialCompletedInLocalStorage) {
             setShowTutorial(true);
         } else {
+            // In all other cases (no user, no student profile, or it is complete), hide it.
             setShowTutorial(false);
         }
-    }, [student, isStudentLoading]);
+    }, [user, isUserLoading, student, isStudentLoading]);
 
     const handleTutorialComplete = () => {
         if (studentDocRef) {
@@ -74,9 +72,11 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
         setShowTutorial(false);
     };
     
+    const shouldRenderTutorial = showTutorial === true;
+
     return (
          <SidebarProvider>
-            {showTutorial && <Tutorial onComplete={handleTutorialComplete} />}
+            {shouldRenderTutorial && <Tutorial onComplete={handleTutorialComplete} />}
             {/* The main `Sidebar` component. It's responsive and becomes an off-canvas menu on mobile. */}
             <Sidebar>
                 {/* The header of the sidebar, typically containing the logo. */}
