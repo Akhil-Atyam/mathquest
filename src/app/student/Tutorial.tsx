@@ -297,20 +297,21 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     let left: number, top: number, transform: string | undefined;
 
     // Automatically adjust position based on viewport
-    if (position === 'right' && targetRect.right + mascotWidth + offset > window.innerWidth) {
-      position = 'left';
+    let autoPosition = position;
+    if (autoPosition === 'right' && targetRect.right + mascotWidth + offset > window.innerWidth) {
+      autoPosition = 'left';
     }
-    if (position === 'left' && targetRect.left - mascotWidth - offset < 0) {
-      position = 'right'; // Failsafe
+    if (autoPosition === 'left' && targetRect.left - mascotWidth - offset < 0) {
+      autoPosition = 'right'; // Failsafe
     }
-    if (position === 'bottom' && targetRect.bottom + mascotHeight + offset > window.innerHeight) {
-      position = 'top';
+    if (autoPosition === 'bottom' && targetRect.bottom + mascotHeight + offset > window.innerHeight) {
+      autoPosition = 'top';
     }
-    if (position === 'top' && targetRect.top - mascotHeight - offset < 0) {
-      position = 'bottom';
+    if (autoPosition === 'top' && targetRect.top - mascotHeight - offset < 0) {
+      autoPosition = 'bottom';
     }
 
-    switch (position) {
+    switch (autoPosition) {
       case 'right':
         left = targetRect.right + offset;
         top = targetRect.top;
@@ -335,12 +336,22 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
     }
 
     // Horizontal clamp for top/bottom positions
-    if (position === 'top' || position === 'bottom') {
+    if (autoPosition === 'top' || autoPosition === 'bottom') {
         if (left + mascotWidth > window.innerWidth) {
             left = window.innerWidth - mascotWidth - offset;
         }
         if (left < offset) {
             left = offset;
+        }
+    }
+    
+    // Vertical clamp for left/right positions
+    if (autoPosition === 'left' || autoPosition === 'right') {
+        if (top + mascotHeight > window.innerHeight) {
+            top = window.innerHeight - mascotHeight - offset;
+        }
+         if (top < offset) {
+            top = offset;
         }
     }
 
