@@ -9,7 +9,6 @@ import { collection, query, where, Timestamp, addDoc, doc, getDocs, updateDoc, a
 import type { GroupStudySession, Student } from '@/lib/types';
 import { format } from 'date-fns';
 import { Calendar, Clock, Video, PlusCircle, Users, Edit } from 'lucide-react';
-import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -233,6 +232,13 @@ export default function GroupStudyPage() {
     
     const isLoading = isUserLoading || isStudentLoading || areHostedLoading || areInvitedLoading;
 
+    const getSafeUrl = (url: string) => {
+        if (!url) return '#';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          return url;
+        }
+        return `https://${url}`;
+    };
 
     if (isLoading) {
         return (
@@ -282,7 +288,7 @@ export default function GroupStudyPage() {
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="w-4 h-4" /><span>Invited: {(session.invitedStudentUsernames || []).join(', ')}</span></div>
                                 </CardContent>
                                 <CardFooter className="flex flex-wrap justify-center gap-2 sm:justify-end">
-                                    <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Start Session</Link></Button>
+                                    <Button asChild><a href={getSafeUrl(session.meetingLink)} target="_blank" rel="noopener noreferrer"><Video className="mr-2 h-4 w-4" />Start Session</a></Button>
                                     <StudySessionDialog student={student} session={session}>
                                         <Button variant="outline"><Edit className="mr-2 h-4 w-4" />Edit</Button>
                                     </StudySessionDialog>
@@ -309,7 +315,7 @@ export default function GroupStudyPage() {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="w-4 h-4" /><span>{format(session.startTime.toDate(), 'p')}</span></div>
                                 </CardContent>
                                 <CardFooter className="gap-2">
-                                    <Button asChild><Link href={session.meetingLink} target="_blank"><Video className="mr-2 h-4 w-4" />Join Session</Link></Button>
+                                    <Button asChild><a href={getSafeUrl(session.meetingLink)} target="_blank" rel="noopener noreferrer"><Video className="mr-2 h-4 w-4" />Join Session</a></Button>
                                 </CardFooter>
                             </Card>
                          ))
@@ -326,3 +332,4 @@ export default function GroupStudyPage() {
     
 
     
+

@@ -10,7 +10,6 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Booking } from '@/lib/types';
 import { format, isBefore } from 'date-fns';
 import { Calendar, Clock, Video } from 'lucide-react';
-import Link from 'next/link';
 
 /**
  * A component to display a list of bookings, either upcoming or past.
@@ -27,6 +26,14 @@ function SessionList({ title, bookings }: { title: string; bookings: Booking[] }
       </div>
     );
   }
+
+  const getSafeUrl = (url: string) => {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `https://${url}`;
+  };
 
   return (
     <div>
@@ -54,10 +61,10 @@ function SessionList({ title, bookings }: { title: string; bookings: Booking[] }
               {title === 'Upcoming Sessions' && (
                 booking.meetingLink ? (
                   <Button asChild>
-                    <Link href={booking.meetingLink} target="_blank">
+                    <a href={getSafeUrl(booking.meetingLink)} target="_blank" rel="noopener noreferrer">
                       <Video className="mr-2 h-4 w-4" />
                       Join Session
-                    </Link>
+                    </a>
                   </Button>
                 ) : (
                   <Button variant="outline" disabled>

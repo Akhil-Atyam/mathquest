@@ -10,7 +10,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Clock, Video, Edit, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -81,6 +80,14 @@ function NextSession({ bookings, onUpdateLink }: { bookings: Booking[] | null, o
         return upcoming[0] || null;
     }, [bookings]);
 
+    const getSafeUrl = (url: string) => {
+        if (!url) return '#';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          return url;
+        }
+        return `https://${url}`;
+    };
+
     if (!nextSession) {
         return (
             <Card>
@@ -90,7 +97,7 @@ function NextSession({ bookings, onUpdateLink }: { bookings: Booking[] | null, o
                 <CardContent>
                     <p className="text-muted-foreground">You have no upcoming sessions.</p>
                     <Button asChild className="mt-4">
-                        <Link href="/teacher/tutoring">Manage Availability</Link>
+                        <a href="/teacher/tutoring">Manage Availability</a>
                     </Button>
                 </CardContent>
             </Card>
@@ -124,10 +131,10 @@ function NextSession({ bookings, onUpdateLink }: { bookings: Booking[] | null, o
                 <div className="flex gap-2">
                     {nextSession.meetingLink ? (
                       <Button asChild>
-                        <Link href={nextSession.meetingLink} target="_blank">
+                        <a href={getSafeUrl(nextSession.meetingLink)} target="_blank" rel="noopener noreferrer">
                           <Video className="mr-2 h-4 w-4" />
                           Join Session
-                        </Link>
+                        </a>
                       </Button>
                     ) : null}
                      <AddLinkDialog booking={nextSession} onSave={onUpdateLink}>
