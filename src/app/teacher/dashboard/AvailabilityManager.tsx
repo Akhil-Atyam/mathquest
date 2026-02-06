@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -56,7 +57,7 @@ export function AvailabilityManager({ teacher }: { teacher: Teacher | null }) {
 
     const today = startOfDay(new Date());
     const selectedDay = startOfDay(day);
-    const dayOffset = Math.ceil((selectedDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dayOffset = Math.round((selectedDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
     if (dayOffset < 0) {
         form.setError('day', { type: 'manual', message: 'Cannot set availability for a past date.' });
