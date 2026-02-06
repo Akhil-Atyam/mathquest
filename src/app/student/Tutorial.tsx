@@ -326,8 +326,8 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         top = targetRect.bottom + offset;
         break;
       case 'top':
-        left = targetRect.left;
-        top = targetRect.top - offset;
+        left = targetRect.top - offset;
+        top = targetRect.top;
         transform = 'translateY(-100%)';
         break;
       default:
