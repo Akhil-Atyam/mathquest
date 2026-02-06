@@ -77,13 +77,12 @@ function HeroButtons() {
               Start Learning
             </Button>
             <Button 
-                asChild 
                 size="lg" 
                 variant="secondary"
                 onClick={() => handleNavigation('/student/tutoring')}
                 disabled={isUserLoading}
             >
-              <Link href={user ? '/student/tutoring' : '/login'}>Book Tutoring</Link>
+              Book Tutoring
             </Button>
         </div>
     );
@@ -129,7 +128,7 @@ export default function Home() {
         </section>
 
         {/* "Why MathQuest?" section highlighting key features of the app */}
-        <section className="bg-card py-20">
+        <section className="py-20">
           <div className="container mx-auto px-4">
             <h2 className="text-4xl font-bold text-center mb-12">Why MathQuest?</h2>
             <div className="grid md:grid-cols-3 gap-8">
@@ -170,8 +169,8 @@ export default function Home() {
         <section className="relative py-20">
             <InteractiveDotGrid />
             <div className="container mx-auto px-4 text-center relative">
-                <h2 className="text-3xl font-bold mb-2">Just for Fun</h2>
-                <p className="text-muted-foreground">Move your mouse around to see the effect.</p>
+                <h2 className="text-3xl font-bold mb-2" aria-hidden="true">Just for Fun</h2>
+                <p className="text-muted-foreground" aria-hidden="true">Move your mouse around to see the effect.</p>
             </div>
         </section>
       </main>
