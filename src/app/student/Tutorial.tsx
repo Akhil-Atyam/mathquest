@@ -90,6 +90,13 @@ const allSteps: TutorialStep[] = [
   // --- My Tutoring Sessions Page ---
   {
     page: '/student/my-tutoring-sessions',
+    elementId: 'tutorial-my-sessions-header',
+    title: 'Your Booked Sessions',
+    text: 'This page lists all your upcoming and past tutoring sessions. Now, let\'s check out group study!',
+    position: 'bottom',
+  },
+  {
+    page: '/student/my-tutoring-sessions',
     elementId: 'tutorial-group-study', // Sidebar link
     title: 'Study With Friends',
     text: "You can also create your own study sessions and invite your friends. Let's check it out!",

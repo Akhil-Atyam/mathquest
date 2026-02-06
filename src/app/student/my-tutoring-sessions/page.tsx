@@ -123,7 +123,7 @@ export default function MyTutoringSessionsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-8">
-      <h1 className="text-3xl font-bold font-headline" id="tutorial-my-sessions">My Tutoring Sessions</h1>
+      <h1 className="text-3xl font-bold font-headline" id="tutorial-my-sessions-header">My Tutoring Sessions</h1>
       <SessionList title="Upcoming Sessions" bookings={upcomingSessions} />
       <SessionList title="Past Sessions" bookings={pastSessions} />
     </div>

@@ -750,7 +750,7 @@ const UnitQuestPath = ({
                             
                             {/* Grade 2 Scenery */}
                              {grade === 2 && sceneryPositions.scubaBrainy && (
-                                <div className="absolute z-20 w-48 h-48" style={{ top: sceneryPositions.scubaBrainy.y + 60, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
+                                <div className="absolute z-20 w-48 h-48" style={{ top: sceneryPositions.scubaBrainy.y + 80, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
                                     <MascotBrainyScuba />
                                 </div>
                             )}
@@ -1209,7 +1209,7 @@ function ResourcesPageContent() {
             <div className="flex-1 space-y-2">
                 <Label htmlFor="grade-filter">Grade</Label>
                 <Select value={selectedGrade} onValueChange={handleGradeChange}>
-                    <SelectTrigger id="grade-filter" data-ai-hint="grade dropdown">
+                    <SelectTrigger id="tutorial-grade-tabs">
                         <SelectValue placeholder="Select a grade" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1263,5 +1263,3 @@ export default function ResourcesPage() {
         </React.Suspense>
     );
 }
-
-    

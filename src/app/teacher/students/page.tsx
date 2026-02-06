@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -30,15 +31,18 @@ export default function StudentsListPage() {
         if (!firestore) return;
 
         const userDocRef = doc(firestore, 'users', studentToDelete.id);
-        const usernameDocRef = doc(firestore, 'usernames', studentToDelete.username);
-
+        
         try {
-            // Use a batch to ensure both documents are deleted atomically.
-            // This is the correct way to free up the username and delete the profile.
             const batch = writeBatch(firestore);
 
+            // Delete the main user profile document
             batch.delete(userDocRef);
-            batch.delete(usernameDocRef);
+
+            // Only attempt to delete the username document if a username exists
+            if (studentToDelete.username) {
+                const usernameDocRef = doc(firestore, 'usernames', studentToDelete.username);
+                batch.delete(usernameDocRef);
+            }
 
             await batch.commit();
             
