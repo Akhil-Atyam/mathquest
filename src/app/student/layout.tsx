@@ -50,7 +50,10 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // Check local storage first to avoid flicker for returning users
         const tutorialCompleted = localStorage.getItem('tutorialCompleted') === 'true';
-        if (student && !tutorialCompleted && student.hasCompletedTutorial === false) {
+        // The tutorial should show if it's NOT marked as completed in the DB,
+        // and NOT marked as completed in local storage.
+        // `student.hasCompletedTutorial !== true` correctly handles cases where the field is `false` or `undefined`.
+        if (student && !tutorialCompleted && student.hasCompletedTutorial !== true) {
             setShowTutorial(true);
         } else {
             setShowTutorial(false);
