@@ -45,20 +45,26 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user?.uid]);
 
-    const { data: student } = useDoc<Student>(studentDocRef);
+    const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
 
     useEffect(() => {
-        // Check local storage first to avoid flicker for returning users
-        const tutorialCompleted = localStorage.getItem('tutorialCompleted') === 'true';
-        // The tutorial should show if it's NOT marked as completed in the DB,
-        // and NOT marked as completed in local storage.
-        // `student.hasCompletedTutorial !== true` correctly handles cases where the field is `false` or `undefined`.
-        if (student && !tutorialCompleted && student.hasCompletedTutorial !== true) {
+        // Don't make a decision until the student profile is loaded.
+        if (isStudentLoading) {
+            return;
+        }
+
+        const tutorialCompletedInLocalStorage = localStorage.getItem('tutorialCompleted') === 'true';
+
+        // Show the tutorial IF:
+        // 1. We have a student profile.
+        // 2. The profile does NOT have hasCompletedTutorial set to true.
+        // 3. The tutorial is NOT marked as completed in local storage.
+        if (student && student.hasCompletedTutorial !== true && !tutorialCompletedInLocalStorage) {
             setShowTutorial(true);
         } else {
             setShowTutorial(false);
         }
-    }, [student]);
+    }, [student, isStudentLoading]);
 
     const handleTutorialComplete = () => {
         if (studentDocRef) {

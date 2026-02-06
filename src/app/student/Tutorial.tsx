@@ -79,10 +79,10 @@ const allSteps: TutorialStep[] = [
     navigateTo: '/student/tutoring',
   },
   // --- Tutoring Page ---
-  {
+   {
     page: '/student/tutoring',
     elementId: 'tutorial-my-sessions', // Sidebar link
-    title: 'Check Your Schedule',
+    title: 'Your Booked Sessions',
     text: 'After you book a session, you can see all of your scheduled tutoring here. Let\'s go see it.',
     position: 'right',
     navigateTo: '/student/my-tutoring-sessions',
@@ -213,9 +213,10 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
             highlightedElementRef.current = element;
         }
     } else {
+        const elementId = step.elementId;
         // If element not found, retry after a short delay
         setTimeout(() => {
-            const el = document.getElementById(step.elementId);
+            const el = document.getElementById(elementId);
             if (el) {
                 setTargetRect(el.getBoundingClientRect());
                 el.classList.add('tutorial-highlight');
