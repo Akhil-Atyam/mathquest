@@ -4,6 +4,7 @@
 import type { Lesson, Student, Quiz, QuizQuestion } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, arrayUnion, arrayRemove, deleteField, writeBatch } from 'firebase/firestore';
@@ -596,7 +597,7 @@ const UnitQuestPath = ({
                     newScenery['bubbles1'] = { x: firstNodePos.x - 180, y: firstNodePos.y + 120 };
                 }
                  if (points.length > 1) { // User wants it near the second assignment
-                    newScenery['scubaBrainy'] = { x: points[1].x - 200, y: points[1].y - 40 };
+                    newScenery['scubaBrainy'] = { x: points[1].x - 200, y: points[1].y + 80 };
                 }
                 if (points.length > 4) {
                     newScenery['singingSeaweed2'] = { x: points[4].x - 200, y: points[4].y + 50 };
@@ -750,7 +751,7 @@ const UnitQuestPath = ({
                             
                             {/* Grade 2 Scenery */}
                              {grade === 2 && sceneryPositions.scubaBrainy && (
-                                <div className="absolute z-20 w-48 h-48" style={{ top: sceneryPositions.scubaBrainy.y + 80, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
+                                <div className="absolute z-20 w-48 h-48" style={{ top: sceneryPositions.scubaBrainy.y, left: sceneryPositions.scubaBrainy.x, transform: 'translateX(-50%)' }}>
                                     <MascotBrainyScuba />
                                 </div>
                             )}
