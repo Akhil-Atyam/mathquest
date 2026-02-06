@@ -143,7 +143,11 @@ function AuthForm({
               title: 'Account Created',
               description: "You're all set! Redirecting to your dashboard.",
             });
-            router.push(`/${formType}/dashboard`);
+            if (formType === 'student') {
+                router.push('/student/dashboard?startTutorial=true');
+            } else {
+                router.push('/teacher/dashboard');
+            }
         }
       } else { // Sign In logic
         if ('username' in values) {

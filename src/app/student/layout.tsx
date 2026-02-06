@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Logo } from "@/components/logo";
@@ -11,6 +12,7 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import type { Student } from "@/lib/types";
 import { Tutorial } from "./Tutorial";
+import { useSearchParams, useRouter } from "next/navigation";
 
 
 /**
@@ -37,7 +39,10 @@ function PageHeader() {
 function StudentLayoutContent({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const [showTutorial, setShowTutorial] = useState<boolean | undefined>(undefined);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const [showTutorial, setShowTutorial] = useState(false);
 
     const studentDocRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -47,22 +52,33 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
     const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentDocRef);
 
     useEffect(() => {
-        // Wait until both user and student profile loading are finished.
-        if (isUserLoading || isStudentLoading) {
-            return;
-        }
-        
-        // Now we know for sure if we have a user and a student profile.
-        const tutorialCompletedInLocalStorage = localStorage.getItem('tutorialCompleted') === 'true';
+        const startFromUrl = searchParams.get('startTutorial') === 'true';
 
-        // If we have a student profile, and it's not marked as complete, and local storage doesn't say it's complete...
-        if (student && student.hasCompletedTutorial !== true && !tutorialCompletedInLocalStorage) {
+        // Priority 1: The URL explicitly tells us to start. This handles new sign-ups.
+        if (startFromUrl) {
+            setShowTutorial(true);
+            // Clean the URL so a refresh doesn't re-trigger the tutorial.
+            router.replace('/student/dashboard', { scroll: false });
+            return; // Decision made, no need to check further.
+        }
+
+        // Priority 2 (Fallback): Check database and local storage for returning users.
+        // This part runs only if the URL parameter isn't present.
+        if (isUserLoading || isStudentLoading) {
+            return; // Still waiting for data, do nothing yet.
+        }
+
+        const tutorialInDbIsDone = student?.hasCompletedTutorial === true;
+        const tutorialInStorageIsDone = localStorage.getItem('tutorialCompleted') === 'true';
+
+        // Show the tutorial if it has NOT been marked as done in either the database or local storage.
+        if (!tutorialInDbIsDone && !tutorialInStorageIsDone) {
             setShowTutorial(true);
         } else {
-            // In all other cases (no user, no student profile, or it is complete), hide it.
             setShowTutorial(false);
         }
-    }, [user, isUserLoading, student, isStudentLoading]);
+
+    }, [user, student, isUserLoading, isStudentLoading, searchParams, router]);
 
     const handleTutorialComplete = () => {
         if (studentDocRef) {
@@ -72,11 +88,9 @@ function StudentLayoutContent({ children }: { children: React.ReactNode }) {
         setShowTutorial(false);
     };
     
-    const shouldRenderTutorial = showTutorial === true;
-
     return (
          <SidebarProvider>
-            {shouldRenderTutorial && <Tutorial onComplete={handleTutorialComplete} />}
+            {showTutorial && <Tutorial onComplete={handleTutorialComplete} />}
             {/* The main `Sidebar` component. It's responsive and becomes an off-canvas menu on mobile. */}
             <Sidebar>
                 {/* The header of the sidebar, typically containing the logo. */}
@@ -119,6 +133,8 @@ export default function StudentLayout({
     children: React.ReactNode;
 }) {
     return (
-        <StudentLayoutContent>{children}</StudentLayoutContent>
+        <Suspense fallback={<div>Loading...</div>}>
+            <StudentLayoutContent>{children}</StudentLayoutContent>
+        </Suspense>
     );
 }
