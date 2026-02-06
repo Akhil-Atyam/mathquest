@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -326,8 +325,8 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         top = targetRect.bottom + offset;
         break;
       case 'top':
-        left = targetRect.top - offset;
-        top = targetRect.top;
+        left = targetRect.left;
+        top = targetRect.top - offset;
         transform = 'translateY(-100%)';
         break;
       default:
