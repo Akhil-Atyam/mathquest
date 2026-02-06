@@ -92,16 +92,8 @@ const allSteps: TutorialStep[] = [
     page: '/student/my-tutoring-sessions',
     elementId: 'tutorial-my-sessions-header',
     title: 'Your Booked Sessions',
-    text: 'This page lists all your upcoming and past tutoring sessions. Now, let\'s check out group study!',
+    text: 'This page lists your upcoming sessions. To wrap up, let\'s look at how you can study with friends.',
     position: 'bottom',
-    navigateTo: '/student/group-study',
-  },
-  {
-    page: '/student/my-tutoring-sessions',
-    elementId: 'tutorial-group-study', // Sidebar link
-    title: 'Study With Friends',
-    text: "You can also create your own study sessions and invite your friends. Let's check it out!",
-    position: 'right',
     navigateTo: '/student/group-study',
   },
   // --- Final Step (on Group Study page) ---
@@ -109,7 +101,7 @@ const allSteps: TutorialStep[] = [
     page: '/student/group-study',
     elementId: 'tutorial-end',
     title: "You're all set!",
-    text: "That's the grand tour! You're ready to start your math adventure. Have fun!",
+    text: "You can create your own study sessions here. That's the grand tour! You're ready to start your math adventure. Have fun!",
     position: 'center',
   }
 ];
@@ -341,6 +333,17 @@ export function Tutorial({ onComplete }: { onComplete: () => void }) {
         left = targetRect.right + offset;
         top = targetRect.top;
     }
+
+    // Horizontal clamp for top/bottom positions
+    if (position === 'top' || position === 'bottom') {
+        if (left + mascotWidth > window.innerWidth) {
+            left = window.innerWidth - mascotWidth - offset;
+        }
+        if (left < offset) {
+            left = offset;
+        }
+    }
+
 
     return { ...baseStyle, top: `${top}px`, left: `${left}px`, transform };
   }, [targetRect, step]);
